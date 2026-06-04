@@ -11,6 +11,7 @@ from alpca.backtest.pairs import (
     backtest_pairs,
     mean_reversion_stats,
     screen_pairs,
+    walkforward_pairs,
     _hedge_ratio,
 )
 
@@ -103,3 +104,26 @@ def test_screen_pairs_finds_the_cointegrated_one():
     found = screen_pairs(["A", "B", "C"], {"A": A, "B": B, "C": C},
                          min_overlap=100, max_half_life=120, min_half_life=2)
     assert any({r["a"], r["b"]} == {"A", "B"} for r in found)
+
+
+# ----------------------------------------------------------- walk-forward
+def test_walkforward_trades_oos_and_is_profitable_on_cointegrated_universe():
+    n = 500
+    common = [100.0 + 25.0 * math.sin(i / 70.0) for i in range(n)]
+
+    def leg(amp, ph, sign):
+        return _bars([common[i] + sign * amp * math.sin(i / 5.0 + ph) for i in range(n)])
+    bars = {"A1": leg(2.0, 0, 1), "B1": leg(2.0, 0, -1),
+            "A2": leg(1.5, 1, 1), "B2": leg(1.5, 1, -1),
+            "A3": leg(2.5, 2, 1), "B3": leg(2.5, 2, -1)}
+    res = walkforward_pairs(bars, train=80, test=30, top_n=3, max_half_life=80,
+                            min_half_life=2, cost_bps=0.0)
+    assert res.n_windows > 1          # rolled forward several times
+    assert res.n_oos_bars > 0
+    assert res.total_return > 0       # OOS-traded cointegrated pairs pay
+
+
+def test_walkforward_safe_when_too_short():
+    bars = {f"S{k}": _bars([100 + k + i for i in range(50)]) for k in range(4)}
+    res = walkforward_pairs(bars, train=80, test=30)
+    assert res.n_windows == 0 and res.total_return == 0.0

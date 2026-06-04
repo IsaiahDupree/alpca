@@ -94,23 +94,105 @@ def screen_pairs(symbols: List[str], bars_by_sym: Dict[str, List[dict]], *,
     sorted by half-life ascending (faster reversion = more tradeable). Each entry:
     {a, b, hedge, half_life, lam, n}.
     """
+    # precompute {timestamp: close} per symbol ONCE (so a pair screen is a set-intersection
+    # + lookup, not a per-pair dict rebuild — ~N^2 pairs, this is the hot loop).
+    maps = {s: {float(b.get("timestamp", 0) or 0): float(b["close"]) for b in bars_by_sym.get(s, [])}
+            for s in symbols}
     out = []
     for i in range(len(symbols)):
+        a = symbols[i]
+        ma = maps[a]
+        ka = ma.keys()
         for j in range(i + 1, len(symbols)):
-            a, b = symbols[i], symbols[j]
-            rows = align(bars_by_sym.get(a, []), bars_by_sym.get(b, []))
-            if len(rows) < min_overlap:
+            b = symbols[j]
+            mb = maps[b]
+            ts = sorted(ka & mb.keys())
+            if len(ts) < min_overlap:
                 continue
-            la = [math.log(c) for _, c, _ in rows]
-            lb = [math.log(c) for _, _, c in rows]
+            la = [math.log(ma[t]) for t in ts]
+            lb = [math.log(mb[t]) for t in ts]
             h = _hedge_ratio(la, lb)
-            spread = [la[k] - h * lb[k] for k in range(len(rows))]
+            spread = [la[k] - h * lb[k] for k in range(len(ts))]
             lam, hl = mean_reversion_stats(spread)
             if min_half_life <= hl <= max_half_life:
                 out.append({"a": a, "b": b, "hedge": round(h, 3), "half_life": round(hl, 1),
-                            "lam": round(lam, 5), "n": len(rows)})
+                            "lam": round(lam, 5), "n": len(ts)})
     out.sort(key=lambda r: r["half_life"])
     return out
+
+
+@dataclass
+class WalkForwardResult:
+    n_symbols: int
+    n_windows: int
+    n_oos_bars: int
+    total_return: float
+    sharpe: float
+    max_drawdown: float
+    train: int
+    test: int
+    top_n: int
+    equity_curve: List[float] = field(default_factory=list)
+
+
+def walkforward_pairs(bars_by_sym: Dict[str, List[dict]], *, train: int = 252, test: int = 63,
+                      top_n: int = 15, max_half_life: float = 30.0, min_half_life: float = 3.0,
+                      entry_z: float = 2.0, exit_z: float = 0.5, cost_bps: float = 2.0,
+                      starting_equity: float = 100_000.0, periods_per_year: float = 252.0) -> "WalkForwardResult":
+    """
+    Rigorous walk-forward market-neutral pairs. Each step: SCREEN + hedge-fit on a trailing
+    `train` window, then TRADE the selected top_n pairs on the next `test` window (genuinely
+    out-of-sample — selection & hedge used only past data), roll forward by `test`. The OOS
+    test-window basket returns are concatenated into one continuous equity curve, so the
+    resulting Sharpe is the HONEST number (every trade is on unseen data). Pairs are
+    re-selected each window (rolling re-screen) and the hedge is re-fit each window (rolling
+    hedge) — the two upgrades over a single static screen.
+    """
+    from alpca.backtest.evaluation import max_drawdown_of, sharpe_of
+
+    syms = sorted(bars_by_sym)
+    sets = [set(float(b.get("timestamp", 0) or 0) for b in bars_by_sym[s]) for s in syms]
+    common = sorted(set.intersection(*sets)) if sets else []
+    n = len(common)
+    if n < train + 2 * test or len(syms) < 4:
+        return WalkForwardResult(len(syms), 0, 0, 0.0, 0.0, 0.0, train, test, top_n, [])
+
+    bymap = {s: {float(b["timestamp"]): b for b in bars_by_sym[s]} for s in syms}
+    aligned = {s: [bymap[s][t] for t in common] for s in syms}
+
+    oos_rets: List[float] = []
+    windows = 0
+    w = 0
+    while w + train + test <= n:
+        train_slice = {s: aligned[s][w:w + train] for s in syms}
+        screened = screen_pairs(syms, train_slice, min_overlap=int(train * 0.8),
+                                max_half_life=max_half_life, min_half_life=min_half_life)
+        per_pair: List[List[float]] = []
+        for r in screened[:top_n]:
+            seg_a = aligned[r["a"]][w:w + train + test]
+            seg_b = aligned[r["b"]][w:w + train + test]
+            lb = int(max(20, min(120, r["half_life"] * 3)))
+            res = backtest_pairs(seg_a, seg_b, lookback=lb, entry_z=entry_z, exit_z=exit_z,
+                                 cost_bps=cost_bps, hedge=r["hedge"])  # hedge fit on TRAIN only
+            eq = res.equity_curve
+            seg = eq[-(test + 1):] if len(eq) > test else eq
+            rr = [(seg[i] - seg[i - 1]) / seg[i - 1] for i in range(1, len(seg)) if seg[i - 1] > 0]
+            if rr:
+                per_pair.append(rr)
+        if per_pair:
+            m = min(len(x) for x in per_pair)
+            for t in range(m):
+                oos_rets.append(sum(x[t] for x in per_pair) / len(per_pair))
+            windows += 1
+        w += test
+
+    eq = [starting_equity]
+    for r in oos_rets:
+        eq.append(eq[-1] * (1 + r))
+    total = (eq[-1] - starting_equity) / starting_equity if len(eq) > 1 else 0.0
+    return WalkForwardResult(len(syms), windows, len(oos_rets), total,
+                             sharpe_of(eq, periods_per_year), max_drawdown_of(eq),
+                             train, test, top_n, eq)
 
 
 def backtest_pairs(a_bars: List[dict], b_bars: List[dict], *, sym_a: str = "A", sym_b: str = "B",

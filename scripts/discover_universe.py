@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from alpca.backtest.cross_sectional import backtest_cross_sectional_momentum  # noqa: E402
 from alpca.backtest.evaluation import max_drawdown_of, sharpe_of  # noqa: E402
-from alpca.backtest.pairs import backtest_pairs, screen_pairs  # noqa: E402
+from alpca.backtest.pairs import backtest_pairs, screen_pairs, walkforward_pairs  # noqa: E402
 
 # light sector map (for labeling whether screened pairs are same-sector = sane)
 SECTOR = {}
@@ -113,7 +113,14 @@ def main() -> int:
     oret, oos_sh, odd = _basket(oos_res)
     print(f"  OUT-OF-SAMPLE BASKET (screened on first 60%, traded on held-out 40%):"
           f"  ret {oret*100:+.1f}%  Sharpe {oos_sh:.2f}  maxDD {odd*100:.1f}%")
-    print(f"  ^ THE HONEST NUMBER. {'holds up — real market-neutral edge' if oos_sh > 0.7 else 'modest but positive OOS edge' if oos_sh > 0.2 else 'collapses OOS — overfit'}.")
+    print(f"  ^ static 60/40 split. {'holds up' if oos_sh > 0.7 else 'modest OOS edge' if oos_sh > 0.2 else 'collapses — overfit'}.")
+
+    # ---- WALK-FORWARD: re-screen + re-fit hedge each quarter, trade the next (most honest) ----
+    wf = walkforward_pairs(bars, train=252, test=63, top_n=args.top * 2, max_half_life=args.max_half_life, cost_bps=2.0)
+    print(f"\n  WALK-FORWARD (re-screen+re-hedge each quarter, trade the next, {wf.n_windows} windows):")
+    print(f"    ret {wf.total_return*100:+.1f}%  Sharpe {wf.sharpe:.2f}  maxDD {wf.max_drawdown*100:.1f}%  "
+          f"({wf.n_oos_bars} fully-OOS bars)")
+    print(f"    ^^ THE MOST HONEST NUMBER — every trade is on data unseen at selection time.")
 
     # ---- cross-sectional momentum across the whole universe ----
     print(f"\n===== CROSS-SECTIONAL MOMENTUM (market-neutral L/S, {len(syms)}-name universe) =====")
@@ -131,6 +138,8 @@ def main() -> int:
         "n_screened_pairs": len(screened), "top_pairs": rows_out,
         "basket_insample": {"return": bret, "sharpe": bsh, "maxdd": bdd} if pair_results else None,
         "basket_oos": {"return": oret, "sharpe": oos_sh, "maxdd": odd},
+        "walkforward": {"return": wf.total_return, "sharpe": wf.sharpe, "maxdd": wf.max_drawdown,
+                        "windows": wf.n_windows, "oos_bars": wf.n_oos_bars},
         "best_cross_sectional": {"config": best[0], "sharpe": best[1], "return": best[2]} if best else None,
     }, indent=2))
     print(f"\n[done] wrote {args.out}")
