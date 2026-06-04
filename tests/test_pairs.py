@@ -6,7 +6,13 @@ import math
 
 import pytest
 
-from alpca.backtest.pairs import align, backtest_pairs, _hedge_ratio
+from alpca.backtest.pairs import (
+    align,
+    backtest_pairs,
+    mean_reversion_stats,
+    screen_pairs,
+    _hedge_ratio,
+)
 
 DAY = 86400
 T0 = 1_700_000_000
@@ -72,3 +78,28 @@ def test_equity_curve_length_matches_aligned_bars():
     b = _bars([100 + math.cos(i) for i in range(200)])
     res = backtest_pairs(a, b, lookback=30)
     assert len(res.equity_curve) == 200
+
+
+# ------------------------------------------------- cointegration / half-life
+def test_mean_reversion_stats_detects_reverting_spread():
+    spread = [math.sin(i / 5.0) for i in range(200)]   # oscillates around 0 -> reverts
+    lam, hl = mean_reversion_stats(spread)
+    assert lam < 0 and math.isfinite(hl) and hl > 0
+
+
+def test_mean_reversion_stats_rejects_trend():
+    spread = [float(i) for i in range(200)]             # monotonic -> not mean-reverting
+    _, hl = mean_reversion_stats(spread)
+    assert hl == float("inf")
+
+
+def test_screen_pairs_finds_the_cointegrated_one():
+    n = 400
+    common = [100.0 + 25.0 * math.sin(i / 60.0) for i in range(n)]
+    dev = [2.0 * math.sin(i / 4.0) for i in range(n)]    # FAST-reverting spread (period ~25)
+    A = _bars([common[i] + dev[i] for i in range(n)])    # A,B cointegrated
+    B = _bars([common[i] - dev[i] for i in range(n)])
+    C = _bars([100.0 + 0.1 * i for i in range(n)])        # C independent trend
+    found = screen_pairs(["A", "B", "C"], {"A": A, "B": B, "C": C},
+                         min_overlap=100, max_half_life=120, min_half_life=2)
+    assert any({r["a"], r["b"]} == {"A", "B"} for r in found)

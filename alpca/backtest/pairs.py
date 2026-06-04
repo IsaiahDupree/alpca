@@ -61,6 +61,58 @@ def _hedge_ratio(la: List[float], lb: List[float]) -> float:
     return cov / var if var > 0 else 1.0
 
 
+def mean_reversion_stats(spread: List[float]) -> Tuple[float, float]:
+    """
+    Ornstein-Uhlenbeck mean-reversion speed via the AR(1) regression
+        d(spread)_t = a + lam * spread_{t-1}
+    lam < 0 => mean-reverting; half-life = -ln(2)/lam (in bars). Returns (lam, half_life);
+    half_life = inf when not mean-reverting. This is the cointegration screen: a pair is
+    only tradeable if its spread reverts on a sane horizon.
+    """
+    n = len(spread)
+    if n < 5:
+        return 0.0, float("inf")
+    slag = spread[:-1]
+    ds = [spread[i] - spread[i - 1] for i in range(1, n)]
+    ml = statistics.fmean(slag)
+    md = statistics.fmean(ds)
+    var = sum((x - ml) ** 2 for x in slag)
+    if var <= 0:
+        return 0.0, float("inf")
+    lam = sum((slag[i] - ml) * (ds[i] - md) for i in range(len(ds))) / var
+    if lam >= 0:
+        return lam, float("inf")
+    return lam, -math.log(2) / lam
+
+
+def screen_pairs(symbols: List[str], bars_by_sym: Dict[str, List[dict]], *,
+                 min_overlap: int = 120, max_half_life: float = 60.0,
+                 min_half_life: float = 2.0) -> List[dict]:
+    """
+    Rank every symbol pair by spread mean-reversion quality (cointegration screen).
+    Returns pairs whose spread reverts with a half-life in [min_half_life, max_half_life],
+    sorted by half-life ascending (faster reversion = more tradeable). Each entry:
+    {a, b, hedge, half_life, lam, n}.
+    """
+    out = []
+    for i in range(len(symbols)):
+        for j in range(i + 1, len(symbols)):
+            a, b = symbols[i], symbols[j]
+            rows = align(bars_by_sym.get(a, []), bars_by_sym.get(b, []))
+            if len(rows) < min_overlap:
+                continue
+            la = [math.log(c) for _, c, _ in rows]
+            lb = [math.log(c) for _, _, c in rows]
+            h = _hedge_ratio(la, lb)
+            spread = [la[k] - h * lb[k] for k in range(len(rows))]
+            lam, hl = mean_reversion_stats(spread)
+            if min_half_life <= hl <= max_half_life:
+                out.append({"a": a, "b": b, "hedge": round(h, 3), "half_life": round(hl, 1),
+                            "lam": round(lam, 5), "n": len(rows)})
+    out.sort(key=lambda r: r["half_life"])
+    return out
+
+
 def backtest_pairs(a_bars: List[dict], b_bars: List[dict], *, sym_a: str = "A", sym_b: str = "B",
                    lookback: int = 60, entry_z: float = 2.0, exit_z: float = 0.5,
                    starting_equity: float = 100_000.0, leg_notional_pct: float = 0.5,
