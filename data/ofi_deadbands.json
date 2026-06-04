@@ -1,0 +1,44 @@
+{
+  "window_bars": 20,
+  "symbols": [
+    {
+      "symbol": "SPY",
+      "bars_quoted": 1949,
+      "days": 5,
+      "window_bars": 20,
+      "n_ofi": 1849,
+      "ofi_abs_p50": 0.09,
+      "ofi_abs_p75": 0.1488,
+      "ofi_abs_p90": 0.2036,
+      "ofi_abs_p95": 0.241,
+      "recommend_entry": 0.204,
+      "recommend_exit": 0.09
+    },
+    {
+      "symbol": "QQQ",
+      "bars_quoted": 1932,
+      "days": 5,
+      "window_bars": 20,
+      "n_ofi": 1832,
+      "ofi_abs_p50": 0.0929,
+      "ofi_abs_p75": 0.1568,
+      "ofi_abs_p90": 0.2129,
+      "ofi_abs_p95": 0.2516,
+      "recommend_entry": 0.213,
+      "recommend_exit": 0.093
+    },
+    {
+      "symbol": "AAPL",
+      "bars_quoted": 1946,
+      "days": 5,
+      "window_bars": 20,
+      "n_ofi": 1846,
+      "ofi_abs_p50": 0.0625,
+      "ofi_abs_p75": 0.1091,
+      "ofi_abs_p90": 0.1569,
+      "ofi_abs_p95": 0.1948,
+      "recommend_entry": 0.157,
+      "recommend_exit": 0.062
+    }
+  ]
+}

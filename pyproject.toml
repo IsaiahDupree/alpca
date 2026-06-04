@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alpca"
+version = "0.1.0"
+description = "Alpaca paper-trading bot with first-class signal->order->fill latency metrics"
+requires-python = ">=3.10"
+dependencies = [
+    "alpaca-py>=0.21",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "websockets>=11",
+    "aiohttp>=3.9",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+
+[project.scripts]
+alpca = "alpca.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["alpca*"]
+exclude = ["tests*", "scripts*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

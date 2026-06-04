@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtualenv
+.venv/
+venv/
+
+# Secrets — NEVER commit credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+credentials*.json
+
+# Runtime data / logs — ignore EVERYTHING in data/ (ledgers, run outputs, scratch)
+# except the small committed calibration reference fits that tests assert against.
+data/*
+!data/microstructure_deadbands.json
+!data/ofi_deadbands.json
+!data/.gitkeep
+data/cache/
+*.log
+
+# OS
+.DS_Store
