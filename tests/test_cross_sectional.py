@@ -47,6 +47,19 @@ def test_too_few_symbols_is_safe():
     assert res.total_return == 0.0 and res.n_rebalances == 0
 
 
+def test_reversal_inverts_momentum_on_trending_universe():
+    # on a TRENDING cross-section, momentum (long winners) profits while reversal
+    # (long losers) loses — confirms the inversion is wired correctly.
+    n = 250
+    win = _bars([100 * (1.004 ** i) for i in range(n)])
+    mid = _bars([100 + 0.5 * math.sin(i / 5.0) for i in range(n)])
+    lose = _bars([100 * (0.996 ** i) for i in range(n)])
+    syms = {"WIN": win, "MID": mid, "LOSE": lose}
+    mom = backtest_cross_sectional_momentum(syms, lookback=20, hold=10, cost_bps=0.0, reverse=False)
+    rev = backtest_cross_sectional_momentum(syms, lookback=20, hold=10, cost_bps=0.0, reverse=True)
+    assert rev.total_return < mom.total_return
+
+
 def test_long_only_mode_is_directional():
     # market_neutral=False -> long-only top name (this is BETA, for comparison)
     n = 200

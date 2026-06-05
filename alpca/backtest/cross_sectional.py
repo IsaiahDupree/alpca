@@ -32,7 +32,7 @@ class CrossSectionalResult:
 def backtest_cross_sectional_momentum(
     bars_by_sym: Dict[str, List[dict]], *, lookback: int = 60, hold: int = 20,
     top_k: int = 1, bottom_k: int = 1, cost_bps: float = 2.0,
-    periods_per_year: float = 252.0, market_neutral: bool = True,
+    periods_per_year: float = 252.0, market_neutral: bool = True, reverse: bool = False,
 ) -> CrossSectionalResult:
     from alpca.backtest.evaluation import max_drawdown_of, sharpe_of
 
@@ -61,7 +61,9 @@ def backtest_cross_sectional_momentum(
         if t >= lookback and (t - lookback) % hold == 0:
             mom = {s: (price[s][t] / price[s][t - lookback] - 1.0) if price[s][t - lookback] > 0 else 0.0
                    for s in syms}
-            ranked = sorted(syms, key=lambda s: mom[s], reverse=True)
+            # momentum: long winners / short losers. reversal: long losers / short winners
+            # (short-horizon mean-reversion anomaly).
+            ranked = sorted(syms, key=lambda s: mom[s], reverse=not reverse)
             new_w = {s: 0.0 for s in syms}
             for s in ranked[:top_k]:
                 new_w[s] += 0.5 / top_k
