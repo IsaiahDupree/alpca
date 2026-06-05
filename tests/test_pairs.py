@@ -7,8 +7,10 @@ import math
 import pytest
 
 from alpca.backtest.pairs import (
+    adf_stat,
     align,
     backtest_pairs,
+    kalman_spread,
     mean_reversion_stats,
     screen_pairs,
     walkforward_pairs,
@@ -127,3 +129,50 @@ def test_walkforward_safe_when_too_short():
     bars = {f"S{k}": _bars([100 + k + i for i in range(50)]) for k in range(4)}
     res = walkforward_pairs(bars, train=80, test=30)
     assert res.n_windows == 0 and res.total_return == 0.0
+
+
+# ----------------------------------------------- ADF cointegration test
+def test_adf_strongly_negative_for_stationary():
+    # a strongly mean-reverting AR(1) (phi=0.2) -> DF stat very negative
+    y = [0.0]
+    for i in range(1, 300):
+        y.append(0.2 * y[-1] + math.sin(i * 1.7))
+    assert adf_stat(y) < -2.86          # rejects unit root -> mean-reverting
+
+
+def test_adf_near_zero_for_trend():
+    trend = [0.5 * i for i in range(200)]         # non-stationary
+    assert adf_stat(trend) > -2.86
+
+
+def test_adf_screen_is_stricter_than_half_life():
+    # build a small universe; the ADF filter must pass <= the half-life-only screen
+    n = 400
+    common = [100.0 + 25.0 * math.sin(i / 60.0) for i in range(n)]
+    syms, bars = [], {}
+    for k in range(6):
+        dev = [(1.5 + 0.3 * k) * math.sin(i / (4.0 + k) + k) for i in range(n)]
+        bars[f"A{k}"] = _bars([common[i] + dev[i] for i in range(n)])
+        bars[f"B{k}"] = _bars([common[i] - dev[i] for i in range(n)])
+        syms += [f"A{k}", f"B{k}"]
+    loose = screen_pairs(syms, bars, min_overlap=200, max_half_life=60)
+    strict = screen_pairs(syms, bars, min_overlap=200, max_half_life=60, max_adf=-3.0)
+    assert len(strict) <= len(loose)
+    assert all("adf" in r and r["adf"] < -3.0 for r in strict)
+
+
+# ----------------------------------------------- Kalman dynamic hedge
+def test_kalman_converges_to_true_hedge():
+    lb = [math.log(10 + i) for i in range(300)]
+    la = [2.0 * x + 0.1 for x in lb]              # a = 2*b + const in logs
+    betas, innov, sd = kalman_spread(la, lb)
+    assert len(betas) == len(innov) == len(sd) == 300
+    assert betas[-1] == pytest.approx(2.0, abs=0.25)   # tracks the true hedge
+
+
+def test_backtest_pairs_kalman_runs_on_cointegrated():
+    a, b = _cointegrated()
+    res = backtest_pairs(_bars(a), _bars(b), lookback=30, entry_z=1.5, exit_z=0.3,
+                         cost_bps=0.0, use_kalman=True)
+    assert len(res.equity_curve) == len(a)
+    assert math.isfinite(res.total_return)

@@ -85,14 +85,43 @@ def mean_reversion_stats(spread: List[float]) -> Tuple[float, float]:
     return lam, -math.log(2) / lam
 
 
+def adf_stat(series: List[float]) -> float:
+    """
+    Dickey-Fuller test statistic for a unit root: regress d(y)_t = a + b*y_{t-1} + e and
+    return t = b/SE(b). MORE NEGATIVE = more stationary (mean-reverting). Engle-Granger
+    cointegration screen: run this on the pair's spread; require it below a critical value
+    (~-2.86 at 5%, stricter ~-3.34 for an estimated-residual spread). Far stricter than a
+    half-life cap (which passes most noise). Pure-python, no scipy.
+    """
+    n = len(series)
+    if n < 12:
+        return 0.0
+    dy = [series[i] - series[i - 1] for i in range(1, n)]
+    ylag = series[:-1]
+    m = len(dy)
+    mx = statistics.fmean(ylag)
+    my = statistics.fmean(dy)
+    sxx = sum((ylag[i] - mx) ** 2 for i in range(m))
+    if sxx <= 0:
+        return 0.0
+    b = sum((ylag[i] - mx) * (dy[i] - my) for i in range(m)) / sxx
+    a = my - b * mx
+    rss = sum((dy[i] - (a + b * ylag[i])) ** 2 for i in range(m))
+    if m <= 2 or rss <= 0:
+        return 0.0
+    se = math.sqrt(rss / (m - 2) / sxx)
+    return b / se if se > 0 else 0.0
+
+
 def screen_pairs(symbols: List[str], bars_by_sym: Dict[str, List[dict]], *,
                  min_overlap: int = 120, max_half_life: float = 60.0,
-                 min_half_life: float = 2.0) -> List[dict]:
+                 min_half_life: float = 2.0, max_adf: Optional[float] = None) -> List[dict]:
     """
     Rank every symbol pair by spread mean-reversion quality (cointegration screen).
-    Returns pairs whose spread reverts with a half-life in [min_half_life, max_half_life],
-    sorted by half-life ascending (faster reversion = more tradeable). Each entry:
-    {a, b, hedge, half_life, lam, n}.
+    Returns pairs whose spread reverts with a half-life in [min_half_life, max_half_life]
+    (and, when `max_adf` is set, whose spread ADF statistic is below it — a real
+    stationarity test, much stricter than half-life alone). Sorted by ADF ascending if
+    used, else half-life. Each entry: {a, b, hedge, half_life, lam, adf, n}.
     """
     # precompute {timestamp: close} per symbol ONCE (so a pair screen is a set-intersection
     # + lookup, not a per-pair dict rebuild — ~N^2 pairs, this is the hot loop).
@@ -114,10 +143,14 @@ def screen_pairs(symbols: List[str], bars_by_sym: Dict[str, List[dict]], *,
             h = _hedge_ratio(la, lb)
             spread = [la[k] - h * lb[k] for k in range(len(ts))]
             lam, hl = mean_reversion_stats(spread)
-            if min_half_life <= hl <= max_half_life:
-                out.append({"a": a, "b": b, "hedge": round(h, 3), "half_life": round(hl, 1),
-                            "lam": round(lam, 5), "n": len(ts)})
-    out.sort(key=lambda r: r["half_life"])
+            if not (min_half_life <= hl <= max_half_life):
+                continue
+            adf = adf_stat(spread) if max_adf is not None else 0.0
+            if max_adf is not None and adf >= max_adf:
+                continue
+            out.append({"a": a, "b": b, "hedge": round(h, 3), "half_life": round(hl, 1),
+                        "lam": round(lam, 5), "adf": round(adf, 3), "n": len(ts)})
+    out.sort(key=lambda r: r["adf"] if max_adf is not None else r["half_life"])
     return out
 
 
@@ -138,7 +171,8 @@ class WalkForwardResult:
 def walkforward_pairs(bars_by_sym: Dict[str, List[dict]], *, train: int = 252, test: int = 63,
                       top_n: int = 15, max_half_life: float = 30.0, min_half_life: float = 3.0,
                       entry_z: float = 2.0, exit_z: float = 0.5, cost_bps: float = 2.0,
-                      starting_equity: float = 100_000.0, periods_per_year: float = 252.0) -> "WalkForwardResult":
+                      starting_equity: float = 100_000.0, periods_per_year: float = 252.0,
+                      max_adf: Optional[float] = None, use_kalman: bool = False) -> "WalkForwardResult":
     """
     Rigorous walk-forward market-neutral pairs. Each step: SCREEN + hedge-fit on a trailing
     `train` window, then TRADE the selected top_n pairs on the next `test` window (genuinely
@@ -166,14 +200,15 @@ def walkforward_pairs(bars_by_sym: Dict[str, List[dict]], *, train: int = 252, t
     while w + train + test <= n:
         train_slice = {s: aligned[s][w:w + train] for s in syms}
         screened = screen_pairs(syms, train_slice, min_overlap=int(train * 0.8),
-                                max_half_life=max_half_life, min_half_life=min_half_life)
+                                max_half_life=max_half_life, min_half_life=min_half_life, max_adf=max_adf)
         per_pair: List[List[float]] = []
         for r in screened[:top_n]:
             seg_a = aligned[r["a"]][w:w + train + test]
             seg_b = aligned[r["b"]][w:w + train + test]
             lb = int(max(20, min(120, r["half_life"] * 3)))
             res = backtest_pairs(seg_a, seg_b, lookback=lb, entry_z=entry_z, exit_z=exit_z,
-                                 cost_bps=cost_bps, hedge=r["hedge"])  # hedge fit on TRAIN only
+                                 cost_bps=cost_bps, hedge=r["hedge"],  # hedge fit on TRAIN only
+                                 use_kalman=use_kalman)
             eq = res.equity_curve
             seg = eq[-(test + 1):] if len(eq) > test else eq
             rr = [(seg[i] - seg[i - 1]) / seg[i - 1] for i in range(1, len(seg)) if seg[i - 1] > 0]
@@ -195,11 +230,42 @@ def walkforward_pairs(bars_by_sym: Dict[str, List[dict]], *, train: int = 252, t
                              train, test, top_n, eq)
 
 
+def kalman_spread(la: List[float], lb: List[float], *, delta: float = 1e-4, R: float = 1e-3):
+    """
+    Time-varying hedge via a 2-state Kalman filter (intercept + hedge ratio modeled as a
+    random walk). Returns (betas, innovations, std): the innovation is the ADAPTIVE spread
+    and std = sqrt(its variance S_t), so z_t = innovation/std. `delta` sets how fast the
+    hedge tracks (bigger = faster); `R` is observation noise. Pure-python 2x2 (no numpy).
+    """
+    q = delta / (1.0 - delta)
+    t0, t1 = 0.0, 1.0
+    p00, p01, p11 = 1.0, 0.0, 1.0
+    betas, innov, sd = [], [], []
+    for i in range(len(la)):
+        x, y = lb[i], la[i]
+        p00 += q
+        p11 += q                       # predict: add process noise to the diagonal
+        hp0 = p00 + x * p01            # H·P, H=[1,x], P symmetric
+        hp1 = p01 + x * p11
+        S = hp0 + x * hp1 + R
+        e = y - (t0 + t1 * x)
+        k0, k1 = hp0 / S, hp1 / S
+        t0 += k0 * e
+        t1 += k1 * e
+        p00 -= k0 * hp0
+        p01 -= k0 * hp1
+        p11 -= k1 * hp1
+        betas.append(t1)
+        innov.append(e)
+        sd.append(math.sqrt(S) if S > 0 else 0.0)
+    return betas, innov, sd
+
+
 def backtest_pairs(a_bars: List[dict], b_bars: List[dict], *, sym_a: str = "A", sym_b: str = "B",
                    lookback: int = 60, entry_z: float = 2.0, exit_z: float = 0.5,
                    starting_equity: float = 100_000.0, leg_notional_pct: float = 0.5,
                    cost_bps: float = 2.0, periods_per_year: float = 252.0,
-                   hedge: Optional[float] = None) -> PairsResult:
+                   hedge: Optional[float] = None, use_kalman: bool = False) -> PairsResult:
     from alpca.backtest.evaluation import max_drawdown_of, sharpe_of
 
     rows = align(a_bars, b_bars)
@@ -208,15 +274,31 @@ def backtest_pairs(a_bars: List[dict], b_bars: List[dict], *, sym_a: str = "A", 
 
     la = [math.log(c) for _, c, _ in rows]
     lb = [math.log(c) for _, _, c in rows]
-    h = hedge if hedge is not None else _hedge_ratio(la, lb)
-    spread = [la[i] - h * lb[i] for i in range(len(rows))]
+    if use_kalman:
+        # adaptive hedge: z from the Kalman innovation; warm up `lookback` bars to converge
+        betas, innov, sdk = kalman_spread(la, lb)
+        h = betas[-1]
+        z_series = [innov[i] / sdk[i] if (i >= lookback and sdk[i] > 0) else None
+                    for i in range(len(rows))]
+    else:
+        h = hedge if hedge is not None else _hedge_ratio(la, lb)
+        spread = [la[i] - h * lb[i] for i in range(len(rows))]
+        z_series = []
+        win = deque(maxlen=lookback)
+        for i in range(len(rows)):
+            win.append(spread[i])
+            if len(win) >= lookback:
+                mu = statistics.fmean(win)
+                sd = statistics.pstdev(win)
+                z_series.append((spread[i] - mu) / sd if sd > 0 else 0.0)
+            else:
+                z_series.append(None)
 
     cash = starting_equity
     qa = qb = 0.0
     state = 0          # +1 long-spread (long A/short B), -1 short-spread, 0 flat
     trades = 0
     equity: List[float] = []
-    win = deque(maxlen=lookback)
 
     def rebalance(target: int, pa: float, pb: float):
         nonlocal cash, qa, qb, state, trades
@@ -237,11 +319,8 @@ def backtest_pairs(a_bars: List[dict], b_bars: List[dict], *, sym_a: str = "A", 
 
     for i in range(len(rows)):
         _, pa, pb = rows[i]
-        win.append(spread[i])
-        if len(win) >= lookback:
-            mu = statistics.fmean(win)
-            sd = statistics.pstdev(win)
-            z = (spread[i] - mu) / sd if sd > 0 else 0.0
+        z = z_series[i]
+        if z is not None:
             if state == 0:
                 if z > entry_z:
                     rebalance(-1, pa, pb)
