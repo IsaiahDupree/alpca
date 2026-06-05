@@ -108,6 +108,51 @@ def fetch_alpaca_bars(
     return out
 
 
+def fetch_alpaca_crypto_bars(
+    config: AlpacaConfig,
+    symbol: str,
+    *,
+    timeframe: str = "1day",
+    days: int = 365,
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
+) -> List[Dict[str, float]]:
+    """
+    Fetch real OHLCV bars for a CRYPTO symbol (e.g. "BTC/USD") from Alpaca's crypto
+    data API. Same bar-dict shape as fetch_alpaca_bars (no split/dividend adjustment —
+    crypto has none). Crypto trades 24/7, so downstream code should pass
+    periods_per_year=365 (daily) to the evaluation harness, not 252.
+    """
+    config.require_credentials()
+    from alpaca.data.historical import CryptoHistoricalDataClient
+    from alpaca.data.requests import CryptoBarsRequest
+
+    client = CryptoHistoricalDataClient(config.api_key, config.secret_key)
+    end = end or datetime.now(timezone.utc)
+    start = start or (end - timedelta(days=days))
+    req = CryptoBarsRequest(
+        symbol_or_symbols=symbol,
+        timeframe=_to_alpaca_timeframe(timeframe),
+        start=start,
+        end=end,
+    )
+    barset = client.get_crypto_bars(req)
+    raw = barset.data.get(symbol, [])
+    out: List[Dict[str, float]] = []
+    for b in raw:
+        out.append({
+            "open": float(b.open),
+            "high": float(b.high),
+            "low": float(b.low),
+            "close": float(b.close),
+            "volume": float(b.volume),
+            "timestamp": b.timestamp.timestamp() if hasattr(b.timestamp, "timestamp") else 0.0,
+            "symbol": symbol,
+            "adjustment": "raw",
+        })
+    return out
+
+
 def fetch_alpaca_quotes(
     config: AlpacaConfig,
     symbol: str,
