@@ -35,6 +35,9 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 11 | TSMOM (vol-scaled ETF panel) | Diversified | momentum 1.62 < vol-scale 1.76 < buy-hold 1.93 (OOS) | ❌ Illusory (Kim 2016) |
 | 12 | Crypto funding-rate tilt | Sentiment overlay | Mild DD reduction in a 1yr bear; no alpha | ⚠️ Weak / inconclusive |
 | 13 | News / sentiment alt-data | Alt-data | Free API exposes ~50 articles / ~8 days | ❌ Not backtestable here |
+| 14 | **PEAD** (post-earnings drift, L/S) | Market-neutral event | Dollar-neutral Sharpe 0.66–0.82; short leg carries it | 🟡 **Encouraging, unvalidated** (~1yr) |
+| 15 | Seasonality (turn-of-month, pre-FOMC) | Event-clock overlay | Standalone Sharpe 0.24–0.34, exposure 3–34% | ⚠️ Weak alone; ✅ uncorrelated leg |
+| 16 | **Portfolio combination** (inverse-vol blend) | Allocation | 5 legs avg \|corr\| 0.05; combined ~0.87 ≈ null | ⚙️ Method works; edge-supply-limited |
 
 ---
 
@@ -174,6 +177,67 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 
 ---
 
+## Case 14 — PEAD (post-earnings-announcement drift) 🟡 (encouraging, unvalidated)
+
+- **Hypothesis.** A stock that beats consensus keeps drifting up for weeks (and misses drift
+  down). Long high-surprise / short low-surprise, dollar-neutral — event-driven and
+  cross-sectional, so genuinely *diversifying* from price-mean-reversion pairs.
+- **Method.** Earnings surprise from the free Nasdaq endpoint (no key, ~4 quarters/ticker);
+  long if surprise > +thr, short if < −thr, hold 30 trading days from the day after the
+  report. Long, short, and dollar-neutral legs judged **separately**. 167 symbols, 665 events.
+- **Result.** Dollar-neutral Sharpe **0.66** (and **0.82** at a stricter ±3% threshold),
+  −8% maxDD. The **short leg carries it (0.50) vs the long leg (0.32)** — exactly as theory
+  predicts (the long leg is mostly beta; neutral alpha lives in the short).
+- **Verdict.** 🟡 **The first new candidate that didn't immediately die — but NOT validated.**
+  The honest caveat is decisive: in-sample Sharpe is **0.00** across all configs because the
+  free data only covers ~1 year, so positions only populate the back half — the "OOS 1.21" is
+  *not* a clean walk-forward, just the active window. Single regime, weak power, paper-shorting
+  realism unmodeled. **To judge it properly needs multi-year history (a free Finnhub key).**
+- **Next step.** Add `FINNHUB_API_KEY`, pull 5+ years, re-run with a real walk-forward + DSR.
+
+## Case 15 — Calendar seasonality (turn-of-month, pre-FOMC) ⚠️/✅
+
+- **Hypothesis.** Long an index ETF only around month-end flows (turn-of-month) or the ~24h
+  before scheduled FOMC announcements (Lucca-Moench drift); flat otherwise.
+- **Result** (SPY/QQQ, ~2021-2026): standalone Sharpe 0.24–0.34 (turn-of-month, 34% exposure)
+  and 0.24–0.60 (pre-FOMC, 3% exposure) — below buy-and-hold's 0.80+ on absolute return, and
+  OOS-negative standalone (our window can't test the documented pre-2011 vs post-2011 decay).
+- **Verdict.** ⚠️ **Weak as a standalone strategy** (cash-parked most days) **but ✅ valuable as
+  an uncorrelated leg** — its PnL is on an *event clock*, so it correlates ~0 with every
+  price-driven strategy (see Case 16). That structural ρ≈0 is its entire value.
+
+## Case 16 — Portfolio combination (inverse-vol + half-Kelly blend) ⚙️
+
+- **The math.** Combining k equal-risk legs of Sharpe S, avg correlation ρ, gives
+  `S·√k / √(1+(k−1)ρ)`. Four uncorrelated 0.5-legs → 1.0; at ρ=0.3 → only 0.69. **Correlation
+  is destiny** — stacking correlated betas buys nothing (which is why momentum/reversal/TSMOM/
+  PCA stacking did nothing: they were secretly the same beta).
+- **Method.** A real combiner (`backtest/combine.py`): measures the cross-leg correlation
+  matrix, blends by inverse-vol + a half-Kelly leverage cap (de Prado's robust default at low
+  N), reports combined Sharpe vs the equal-weight null, and translates Sharpe → expected
+  daily/annual return. Tested on 5 *real* legs: pairs basket (MN), rsi-mr (beta), cross-
+  sectional (MN), turn-of-month, pre-FOMC.
+- **Result.** The legs are genuinely uncorrelated (avg |off-diagonal corr| **0.05**), and the
+  inverse-vol blend beats/ties the equal-weight null (~**0.87**). BUT the combined Sharpe sits
+  *below* the best single leg, because four of five legs are weak (0.0–0.4): **combining one
+  good leg with weak diversifiers dilutes, it doesn't lift.** The diversification formula only
+  delivers when you have *several genuinely-good* uncorrelated edges — which we don't.
+- **Honest ROI translation.** At the achieved combined Sharpe (~0.87) and an 8% vol target:
+  ~5–9% / year ≈ **~2 bps/day expected, under ~40 bps/day of noise (noise ≈ 18× the edge).**
+  The edge is *invisible* day-to-day. **"X% per day" targets are noise-mining** — the right
+  scoreboard is combined OOS Sharpe (deflated for trial count via DSR) and max drawdown.
+- **Verdict.** ⚙️ **The method is real and is the single biggest lever** — but its output is
+  capped by the *supply of good uncorrelated edges*. The bottleneck is finding more real
+  edges (e.g. validating PEAD), not the allocator.
+
+## Methodology upgrade — Deflated Sharpe Ratio
+
+Given how many strategies this project has tried (~34 in the registry + the dozen edge
+families here), naive p-values overstate significance. The harness now includes the
+**Probabilistic** and **Deflated Sharpe Ratio** (Bailey & López de Prado): the DSR tests a
+Sharpe against the *expected maximum* Sharpe over the number of trials, so it accounts for
+selection bias. Use DSR > 0.95 — not a raw p<0.05 — as the real significance bar going forward.
+
 ## What we learned
 
 1. **The harness is the product.** Its job is to *reject*, and it has correctly rejected every
@@ -188,7 +252,17 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 5. **Beta is not a sin — mislabeling it is.** rsi-mr is deployed live as honest risk-reduced
    beta (the swing job). We just never call it alpha.
 
+6. **Combining is the biggest lever, but it's edge-supply-limited.** The diversification-of-
+   Sharpe math is real and our combiner works (legs uncorrelated at ρ≈0.05, beats the equal-
+   weight null) — but you can't manufacture a high combined Sharpe from one good leg plus weak
+   diversifiers. The constraint is the *supply of genuinely-good uncorrelated edges*.
+7. **Daily-ROI is the wrong target.** At any honest Sharpe (0.5–1.2), the daily expected
+   return is ~2–5 bps, buried under ~40–60 bps of daily noise (noise ≈ 10–20× the edge). The
+   correct scoreboard is **combined OOS Sharpe (DSR-deflated for trial count) and drawdown**.
+
 **Bottom line:** after equities (all families), crypto (daily + hourly), market-making, two
-sizing/factor generalizations, a CTA edge, an alt-data probe, and a funding signal — the
-**84-symbol cointegrated-pairs market-neutral basket (OOS Sharpe ~0.5)** remains the only
-edge that has survived honest, out-of-sample testing.
+sizing/factor generalizations, a CTA edge, an alt-data probe, a funding signal, seasonality,
+and a portfolio combiner — the **84-symbol cointegrated-pairs market-neutral basket (OOS
+Sharpe ~0.5)** remains the only fully-validated edge, with **PEAD the one encouraging new
+lead** (dollar-neutral Sharpe ~0.7 on ~1yr, short-leg-carried) that's worth multi-year data to
+confirm. The combiner is ready to stack edges the moment a second validated one exists.
