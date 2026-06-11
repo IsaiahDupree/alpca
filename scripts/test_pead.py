@@ -1,0 +1,103 @@
+"""
+Harness-test PEAD (post-earnings-announcement drift), judging the LONG, SHORT, and dollar-
+neutral COMBINED legs separately. Earnings surprise from the cache built by
+alpca.data.earnings.download_universe_earnings (Nasdaq free ~1yr, or Finnhub if a key is set).
+
+Market-neutral combined leg -> the return itself is the alpha (no buy-and-hold). Honest null:
+PEAD has decayed since the 2000s; the long leg is often just beta; any real edge lives in the
+short leg / dollar-neutral combo. CAVEAT: free Nasdaq surprise is only ~4 quarters/ticker ->
+a ~1yr window = weak statistical power, single regime. A multi-year test needs a FINNHUB_API_KEY.
+
+Run: .venv/bin/python scripts/test_pead.py --cache "/Volumes/My Passport/AlpcaData/cache" \
+       --earnings "/Volumes/My Passport/AlpcaData/earnings"
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from alpca.backtest.evaluation import sharpe_of, sharpe_pvalue, sharpe_tstat  # noqa: E402
+from alpca.backtest.pead import backtest_pead  # noqa: E402
+
+PPY = 252.0
+
+
+def oos(eq, frac=0.3):
+    sp = int(len(eq) * (1 - frac))
+    return sharpe_of(eq[:sp], PPY), sharpe_of(eq[sp:], PPY)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--cache", default="/Volumes/My Passport/AlpcaData/cache")
+    ap.add_argument("--earnings", default="/Volumes/My Passport/AlpcaData/earnings")
+    ap.add_argument("--hold", type=int, default=30)
+    ap.add_argument("--entry-thr", type=float, default=2.0)
+    ap.add_argument("--cost-bps", type=float, default=2.0)
+    ap.add_argument("--out", default="data/pead_results.json")
+    args = ap.parse_args()
+    cache, edir = Path(args.cache), Path(args.earnings)
+
+    bars_by, events_by = {}, {}
+    for ef in edir.glob("*_earnings.json"):
+        sym = ef.name.replace("_earnings.json", "")
+        ev = json.loads(ef.read_text())
+        bf = cache / f"{sym}_1day_bars.jsonl"
+        if ev and bf.exists():
+            bars_by[sym] = [json.loads(l) for l in bf.open() if l.strip()]
+            events_by[sym] = ev
+    n_events = sum(len(v) for v in events_by.values())
+    spans = [e["date"] for v in events_by.values() for e in v]
+    print(f"[ok] {len(events_by)} symbols, {n_events} earnings events "
+          f"(window ~{(max(spans)-min(spans))/86400/365:.1f}yr)\n" if spans else "[fail] no events")
+    if not spans:
+        return 1
+
+    grid = [(0.0, "long"), (0.0, "short"), (0.0, "both"),
+            (1.0, "both"), (3.0, "both")]
+    rows = []
+    print(f"{'entry_thr':>9}{'leg':>7}{'sharpe':>8}{'IS':>7}{'OOS':>7}{'ret':>8}{'maxDD':>8}"
+          f"{'events':>8}{'active':>8}{'sig':>5}")
+    print("-" * 80)
+    for thr, leg in [(args.entry_thr, "long"), (args.entry_thr, "short"), (args.entry_thr, "both"),
+                     (1.0, "both"), (3.0, "both")]:
+        r = backtest_pead(bars_by, events_by, hold=args.hold, entry_thr=thr, leg=leg,
+                          cost_bps=args.cost_bps, periods_per_year=PPY)
+        if r.n_days < 60:
+            continue
+        is_sh, oos_sh = oos(r.equity_curve)
+        t, pv = sharpe_tstat(r.equity_curve), sharpe_pvalue(r.equity_curve)
+        sig = pv < 0.05 and abs(t) > 2.0
+        rows.append({"entry_thr": thr, "leg": leg, "sharpe": r.sharpe, "is_sharpe": is_sh,
+                     "oos_sharpe": oos_sh, "ret": r.total_return, "maxdd": r.max_drawdown,
+                     "events": r.n_events_used, "avg_active": r.avg_active, "sig": sig})
+        print(f"{thr:>9.1f}{leg:>7}{r.sharpe:>8.2f}{is_sh:>7.2f}{oos_sh:>7.2f}"
+              f"{r.total_return*100:>7.0f}%{r.max_drawdown*100:>7.1f}%{r.n_events_used:>8}"
+              f"{r.avg_active:>8.1f}{('Y' if sig else ''):>5}")
+
+    both = next((x for x in rows if x["leg"] == "both" and x["entry_thr"] == args.entry_thr), None)
+    longl = next((x for x in rows if x["leg"] == "long"), None)
+    shortl = next((x for x in rows if x["leg"] == "short"), None)
+    print("\n" + "=" * 80)
+    if both and longl and shortl:
+        print(f"LEG DECOMPOSITION (entry_thr {args.entry_thr}):")
+        print(f"  long-only  Sharpe {longl['sharpe']:.2f} (likely beta)")
+        print(f"  short-only Sharpe {shortl['sharpe']:.2f} (where neutral alpha would live)")
+        print(f"  dollar-neutral Sharpe {both['sharpe']:.2f}, OOS {both['oos_sharpe']:.2f}")
+        verdict = ("dollar-neutral PEAD shows OOS edge — worth more data (Finnhub key)"
+                   if both["oos_sharpe"] > 0.5 else
+                   "no convincing OOS edge in this ~1yr window — needs multi-year data to judge")
+        print(f"  VERDICT: {verdict}")
+    Path(args.out).write_text(json.dumps({"n_symbols": len(events_by), "n_events": n_events,
+                                          "grid": rows}, indent=2))
+    print(f"\n[done] wrote {args.out}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

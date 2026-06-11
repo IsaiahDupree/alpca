@@ -41,19 +41,12 @@ class TSMOMResult:
 
 
 def _aligned_returns(bars_by_sym: Dict[str, List[dict]], syms: List[str]):
-    common = None
-    maps = {}
-    for s in syms:
-        bars = bars_by_sym.get(s, [])
-        m = {int(b["timestamp"]): float(b["close"]) for b in bars if float(b.get("close", 0)) > 0}
-        maps[s] = m
-        common = set(m) if common is None else (common & set(m))
-    ts = sorted(common or [])
+    """(use, R) on the timestamps common to `syms`. Wrapper over panel.aligned_returns;
+    keeps the >=300-bar floor this module expects."""
+    from alpca.backtest.panel import aligned_returns
+    use, R, ts = aligned_returns(bars_by_sym, syms)
     if len(ts) < 300:
         return [], np.zeros((0, 0))
-    use = [s for s in syms if s in maps and len(maps[s]) >= len(ts)]
-    P = np.array([[maps[s][t] for s in use] for t in ts])  # (T+1 x N)
-    R = (P[1:] - P[:-1]) / P[:-1]
     return use, R
 
 

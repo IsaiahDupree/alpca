@@ -78,6 +78,85 @@ def sharpe_pvalue(equity: List[float]) -> float:
     return 2.0 * (1.0 - _normal_cdf(abs(sharpe_tstat(equity))))
 
 
+def _skew_kurt(r: List[float]):
+    """Sample skewness and (non-excess) kurtosis of a return series; normal kurtosis = 3."""
+    n = len(r)
+    if n < 4:
+        return 0.0, 3.0
+    m = statistics.fmean(r)
+    sd = statistics.pstdev(r)
+    if sd <= 0:
+        return 0.0, 3.0
+    skew = sum((x - m) ** 3 for x in r) / n / sd ** 3
+    kurt = sum((x - m) ** 4 for x in r) / n / sd ** 4
+    return skew, kurt
+
+
+def probabilistic_sharpe_ratio(equity: List[float], sr_benchmark: float = 0.0) -> float:
+    """PSR (Bailey & López de Prado): probability the TRUE per-period Sharpe exceeds
+    `sr_benchmark`, correcting the Sharpe estimator's standard error for skew/kurtosis
+    (non-normal returns inflate Sharpe). Returns a probability in [0,1]."""
+    r = _returns(equity)
+    n = len(r)
+    if n < 4:
+        return 0.0
+    sd = statistics.pstdev(r)
+    if sd <= 0:
+        return 0.0
+    sr = statistics.fmean(r) / sd                       # per-period Sharpe
+    skew, kurt = _skew_kurt(r)
+    denom = math.sqrt(max(1e-12, 1.0 - skew * sr + (kurt - 1.0) / 4.0 * sr * sr))
+    return _normal_cdf((sr - sr_benchmark) * math.sqrt(n - 1) / denom)
+
+
+def expected_max_sharpe(n_trials: int, sharpe_variance: float) -> float:
+    """Expected MAX of `n_trials` independent per-period Sharpes drawn with variance
+    `sharpe_variance` (the deflation benchmark SR0). Uses the extreme-value approximation
+    from Bailey & López de Prado (Euler-Mascheroni γ)."""
+    if n_trials < 2 or sharpe_variance <= 0:
+        return 0.0
+    gamma = 0.5772156649015329
+    inv = _norm_ppf
+    a = inv(1.0 - 1.0 / n_trials)
+    b = inv(1.0 - 1.0 / (n_trials * math.e))
+    return math.sqrt(sharpe_variance) * ((1.0 - gamma) * a + gamma * b)
+
+
+def _norm_ppf(p: float) -> float:
+    """Inverse standard-normal CDF (Acklam's rational approximation; |err| < 1.2e-9)."""
+    p = min(max(p, 1e-12), 1.0 - 1e-12)
+    a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+         1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00]
+    b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+         6.680131188771972e+01, -1.328068155288572e+01]
+    c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+         -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00]
+    d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
+         3.754408661907416e+00]
+    plow, phigh = 0.02425, 1 - 0.02425
+    if p < plow:
+        q = math.sqrt(-2 * math.log(p))
+        return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / \
+               ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
+    if p > phigh:
+        q = math.sqrt(-2 * math.log(1 - p))
+        return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / \
+               ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
+    q = p - 0.5
+    rr = q * q
+    return (((((a[0] * rr + a[1]) * rr + a[2]) * rr + a[3]) * rr + a[4]) * rr + a[5]) * q / \
+           (((((b[0] * rr + b[1]) * rr + b[2]) * rr + b[3]) * rr + b[4]) * rr + 1)
+
+
+def deflated_sharpe_ratio(equity: List[float], n_trials: int, sharpe_variance: float) -> float:
+    """DSR: PSR against the deflation benchmark SR0 = expected max Sharpe over `n_trials`
+    (Bailey & López de Prado). The honest probability a Sharpe is real AFTER accounting for
+    how many strategies were tried. DSR > 0.95 ~ significant post-deflation. With ~34
+    strategies tried in this project, naive p-values overstate significance — use this."""
+    sr0 = expected_max_sharpe(n_trials, sharpe_variance)
+    return probabilistic_sharpe_ratio(equity, sr_benchmark=sr0)
+
+
 def beta_alpha(strat_eq: List[float], bench_eq: List[float], ppy: float):
     """OLS of strategy returns on benchmark returns -> (beta, annualized alpha)."""
     sr, br = _returns(strat_eq), _returns(bench_eq)

@@ -45,25 +45,12 @@ class PCAStatArbResult:
 
 
 def _aligned_returns(bars_by_sym: Dict[str, List[dict]], min_len: int):
-    """Intersect timestamps across symbols with enough history; return (syms, R) where
-    R is a (T x N) simple-returns matrix aligned on the common date index."""
-    usable = {s: b for s, b in bars_by_sym.items() if len(b) >= min_len}
-    if len(usable) < 5:
-        return [], np.zeros((0, 0)), []
-    # common timestamp set (intersection)
-    common = None
-    maps = {}
-    for s, bars in usable.items():
-        m = {int(b["timestamp"]): float(b["close"]) for b in bars if float(b.get("close", 0)) > 0}
-        maps[s] = m
-        common = set(m) if common is None else (common & set(m))
-    ts = sorted(common or [])
-    if len(ts) < min_len:
-        return [], np.zeros((0, 0)), []
-    syms = sorted(usable)
-    P = np.array([[maps[s][t] for s in syms] for t in ts])   # (T+1 x N) prices
-    R = (P[1:] - P[:-1]) / P[:-1]                              # (T x N) simple returns
-    return syms, R, ts[1:]
+    """Intersect timestamps across symbols with enough history; return (syms, R, ts) where
+    R is a (T x N) simple-returns matrix aligned on the common date index. Thin wrapper over
+    the shared panel.aligned_returns (kept for the module's existing call sites/tests)."""
+    from alpca.backtest.panel import aligned_returns
+    syms, R, ts = aligned_returns(bars_by_sym, min_len=min_len)
+    return (syms, R, ts) if len(syms) >= 5 else ([], np.zeros((0, 0)), [])
 
 
 def _sscores(Rwin: np.ndarray, n_factors: int, max_half_life: float):
