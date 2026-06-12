@@ -197,14 +197,21 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   surprise outperforms low-surprise) **even though the short leg alone is negative (−0.47)** —
   shorting low-surprise names in a bull market loses; the edge is the long-minus-short *spread*,
   not the short leg in isolation (this corrects the earlier theory note).
+- **Shorting realism (now modeled).** `backtest_pead` charges a daily stock-borrow fee on the
+  short notional (`borrow_apr`, flat or per-symbol) and drops names with no locate (`no_borrow`).
+  Stress on the dollar-neutral leg: Sharpe **0.61 → 0.58** at a realistic large-cap general-
+  collateral borrow (~1%/yr) → **0.53** at 3% → **0.34** only under a 10% hard-to-borrow stress.
+  Our universe is liquid S&P large-caps (GC, ~0.3–1%), so **the edge is robust to realistic
+  borrow** — the drag is ~apr/2 per year on a dollar-neutral book. Shorting realism is *not* the
+  binding constraint.
 - **Verdict.** 🟢 **The strongest new candidate — the first thing besides the pairs basket that
-  looks like a genuine, diversifying, market-neutral edge.** It holds across a real walk-forward
-  and is *near* significant after deflation (DSR 0.92, just under the 0.95 bar). NOT a slam dunk:
-  only 23 symbols (free-tier 25 req/day quota), 5-year window, and paper-shorting borrow/locate
-  realism is unmodeled.
-- **Next step.** Broaden to more symbols (a few API-days, or a paid tier) to tighten the cross-
-  sectional deciles and push DSR over 0.95; model shorting realism; then it's a candidate second
-  leg for the combiner — uncorrelated to the pairs basket by construction.
+  looks like a genuine, diversifying, market-neutral edge,** and it survives realistic borrow
+  costs. *Near* significant after deflation (DSR 0.92, just under 0.95). The one binding
+  limitation is **breadth** — only 23 symbols (free-tier 25 req/day), 5-year window.
+- **Next step.** The daily `avearnings` job is filling the full 195-symbol universe (~8 days),
+  which tightens the cross-sectional deciles and shrinks the Sharpe standard error — the direct
+  route to DSR > 0.95. Then PEAD becomes the combiner's second leg (uncorrelated to the pairs
+  basket by construction).
 
 ## Case 15 — Calendar seasonality (turn-of-month, pre-FOMC) ⚠️/✅
 

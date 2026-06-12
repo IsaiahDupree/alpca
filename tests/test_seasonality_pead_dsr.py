@@ -115,6 +115,52 @@ def test_pead_skips_events_outside_price_window():
     assert r.n_events_used == 1
 
 
+def test_pead_borrow_fee_reduces_short_return():
+    import random
+    rng = random.Random(7)
+    base = 1_600_000_000
+    bars_by, events_by = {}, {}
+    for j in range(6):
+        p, bars = 100.0, []
+        for i in range(400):
+            p *= (1 + rng.gauss(0.0003, 0.012))
+            bars.append({"timestamp": base + i * 86400, "close": p})
+        bars_by[f"S{j}"] = bars
+        events_by[f"S{j}"] = [{"date": base + 150 * 86400, "surprise_pct": 5.0 if j % 2 else -5.0}]
+    free = backtest_pead(bars_by, events_by, hold=40, entry_thr=2.0, leg="short", borrow_apr=0.0)
+    paid = backtest_pead(bars_by, events_by, hold=40, entry_thr=2.0, leg="short", borrow_apr=0.50)
+    assert paid.total_return < free.total_return    # borrow fee is a pure drag on the short book
+
+
+def test_pead_no_borrow_drops_short_events():
+    base = 1_600_000_000
+    bars = [{"timestamp": base + i * 86400, "close": 100.0 + i} for i in range(300)]
+    bars_by = {"A": bars, "B": bars, "C": bars}
+    events = {"A": [{"date": base + 100 * 86400, "surprise_pct": 9.0}],    # long  -> kept
+              "B": [{"date": base + 100 * 86400, "surprise_pct": -8.0}],   # short -> dropped (no borrow)
+              "C": [{"date": base + 120 * 86400, "surprise_pct": -8.0}]}   # short -> kept
+    r = backtest_pead(bars_by, events, hold=20, entry_thr=2.0, leg="both", no_borrow={"B"})
+    assert r.n_events_used == 2     # A long + C short; B's short skipped
+
+
+def test_pead_per_symbol_borrow_dict():
+    import random
+    rng = random.Random(8)
+    base = 1_600_000_000
+    bars_by, events_by = {}, {}
+    for j in range(6):
+        p, bars = 100.0, []
+        for i in range(400):
+            p *= (1 + rng.gauss(0.0, 0.012))
+            bars.append({"timestamp": base + i * 86400, "close": p})
+        bars_by[f"S{j}"] = bars
+        events_by[f"S{j}"] = [{"date": base + 150 * 86400, "surprise_pct": -5.0}]
+    flat = backtest_pead(bars_by, events_by, hold=40, entry_thr=2.0, leg="short", borrow_apr=0.10)
+    persym = backtest_pead(bars_by, events_by, hold=40, entry_thr=2.0, leg="short",
+                           borrow_apr={f"S{j}": 0.10 for j in range(6)})
+    assert abs(flat.total_return - persym.total_return) < 1e-9   # dict == flat when all equal
+
+
 def test_pead_threshold_filters_events():
     base = 1_600_000_000
     bars = [{"timestamp": base + i * 86400, "close": 100.0 + i} for i in range(300)]

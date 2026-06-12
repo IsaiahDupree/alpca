@@ -82,12 +82,17 @@ incl. **Deflated Sharpe Ratio** (`evaluation.deflated_sharpe_ratio`) to account 
 *spread* (high-surprise outperforms low-surprise); the short leg alone is negative (shorting in a
 bull loses), so the alpha is long-minus-short.
 
+**Shorting realism (modeled):** `backtest_pead(borrow_apr=…, no_borrow={…})` charges a daily
+borrow fee on the short notional and drops un-locatable names. Stress: dollar-neutral Sharpe
+0.61 → 0.58 at realistic large-cap GC borrow (~1%/yr) → 0.34 only under a 10% HTB stress. The
+edge **survives realistic borrow** (our universe is liquid large-cap GC); shorting cost is *not*
+the binding constraint.
+
 **To validate (DSR > 0.95):**
-1. **Breadth** — the daily `avearnings` job fills the full 195-symbol universe (~8 days), tightening
-   the cross-sectional deciles and shrinking the Sharpe standard error.
-2. **Shorting realism** — model borrow/locate + paper-short constraints on the short leg.
-3. **Re-run** `scripts/test_pead.py` as breadth grows; watch DSR cross 0.95.
-4. **Stack** — once validated, add PEAD as the combiner's second leg (`scripts/test_combine.py`);
+1. **Breadth (the binding constraint)** — the daily `avearnings` job fills the full 195-symbol
+   universe (~8 days), tightening the cross-sectional deciles and shrinking the Sharpe SE.
+2. **Re-run** `scripts/test_pead.py` as breadth grows; watch DSR cross 0.95.
+3. **Stack** — once validated, add PEAD as the combiner's second leg (`scripts/test_combine.py`);
    being event-clock, it's ρ≈0 to the pairs basket, so the combined Sharpe should genuinely lift.
 
 ---

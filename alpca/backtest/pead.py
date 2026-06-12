@@ -46,13 +46,23 @@ def backtest_pead(
     entry_thr: float = 2.0,
     leg: str = "both",
     cost_bps: float = 2.0,
+    borrow_apr=0.0,
+    no_borrow=None,
     starting_equity: float = 100_000.0,
     periods_per_year: float = 252.0,
 ) -> PEADResult:
-    """Walk-forward PEAD over a universe. `events_by_sym[sym]` = [{date(epoch), surprise_pct}]."""
+    """Walk-forward PEAD over a universe. `events_by_sym[sym]` = [{date(epoch), surprise_pct}].
+
+    SHORTING REALISM (the short leg is the fragile one):
+      borrow_apr: annualized stock-borrow fee charged daily on the short notional
+                  (apr/periods_per_year per day). Float = flat rate for all names, or a
+                  {symbol: apr} dict for per-name rates. Large-cap GC ~0.3-1%; HTB much higher.
+      no_borrow:  set of symbols with NO locate available -> their short events are dropped
+                  entirely (you simply cannot put the trade on)."""
     syms = sorted(s for s in bars_by_sym if events_by_sym.get(s))
     if len(syms) < 3:
         return PEADResult(leg, [starting_equity], 0.0, 0.0, 0.0, 0, 0, 0.0, periods_per_year)
+    no_borrow = set(no_borrow or ())
 
     # master trading calendar = sorted union of all symbols' bar timestamps
     master = sorted({int(b["timestamp"]) for s in syms for b in bars_by_sym[s]})
@@ -64,6 +74,9 @@ def backtest_pead(
     ret = np.zeros((T, N))
     pos = np.zeros((T, N))
     n_used = 0
+    # per-symbol annualized borrow rate (float -> flat; dict -> per name)
+    apr = np.array([(borrow_apr.get(s, 0.0) if isinstance(borrow_apr, dict) else float(borrow_apr))
+                    for s in syms])
 
     for j, s in enumerate(syms):
         bars = sorted(bars_by_sym[s], key=lambda b: int(b["timestamp"]))
@@ -79,6 +92,8 @@ def backtest_pead(
             if surp is None or abs(surp) < entry_thr:
                 continue
             sign = 1.0 if surp > 0 else -1.0
+            if sign < 0 and s in no_borrow:
+                continue                       # no locate available -> can't short this name
             # require the report to fall INSIDE this symbol's price window — else there's no
             # clean post-report entry (events before ts[0] would all pile in at bar 0).
             if ev["date"] < ts[0] or ev["date"] > ts[-1]:
@@ -107,7 +122,10 @@ def backtest_pead(
         if leg in ("short", "both") and shorts.any():
             w[shorts] = -(1.0 if leg == "short" else 0.5) / shorts.sum()
         turnover = np.abs(w - prev_w).sum()
-        port_ret = float(w @ ret[t]) - turnover * (cost_bps / 10_000.0)
+        # daily borrow fee on the short notional (apr/periods_per_year per name held short)
+        short_w = np.where(w < 0, -w, 0.0)
+        borrow_drag = float((short_w * apr).sum()) / periods_per_year
+        port_ret = float(w @ ret[t]) - turnover * (cost_bps / 10_000.0) - borrow_drag
         eq.append(eq[-1] * (1 + port_ret))
         daily.append(port_ret)
         actives.append(int(longs.sum() + shorts.sum()))

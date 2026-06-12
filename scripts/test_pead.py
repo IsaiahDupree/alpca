@@ -42,6 +42,8 @@ def main() -> int:
     ap.add_argument("--entry-thr", type=float, default=2.0)
     ap.add_argument("--cost-bps", type=float, default=2.0)
     ap.add_argument("--n-trials", type=int, default=34, help="DSR deflation: project search breadth")
+    ap.add_argument("--borrow-aprs", default="0.0,0.01,0.03,0.10",
+                    help="short-borrow APRs to stress (large-cap GC ~0.3-1%%, HTB much higher)")
     ap.add_argument("--out", default="data/pead_results.json")
     args = ap.parse_args()
     cache, edir = Path(args.cache), Path(args.earnings)
@@ -113,8 +115,31 @@ def main() -> int:
                    if both["oos_sharpe"] > 0.3 else
                    "no convincing edge across the walk-forward")
         print(f"  VERDICT: {verdict}")
+    # ---- SHORTING REALISM: borrow-fee stress on the dollar-neutral leg ----
+    print("\n" + "=" * 80)
+    print("SHORTING REALISM — borrow fee charged daily on the short notional (dollar-neutral, "
+          f"thr {args.entry_thr}):")
+    print(f"{'borrow_apr':>11}{'sharpe':>8}{'OOS':>7}{'ret':>8}{'PSR':>7}{'DSR':>7}")
+    print("-" * 50)
+    borrow_rows = []
+    for apr in [float(x) for x in args.borrow_aprs.split(",")]:
+        r = backtest_pead(bars_by, events_by, hold=args.hold, entry_thr=args.entry_thr, leg="both",
+                          cost_bps=args.cost_bps, borrow_apr=apr, periods_per_year=PPY)
+        _, oos_sh = oos(r.equity_curve)
+        psr_a = probabilistic_sharpe_ratio(r.equity_curve)
+        dsr_a = deflated_sharpe_ratio(r.equity_curve, n_trials=args.n_trials,
+                                      sharpe_variance=(var_trials if both else 1e-5))
+        borrow_rows.append({"borrow_apr": apr, "sharpe": r.sharpe, "oos": oos_sh,
+                            "ret": r.total_return, "psr": psr_a, "dsr": dsr_a})
+        print(f"{apr*100:>10.1f}%{r.sharpe:>8.2f}{oos_sh:>7.2f}{r.total_return*100:>7.0f}%"
+              f"{psr_a:>7.2f}{dsr_a:>7.2f}")
+    gc = next((x for x in borrow_rows if abs(x["borrow_apr"] - 0.01) < 1e-9), borrow_rows[0])
+    print(f"\n  At a realistic large-cap GC borrow (~1%/yr): Sharpe {gc['sharpe']:.2f}, DSR {gc['dsr']:.2f}. "
+          f"Borrow drag on a dollar-neutral book (0.5 short notional) is ~apr/2 per year — modest for "
+          f"GC names, material only if shorts become hard-to-borrow.")
+
     Path(args.out).write_text(json.dumps({"n_symbols": len(events_by), "n_events": n_events,
-                                          "grid": rows}, indent=2))
+                                          "grid": rows, "borrow_stress": borrow_rows}, indent=2))
     print(f"\n[done] wrote {args.out}")
     return 0
 
