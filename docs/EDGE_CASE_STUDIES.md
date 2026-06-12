@@ -38,6 +38,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 14 | **PEAD** (post-earnings drift, L/S) | Market-neutral event | Flat-borrow DSR 0.92, but **DSR 0.58 under adverse-selection borrow**; short leg −0.47 standalone | 🟡 **Downgraded** — long leg is beta, short leg fails realistic shorting frictions (24/195 symbols; revisit at full breadth) |
 | 15 | Seasonality (turn-of-month, pre-FOMC) | Event-clock overlay | Standalone Sharpe 0.24–0.34, exposure 3–34% | ⚠️ Weak alone; ✅ uncorrelated leg |
 | 16 | **Portfolio combination** (inverse-vol blend) | Allocation | 5 legs avg \|corr\| 0.05; combined ~0.87 ≈ null | ⚙️ Method works; edge-supply-limited |
+| 17 | **Overnight→intraday reversal** | Market-neutral event | Gross Sharpe 0.93 / DSR 0.90 (control-confirmed) → **−0.41 at 2bps** (~2×/day turnover) | 🔴 **REAL anomaly, untradeable** — canonical cost-wall case |
 
 ---
 
@@ -274,6 +275,45 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 - **Verdict.** ⚙️ **The method is real and is the single biggest lever** — but its output is
   capped by the *supply of good uncorrelated edges*. The bottleneck is finding more real
   edges (e.g. validating PEAD), not the allocator.
+
+## Case 17 — Overnight→intraday cross-sectional reversal 🔴 (REAL anomaly, untradeable here)
+
+- **Hypothesis (the "tug of war," Lou-Polk-Skouras 2019).** A stock's overnight return
+  (prev_close→open) and its intraday return (open→close) are *negatively* related
+  cross-sectionally — overnight winners give it back intraday. The **tradeable, no-lookahead**
+  form: the overnight return is fully known *at the open*, so rank the universe on it, go LONG
+  the overnight losers / SHORT the winners, enter at the open, capture that day's intraday move,
+  and **go flat every night** (no overnight beta — a bull market can't flatter it). A clock we
+  had never tested. (`alpca/backtest/overnight.py`)
+- **Method.** 195-symbol daily universe, 5 years, `adjustment="all"` bars (which removes
+  dividend/split artifacts from the overnight gap). Dollar-neutral, top/bottom 20%, signal-
+  lookback sweep (1–5 days), **a momentum control** (long winners — should fail if the reversal
+  is real), in-sample/out-of-sample split, and a **cost sweep** (the book turns over ~2×/day, so
+  cost is the whole ballgame). DSR-deflated for 36 trials.
+- **Result — the anomaly is unambiguously REAL.** At **zero cost** the best reversal
+  (lookback 1) earns Sharpe **0.93**, PSR 0.98, **DSR 0.90**, and the momentum control is
+  strongly **negative (−2.26)** — the directional control nails it, so this is signal, not luck.
+- **…but it is a pure transaction-cost mirage.** The ~2×/day turnover eats everything:
+
+  | per-leg cost | Sharpe | OOS | DSR |
+  |---|---|---|---|
+  | 0 bps (gross) | **0.93** | 0.66 | 0.90 |
+  | 1 bps | 0.26 | 0.02 | 0.42 |
+  | **2 bps (realistic)** | **−0.41** | −0.63 | 0.05 |
+  | 5 bps | −2.41 | −2.57 | 0.00 |
+
+  The edge breaks even around **~1.2 bps/leg** and is **negative by 2 bps**. And 2 bps is
+  *optimistic*: this needs an open-print and close-print fill every day, and we measured Alpaca
+  fills at ~1.2s with slippery opens — real costs are worse than the sweep's 2 bps column.
+- **Verdict.** 🔴 **Real anomaly, zero tradeable edge on our venue.** The cleanest demonstration
+  yet of the project's recurring law: **a statistically real cross-sectional effect (DSR 0.90
+  gross, control-confirmed) is not the same as a tradeable edge** — high-turnover market-neutral
+  strategies die to spread+impact, exactly as intraday cross-sectional momentum (Case 3/4) and
+  1-min market-neutral did. Rejected as tradeable; **kept as the canonical "cost wall" case.**
+- **What could revive it (not pursued).** Only a structurally cheaper expression: hold the
+  reversal across *multiple* days to amortize turnover (likely kills the signal — it lives in
+  the single open→close window), or trade it on a venue with maker rebates and sub-cent spreads
+  (not Alpaca). Neither is available to us.
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 
