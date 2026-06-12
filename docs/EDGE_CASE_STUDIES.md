@@ -42,7 +42,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 18 | **EAR-PEAD, index-beta-hedged** | Market-neutral event | Hedged Sharpe **0.67, IS 0.70 ≈ OOS 0.66**, −12% DD, DSR 0.89; cheap SPY short (not single-name) | 🟢 **Strongest earnings result** — tradeable short side; rescues Case 14 |
 | 19 | **Lead-lag cross-predictability** | Market-neutral (learned) | Walk-forward real −1.02 ≈ shuffle placebo −1.14 (+0.11); gross only 0.27, dies by 1bp | ❌ **Fitted noise** — fails placebo *and* cost wall |
 | 20 | **Gap reversion** (multi-day hold) | Market-neutral event | No gross edge (−0.14 @ 0bps); gap-momentum control *beats* it on large caps | ❌ **Signal failure** — large-cap gaps are informational, not reverting |
-| 21 | **Short-interest (borrow-fee) tilt** | Market-neutral positioning | Real Nasdaq SI; anomaly Sharpe 2.67 *after* DTC-scaled borrow, control mirrors −3.2, turnover 0.01/day | 🟡 **Strong lead** — right sign, survives borrow, low turnover; but only ~1yr (needs FINRA depth) |
+| 21 | **Short-interest (borrow-fee) tilt** | Market-neutral positioning | Real Nasdaq SI (56 sym); anomaly Sharpe 2.34 *after* DTC-scaled borrow, control mirrors −3.0, turnover 0.01/day | 🟡 **Strong lead** — right sign, survives borrow, low turnover; but only ~1yr (needs FINRA depth) |
 
 ---
 
@@ -459,18 +459,21 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   Rebalances bi-monthly → **turnover ~0.010/day**, structurally cost-robust (the property Cases
   17/19/20 lacked). Judged over the **active window only** (SI covers just the last ~1 yr of the
   5-yr daily panel; scoring the flat pre-data years would fake an IS/OOS split).
-- **Result (preliminary, ~40 of 195 symbols cached, ~1-yr / 24 obs each).**
+- **Result (56 symbols, ~1-yr / ~23 obs each).** *Coverage caveat:* only **56 of 195** universe
+  symbols returned data from Nasdaq's free SI endpoint (139 came back empty) — another reason the
+  full-coverage FINRA feed is the right deepening path.
 
-  | variant | Sharpe | within-yr OOS | turn/day |
+  | variant | Sharpe | IS / within-yr OOS | turn/day |
   |---|---|---|---|
-  | anomaly (short high-DTC), no borrow | ~3.2 | +5.8 | 0.010 |
-  | **control (chase shorts)** | **−3.2** | −5.9 | 0.010 |
-  | anomaly + DTC-scaled borrow (the crux) | **2.67** | +5.3 | 0.010 |
+  | anomaly (short high-DTC), no borrow | 2.93 | 2.04 / 4.44 | 0.010 |
+  | **control (chase shorts)** | **−2.98** | −2.09 / −4.48 | 0.010 |
+  | anomaly + DTC-scaled borrow (the crux) | **2.34** | 1.37 / 3.95 | 0.010 |
 
   Right sign (the control is a near-perfect mirror), **survives its own DTC-scaled borrow**
-  (Sharpe 2.67), low turnover, and statistically significant *within the year* (PSR 0.99; DSR 0.98
-  under a clean same-direction deflation). This is the **only scout-#1 signal that clears the bar
-  the others failed** — it is not a cost-wall casualty (Cases 17/20) nor a placebo failure (Case 19).
+  (Sharpe 2.34, IS *and* within-year OOS both positive), low turnover, and statistically significant
+  within the year (PSR 0.99; DSR 0.98 under a clean same-direction deflation). This is the **only
+  scout-#1 signal that clears the bar the others failed** — not a cost-wall casualty (Cases 17/20)
+  nor a placebo failure (Case 19).
 - **The binding caveat (why 🟡, not 🟢).** It is **one year, one regime.** DSR/PSR account for
   sample length and trial count but **not regime risk**, and the free Nasdaq feed gives only ~1 yr
   (24 settlement points) — there is no true multi-year out-of-sample. A Sharpe of ~2.7 over a single
@@ -480,8 +483,8 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   Next step is concrete: pull **multi-year FINRA short-interest history** (the API is reachable) to
   get a real walk-forward across regimes; if it holds, this becomes a genuine third leg — and being
   positioning-driven (not price), it should be uncorrelated to both the pairs basket and EAR-PEAD.
-  Until then it stays a lead, sized at zero. (The universe is still filling toward 195; the ~1-yr
-  depth, not breadth, is the limit.)
+  Until then it stays a lead, sized at zero. (Both the ~1-yr depth *and* Nasdaq's 56/195 coverage
+  are limits FINRA fixes at once.)
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 
