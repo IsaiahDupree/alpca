@@ -5,7 +5,9 @@ uncorrelated legs lift the risk-adjusted return, and what daily ROI is actually 
 
 Legs (all daily, same equity calendar -> tail-alignment is valid):
   - beta sleeve        : rsi-mr on SPY (risk-reduced long beta, deployed live)
-  - market-neutral     : cross-sectional momentum L/S over the universe (~0 market beta)
+  - market-neutral     : cointegrated-pairs basket + cross-sectional momentum L/S (~0 market beta)
+  - EAR-PEAD (MN)      : earnings-announcement-return drift, beta-hedged with a cheap SPY short
+                         (Case 18 — the strongest earnings leg, uncorrelated event-clock alpha)
   - seasonality (TOM)  : turn-of-month overlay on SPY (event-clock, ~0 correlation)
   - seasonality (FOMC) : pre-FOMC drift overlay on SPY (event-clock)
 
@@ -27,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from alpca.backtest.combine import combined_sharpe_formula, evaluate_combo  # noqa: E402
 from alpca.backtest.cross_sectional import backtest_cross_sectional_momentum  # noqa: E402
+from alpca.backtest.ear_pead import backtest_ear_pead  # noqa: E402
 from alpca.backtest.pairs import backtest_pairs, screen_pairs  # noqa: E402
 from alpca.backtest.runner_backtest import backtest_resting  # noqa: E402
 from alpca.backtest.seasonality import (  # noqa: E402
@@ -58,9 +61,28 @@ def pairs_basket_returns(universe):
     return [sum(c[-m:][t] for c in curves) / len(curves) for t in range(m)]
 
 
+def ear_pead_hedged_returns(load, earnings_dir, bench_bars, entry_thr=1.5, hold=40):
+    """Case 18's surviving leg: long high-EAR names, short SPY by beta (cheap GC short).
+    Returns its daily return stream for the combiner."""
+    edir = Path(earnings_dir)
+    bars_by, events_by = {}, {}
+    for ef in edir.glob("*_earnings.json"):
+        sym = ef.name.replace("_earnings.json", "")
+        ev = json.loads(ef.read_text())
+        bars = load(sym)
+        if ev and bars:
+            bars_by[sym], events_by[sym] = bars, ev
+    if len(events_by) < 5 or not bench_bars:
+        return []
+    r = backtest_ear_pead(bars_by, events_by, hold=hold, entry_thr=entry_thr, mode="beta_hedged",
+                          bench_bars=bench_bars, cost_bps=2.0, periods_per_year=PPY)
+    return r.daily_returns
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cache", default="/Volumes/My Passport/AlpcaData/cache")
+    ap.add_argument("--earnings", default="/Volumes/My Passport/AlpcaData/earnings_av")
     ap.add_argument("--target-vol", type=float, default=0.08)
     ap.add_argument("--out", default="data/combine_results.json")
     args = ap.parse_args()
@@ -82,6 +104,9 @@ def main() -> int:
     basket = pairs_basket_returns(universe)
     if basket:
         streams["pairs-basket (MN)"] = basket      # the real OOS-surviving edge
+    ear = ear_pead_hedged_returns(load, args.earnings, spy)
+    if ear:
+        streams["ear-pead (MN)"] = ear             # Case 18: 2nd real MN leg, uncorrelated event-clock
     cs = backtest_cross_sectional_momentum(universe, lookback=250, hold=20, top_k=5, bottom_k=5,
                                            cost_bps=2.0, periods_per_year=PPY, market_neutral=True)
     streams["x-sectional (MN)"] = rets_from_equity(cs.equity_curve)

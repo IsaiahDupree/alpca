@@ -37,7 +37,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 13 | News / sentiment alt-data | Alt-data | Free API exposes ~50 articles / ~8 days | ❌ Not backtestable here |
 | 14 | **PEAD** (post-earnings drift, L/S) | Market-neutral event | Flat-borrow DSR 0.92, but **DSR 0.58 under adverse-selection borrow**; short leg −0.47 standalone | 🟡 **Downgraded** — long leg is beta, short leg fails realistic shorting frictions (24/195 symbols; revisit at full breadth) |
 | 15 | Seasonality (turn-of-month, pre-FOMC) | Event-clock overlay | Standalone Sharpe 0.24–0.34, exposure 3–34% | ⚠️ Weak alone; ✅ uncorrelated leg |
-| 16 | **Portfolio combination** (inverse-vol blend) | Allocation | 5 legs avg \|corr\| 0.05; combined ~0.87 ≈ null | ⚙️ Method works; edge-supply-limited |
+| 16 | **Portfolio combination** (inverse-vol blend) | Allocation | 6 legs avg \|corr\| 0.04; **EAR-PEAD leg lifted combined 0.83 → 0.99** | ⚙️ Method works; edge-supply bottleneck easing |
 | 17 | **Overnight→intraday reversal** | Market-neutral event | Gross Sharpe 0.93 / DSR 0.90 (control-confirmed) → **−0.41 at 2bps** (~2×/day turnover) | 🔴 **REAL anomaly, untradeable** — canonical cost-wall case |
 | 18 | **EAR-PEAD, index-beta-hedged** | Market-neutral event | Hedged Sharpe **0.67, IS 0.70 ≈ OOS 0.66**, −12% DD, DSR 0.89; cheap SPY short (not single-name) | 🟢 **Strongest earnings result** — tradeable short side; rescues Case 14 |
 
@@ -266,20 +266,28 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 - **Method.** A real combiner (`backtest/combine.py`): measures the cross-leg correlation
   matrix, blends by inverse-vol + a half-Kelly leverage cap (de Prado's robust default at low
   N), reports combined Sharpe vs the equal-weight null, and translates Sharpe → expected
-  daily/annual return. Tested on 5 *real* legs: pairs basket (MN), rsi-mr (beta), cross-
-  sectional (MN), turn-of-month, pre-FOMC.
-- **Result.** The legs are genuinely uncorrelated (avg |off-diagonal corr| **0.05**), and the
-  inverse-vol blend beats/ties the equal-weight null (~**0.87**). BUT the combined Sharpe sits
-  *below* the best single leg, because four of five legs are weak (0.0–0.4): **combining one
-  good leg with weak diversifiers dilutes, it doesn't lift.** The diversification formula only
-  delivers when you have *several genuinely-good* uncorrelated edges — which we don't.
-- **Honest ROI translation.** At the achieved combined Sharpe (~0.87) and an 8% vol target:
-  ~5–9% / year ≈ **~2 bps/day expected, under ~40 bps/day of noise (noise ≈ 18× the edge).**
+  daily/annual return. Tested on 6 *real* legs: pairs basket (MN), **EAR-PEAD hedged (MN, new
+  in Case 18)**, rsi-mr (beta), cross-sectional (MN), turn-of-month, pre-FOMC.
+- **Result.** The legs are genuinely uncorrelated (avg |off-diagonal corr| **0.04**), and the
+  inverse-vol blend beats the equal-weight null (0.99 vs 0.97).
+- **➡️ The edge-supply bottleneck, eased (the EAR-PEAD update).** The original 5-leg blend was
+  edge-starved — one good leg (pairs) plus weak diversifiers, combined Sharpe **0.83**, *below*
+  the best single leg. Adding the **EAR-PEAD beta-hedged leg (Case 18)** — the first genuinely
+  *new* uncorrelated edge (corr **0.04**) with a real standalone Sharpe — lifted the combined
+  inverse-vol Sharpe **0.83 → 0.99 (+0.16)**, measured cleanly with/without the leg. This is the
+  combiner doing exactly what the math promises *once you actually feed it a second real edge* —
+  the first time a new leg moved the combined number rather than diluting it. (The combined still
+  trails the rsi-mr *beta* leg's raw 1.18, but that leg is pure market exposure; the blend is
+  near-market-neutral with a far better drawdown profile — a different, more durable risk object.)
+- **Honest ROI translation.** At the achieved combined Sharpe (~0.99) and a 6% vol target:
+  ~6% / year ≈ **~2.3 bps/day expected, under ~36 bps/day of noise (noise ≈ 16× the edge).**
   The edge is *invisible* day-to-day. **"X% per day" targets are noise-mining** — the right
   scoreboard is combined OOS Sharpe (deflated for trial count via DSR) and max drawdown.
-- **Verdict.** ⚙️ **The method is real and is the single biggest lever** — but its output is
-  capped by the *supply of good uncorrelated edges*. The bottleneck is finding more real
-  edges (e.g. validating PEAD), not the allocator.
+- **Verdict.** ⚙️ **The method is real and is the single biggest lever** — and the bottleneck
+  (edge supply) is now *easing*: EAR-PEAD became the second real uncorrelated leg and lifted the
+  blend +0.16. The path to higher combined Sharpe (and thus higher honest profit-per-day) is
+  **more legs like it** — the scout's statarb borrow-fee/order-flow signals and the lead-lag
+  family are the next veins to mine — not faster trading of any single one.
 
 ## Case 17 — Overnight→intraday cross-sectional reversal 🔴 (REAL anomaly, untradeable here)
 
