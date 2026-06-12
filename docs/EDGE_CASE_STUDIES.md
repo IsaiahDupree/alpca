@@ -42,6 +42,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 18 | **EAR-PEAD, index-beta-hedged** | Market-neutral event | Hedged Sharpe **0.67, IS 0.70 ≈ OOS 0.66**, −12% DD, DSR 0.89; cheap SPY short (not single-name) | 🟢 **Strongest earnings result** — tradeable short side; rescues Case 14 |
 | 19 | **Lead-lag cross-predictability** | Market-neutral (learned) | Walk-forward real −1.02 ≈ shuffle placebo −1.14 (+0.11); gross only 0.27, dies by 1bp | ❌ **Fitted noise** — fails placebo *and* cost wall |
 | 20 | **Gap reversion** (multi-day hold) | Market-neutral event | No gross edge (−0.14 @ 0bps); gap-momentum control *beats* it on large caps | ❌ **Signal failure** — large-cap gaps are informational, not reverting |
+| 21 | **Short-interest (borrow-fee) tilt** | Market-neutral positioning | Real Nasdaq SI; anomaly Sharpe 2.67 *after* DTC-scaled borrow, control mirrors −3.2, turnover 0.01/day | 🟡 **Strong lead** — right sign, survives borrow, low turnover; but only ~1yr (needs FINRA depth) |
 
 ---
 
@@ -442,6 +443,45 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   universe we don't trade; out of scope.) Useful boundary on the reversal family: Case 17's edge
   was intraday microstructure, real but uncapturable; the multi-day large-cap version isn't even
   there to capture.
+
+## Case 21 — Short-interest (borrow-fee) tilt 🟡 (strong lead, power-limited to 1 year)
+
+- **Hypothesis (scout #1, "hard-to-borrow" signal — on REAL data, not a proxy).** Days-to-cover
+  (DTC = shares short / avg daily volume) is the fundamental driver of borrow fees; the documented
+  short-interest anomaly says heavily-shorted names underperform (short sellers are informed). LONG
+  low-DTC / SHORT high-DTC, dollar-neutral. **Data is real Nasdaq short interest** (bi-monthly
+  settlement, cached to the Passport via `scripts/download_short_interest.py`), *not* a price proxy.
+- **Method (the honesty is in the frictions).** `alpca/backtest/short_interest.py`. Two things that
+  usually kill this: (1) **publication lag** — SI as of a settlement date is not disseminated for
+  ~8 trading days, so each signal is acted on `pub_lag=10` days later (no look-ahead); (2) **the
+  borrow crux** — the high-DTC names the anomaly says to short are the *expensive-to-borrow* ones,
+  so a DTC-scaled borrow fee is charged on the short notional (the same wall that sank surprise-PEAD).
+  Rebalances bi-monthly → **turnover ~0.010/day**, structurally cost-robust (the property Cases
+  17/19/20 lacked). Judged over the **active window only** (SI covers just the last ~1 yr of the
+  5-yr daily panel; scoring the flat pre-data years would fake an IS/OOS split).
+- **Result (preliminary, ~40 of 195 symbols cached, ~1-yr / 24 obs each).**
+
+  | variant | Sharpe | within-yr OOS | turn/day |
+  |---|---|---|---|
+  | anomaly (short high-DTC), no borrow | ~3.2 | +5.8 | 0.010 |
+  | **control (chase shorts)** | **−3.2** | −5.9 | 0.010 |
+  | anomaly + DTC-scaled borrow (the crux) | **2.67** | +5.3 | 0.010 |
+
+  Right sign (the control is a near-perfect mirror), **survives its own DTC-scaled borrow**
+  (Sharpe 2.67), low turnover, and statistically significant *within the year* (PSR 0.99; DSR 0.98
+  under a clean same-direction deflation). This is the **only scout-#1 signal that clears the bar
+  the others failed** — it is not a cost-wall casualty (Cases 17/20) nor a placebo failure (Case 19).
+- **The binding caveat (why 🟡, not 🟢).** It is **one year, one regime.** DSR/PSR account for
+  sample length and trial count but **not regime risk**, and the free Nasdaq feed gives only ~1 yr
+  (24 settlement points) — there is no true multi-year out-of-sample. A Sharpe of ~2.7 over a single
+  year is exactly the kind of number that can be regime-specific. So this is a **strong lead, not a
+  validated edge.**
+- **Verdict.** 🟡 **The most promising new candidate of the session — but unvalidated on depth.**
+  Next step is concrete: pull **multi-year FINRA short-interest history** (the API is reachable) to
+  get a real walk-forward across regimes; if it holds, this becomes a genuine third leg — and being
+  positioning-driven (not price), it should be uncorrelated to both the pairs basket and EAR-PEAD.
+  Until then it stays a lead, sized at zero. (The universe is still filling toward 195; the ~1-yr
+  depth, not breadth, is the limit.)
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 
