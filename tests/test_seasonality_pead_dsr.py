@@ -101,6 +101,20 @@ def test_pead_long_short_legs_run():
         assert r.n_events_used == 6
 
 
+def test_pead_skips_events_outside_price_window():
+    # an event BEFORE the bars start must be ignored (else it piles in at bar 0)
+    base = 1_600_000_000
+    bars = [{"timestamp": base + i * 86400, "close": 100.0 + i} for i in range(300)]
+    bars_by = {"A": bars, "B": bars, "C": bars}
+    pre = base - 500 * 86400          # well before ts[0]
+    post = base + 5000 * 86400        # well after ts[-1]
+    events = {"A": [{"date": pre, "surprise_pct": 9.0}],     # outside -> skipped
+              "B": [{"date": post, "surprise_pct": 9.0}],    # outside -> skipped
+              "C": [{"date": base + 100 * 86400, "surprise_pct": 9.0}]}  # inside -> used
+    r = backtest_pead(bars_by, events, hold=20, entry_thr=2.0, leg="both")
+    assert r.n_events_used == 1
+
+
 def test_pead_threshold_filters_events():
     base = 1_600_000_000
     bars = [{"timestamp": base + i * 86400, "close": 100.0 + i} for i in range(300)]

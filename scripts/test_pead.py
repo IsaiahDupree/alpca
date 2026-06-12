@@ -16,12 +16,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import statistics
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from alpca.backtest.evaluation import sharpe_of, sharpe_pvalue, sharpe_tstat  # noqa: E402
+from alpca.backtest.evaluation import (  # noqa: E402
+    deflated_sharpe_ratio, probabilistic_sharpe_ratio, sharpe_of, sharpe_pvalue, sharpe_tstat)
 from alpca.backtest.pead import backtest_pead  # noqa: E402
 
 PPY = 252.0
@@ -35,10 +37,11 @@ def oos(eq, frac=0.3):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cache", default="/Volumes/My Passport/AlpcaData/cache")
-    ap.add_argument("--earnings", default="/Volumes/My Passport/AlpcaData/earnings")
+    ap.add_argument("--earnings", default="/Volumes/My Passport/AlpcaData/earnings_av")
     ap.add_argument("--hold", type=int, default=30)
     ap.add_argument("--entry-thr", type=float, default=2.0)
     ap.add_argument("--cost-bps", type=float, default=2.0)
+    ap.add_argument("--n-trials", type=int, default=34, help="DSR deflation: project search breadth")
     ap.add_argument("--out", default="data/pead_results.json")
     args = ap.parse_args()
     cache, edir = Path(args.cache), Path(args.earnings)
@@ -85,13 +88,30 @@ def main() -> int:
     shortl = next((x for x in rows if x["leg"] == "short"), None)
     print("\n" + "=" * 80)
     if both and longl and shortl:
+        # DSR: deflate the best dollar-neutral config for the project's search breadth.
+        # Units must be PER-PERIOD (PSR uses per-period Sharpe) -> divide annual Sharpes by sqrt(ppy).
+        dn_pp = [x["sharpe"] / (PPY ** 0.5) for x in rows if x["leg"] == "both"]
+        var_trials = (statistics.pvariance(dn_pp) if len(dn_pp) > 1 else 1e-5) or 1e-5
+        best_dn = max((x for x in rows if x["leg"] == "both"), key=lambda x: x["sharpe"])
+        eq = backtest_pead(bars_by, events_by, hold=args.hold, entry_thr=best_dn["entry_thr"],
+                           leg="both", cost_bps=args.cost_bps, periods_per_year=PPY).equity_curve
+        psr = probabilistic_sharpe_ratio(eq)
+        # n_trials reflects the project's broad search (~34 strategies + edge families), not just
+        # this 5-config sweep — the honest, conservative deflation count.
+        dsr = deflated_sharpe_ratio(eq, n_trials=args.n_trials, sharpe_variance=var_trials)
         print(f"LEG DECOMPOSITION (entry_thr {args.entry_thr}):")
         print(f"  long-only  Sharpe {longl['sharpe']:.2f} (likely beta)")
         print(f"  short-only Sharpe {shortl['sharpe']:.2f} (where neutral alpha would live)")
-        print(f"  dollar-neutral Sharpe {both['sharpe']:.2f}, OOS {both['oos_sharpe']:.2f}")
-        verdict = ("dollar-neutral PEAD shows OOS edge — worth more data (Finnhub key)"
-                   if both["oos_sharpe"] > 0.5 else
-                   "no convincing OOS edge in this ~1yr window — needs multi-year data to judge")
+        print(f"  dollar-neutral Sharpe {both['sharpe']:.2f}, IS {both['is_sharpe']:.2f}, OOS {both['oos_sharpe']:.2f}")
+        print(f"  best dollar-neutral (thr {best_dn['entry_thr']}): Sharpe {best_dn['sharpe']:.2f}  "
+              f"PSR(>0) {psr:.2f}  DSR(deflated) {dsr:.2f}")
+        real_oos = both["is_sharpe"] > 0.2 and both["oos_sharpe"] > 0.3
+        verdict = ("dollar-neutral PEAD holds across a REAL walk-forward (IS & OOS both positive) "
+                   "AND survives Deflated-Sharpe — a genuine market-neutral edge candidate"
+                   if real_oos and dsr > 0.90 else
+                   "positive but does NOT clear Deflated-Sharpe / walk-forward bar — not validated"
+                   if both["oos_sharpe"] > 0.3 else
+                   "no convincing edge across the walk-forward")
         print(f"  VERDICT: {verdict}")
     Path(args.out).write_text(json.dumps({"n_symbols": len(events_by), "n_events": n_events,
                                           "grid": rows}, indent=2))

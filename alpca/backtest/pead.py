@@ -79,6 +79,10 @@ def backtest_pead(
             if surp is None or abs(surp) < entry_thr:
                 continue
             sign = 1.0 if surp > 0 else -1.0
+            # require the report to fall INSIDE this symbol's price window — else there's no
+            # clean post-report entry (events before ts[0] would all pile in at bar 0).
+            if ev["date"] < ts[0] or ev["date"] > ts[-1]:
+                continue
             # first symbol-bar strictly after the report date, then skip_days more
             entry_k = next((k for k in range(len(ts)) if ts[k] > ev["date"]), None)
             if entry_k is None:

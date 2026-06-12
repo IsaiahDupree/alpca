@@ -35,7 +35,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 11 | TSMOM (vol-scaled ETF panel) | Diversified | momentum 1.62 < vol-scale 1.76 < buy-hold 1.93 (OOS) | ❌ Illusory (Kim 2016) |
 | 12 | Crypto funding-rate tilt | Sentiment overlay | Mild DD reduction in a 1yr bear; no alpha | ⚠️ Weak / inconclusive |
 | 13 | News / sentiment alt-data | Alt-data | Free API exposes ~50 articles / ~8 days | ❌ Not backtestable here |
-| 14 | **PEAD** (post-earnings drift, L/S) | Market-neutral event | Dollar-neutral Sharpe 0.66–0.82; short leg carries it | 🟡 **Encouraging, unvalidated** (~1yr) |
+| 14 | **PEAD** (post-earnings drift, L/S) | Market-neutral event | Dollar-neutral Sh 0.60–0.78, IS & OOS both +, DSR 0.92 | 🟢 **Strongest new candidate** (5yr, near-significant) |
 | 15 | Seasonality (turn-of-month, pre-FOMC) | Event-clock overlay | Standalone Sharpe 0.24–0.34, exposure 3–34% | ⚠️ Weak alone; ✅ uncorrelated leg |
 | 16 | **Portfolio combination** (inverse-vol blend) | Allocation | 5 legs avg \|corr\| 0.05; combined ~0.87 ≈ null | ⚙️ Method works; edge-supply-limited |
 
@@ -185,15 +185,26 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 - **Method.** Earnings surprise from the free Nasdaq endpoint (no key, ~4 quarters/ticker);
   long if surprise > +thr, short if < −thr, hold 30 trading days from the day after the
   report. Long, short, and dollar-neutral legs judged **separately**. 167 symbols, 665 events.
-- **Result.** Dollar-neutral Sharpe **0.66** (and **0.82** at a stricter ±3% threshold),
-  −8% maxDD. The **short leg carries it (0.50) vs the long leg (0.32)** — exactly as theory
-  predicts (the long leg is mostly beta; neutral alpha lives in the short).
-- **Verdict.** 🟡 **The first new candidate that didn't immediately die — but NOT validated.**
-  The honest caveat is decisive: in-sample Sharpe is **0.00** across all configs because the
-  free data only covers ~1 year, so positions only populate the back half — the "OOS 1.21" is
-  *not* a clean walk-forward, just the active window. Single regime, weak power, paper-shorting
-  realism unmodeled. **To judge it properly needs multi-year history (a free Finnhub key).**
-- **Next step.** Add `FINNHUB_API_KEY`, pull 5+ years, re-run with a real walk-forward + DSR.
+- **Data (upgraded).** Alpha Vantage `EARNINGS` (free, key in `.env`): 23 sector-diverse
+  symbols, **2,554 quarterly surprises back ~20 years**, of which **395 fall inside the 5-year
+  price window** — a genuine multi-regime sample (2021 bull, 2022 bear, 2023–26 recovery).
+  (Replaced the first pass on free Nasdaq data, which only had ~1 year and produced a
+  misleading IS=0 / fake-OOS artifact.) A correctness fix skips events outside the price window.
+- **Result (5-year walk-forward).** Dollar-neutral Sharpe **0.60** (±2% thr) to **0.78** (±3%),
+  with **in-sample AND out-of-sample both positive and consistent** (0.59/0.63 and 0.81/0.73) —
+  a *real* walk-forward, −15% maxDD. **PSR(>0) = 0.96; Deflated Sharpe = 0.92** (deflated for
+  34 trials). The dollar-neutral leg captures the genuine cross-sectional PEAD spread (high-
+  surprise outperforms low-surprise) **even though the short leg alone is negative (−0.47)** —
+  shorting low-surprise names in a bull market loses; the edge is the long-minus-short *spread*,
+  not the short leg in isolation (this corrects the earlier theory note).
+- **Verdict.** 🟢 **The strongest new candidate — the first thing besides the pairs basket that
+  looks like a genuine, diversifying, market-neutral edge.** It holds across a real walk-forward
+  and is *near* significant after deflation (DSR 0.92, just under the 0.95 bar). NOT a slam dunk:
+  only 23 symbols (free-tier 25 req/day quota), 5-year window, and paper-shorting borrow/locate
+  realism is unmodeled.
+- **Next step.** Broaden to more symbols (a few API-days, or a paid tier) to tighten the cross-
+  sectional deciles and push DSR over 0.95; model shorting realism; then it's a candidate second
+  leg for the combiner — uncorrelated to the pairs basket by construction.
 
 ## Case 15 — Calendar seasonality (turn-of-month, pre-FOMC) ⚠️/✅
 
@@ -263,6 +274,9 @@ selection bias. Use DSR > 0.95 — not a raw p<0.05 — as the real significance
 **Bottom line:** after equities (all families), crypto (daily + hourly), market-making, two
 sizing/factor generalizations, a CTA edge, an alt-data probe, a funding signal, seasonality,
 and a portfolio combiner — the **84-symbol cointegrated-pairs market-neutral basket (OOS
-Sharpe ~0.5)** remains the only fully-validated edge, with **PEAD the one encouraging new
-lead** (dollar-neutral Sharpe ~0.7 on ~1yr, short-leg-carried) that's worth multi-year data to
-confirm. The combiner is ready to stack edges the moment a second validated one exists.
+Sharpe ~0.5)** remains the fully-validated edge, now joined by **PEAD as a strong second
+candidate** (dollar-neutral Sharpe 0.6–0.8, IS & OOS both positive over a real 5-year walk-
+forward, DSR 0.92 — just shy of significance, held back mainly by the 23-symbol breadth the
+free API quota allowed). If broader data pushes PEAD's DSR over 0.95, it becomes the combiner's
+second leg — and being event-clock cross-sectional, it's uncorrelated to the pairs basket by
+construction, exactly the kind of leg that lifts a combined Sharpe.
