@@ -36,6 +36,7 @@ class PEADResult:
     avg_active: float
     periods_per_year: float
     daily_returns: List[float] = field(default_factory=list)
+    n_no_locate: int = 0                # short events dropped by the adverse-borrow no-locate ceiling
 
 
 def backtest_pead(
@@ -48,6 +49,7 @@ def backtest_pead(
     cost_bps: float = 2.0,
     borrow_apr=0.0,
     no_borrow=None,
+    adverse_borrow=None,
     starting_equity: float = 100_000.0,
     periods_per_year: float = 252.0,
 ) -> PEADResult:
@@ -58,7 +60,16 @@ def backtest_pead(
                   (apr/periods_per_year per day). Float = flat rate for all names, or a
                   {symbol: apr} dict for per-name rates. Large-cap GC ~0.3-1%; HTB much higher.
       no_borrow:  set of symbols with NO locate available -> their short events are dropped
-                  entirely (you simply cannot put the trade on)."""
+                  entirely (you simply cannot put the trade on).
+      adverse_borrow: ADVERSE-SELECTION borrow model — the honest stress. The names you most
+                  want to short on PEAD are exactly the ones that just printed the worst miss,
+                  i.e. crowded shorts whose borrow goes special and whose locate can vanish.
+                  Dict {base, special, sat, no_locate}: the per-EVENT short borrow apr ramps
+                  linearly from `base` (at |surprise|=entry_thr) to `special` (at |surprise|>=`sat`,
+                  capped there — SATURATING, because raw surprise_pct is wildly fat-tailed and a
+                  300% miss is no more borrowable than a 50% miss); events with |surprise|>=`no_locate`
+                  are DROPPED (the crowded short went no-locate). Overrides borrow_apr for shorts
+                  when set. Defaults if a key is omitted: base 0.01, special 0.30, sat 50, no_locate 200."""
     syms = sorted(s for s in bars_by_sym if events_by_sym.get(s))
     if len(syms) < 3:
         return PEADResult(leg, [starting_equity], 0.0, 0.0, 0.0, 0, 0, 0.0, periods_per_year)
@@ -74,9 +85,21 @@ def backtest_pead(
     ret = np.zeros((T, N))
     pos = np.zeros((T, N))
     n_used = 0
+    n_no_locate = 0                     # short events dropped because borrow went no-locate
     # per-symbol annualized borrow rate (float -> flat; dict -> per name)
     apr = np.array([(borrow_apr.get(s, 0.0) if isinstance(borrow_apr, dict) else float(borrow_apr))
                     for s in syms])
+    # adverse-selection model: per-(day, name) short borrow rate, filled over each short's hold
+    ab = None
+    if adverse_borrow is not None:
+        ab = {"base": 0.01, "special": 0.30, "sat": 50.0, "no_locate": 200.0, **adverse_borrow}
+        bmat = np.zeros((T, N))
+
+    def _adverse_rate(surp_abs: float) -> float:
+        # linear ramp base->special over [entry_thr, sat], capped at special (saturating)
+        span = max(ab["sat"] - entry_thr, 1e-9)
+        frac = min(1.0, max(0.0, (surp_abs - entry_thr) / span))
+        return ab["base"] + (ab["special"] - ab["base"]) * frac
 
     for j, s in enumerate(syms):
         bars = sorted(bars_by_sym[s], key=lambda b: int(b["timestamp"]))
@@ -94,6 +117,9 @@ def backtest_pead(
             sign = 1.0 if surp > 0 else -1.0
             if sign < 0 and s in no_borrow:
                 continue                       # no locate available -> can't short this name
+            if sign < 0 and ab is not None and abs(surp) >= ab["no_locate"]:
+                n_no_locate += 1               # adverse selection: this crowded short went no-locate
+                continue
             # require the report to fall INSIDE this symbol's price window — else there's no
             # clean post-report entry (events before ts[0] would all pile in at bar 0).
             if ev["date"] < ts[0] or ev["date"] > ts[-1]:
@@ -106,8 +132,11 @@ def backtest_pead(
             if entry_k >= len(ts):
                 continue
             n_used += 1
+            ev_rate = _adverse_rate(abs(surp)) if (sign < 0 and ab is not None) else 0.0
             for k in range(entry_k, min(entry_k + hold, len(ts))):
                 pos[idx[ts[k]], j] = sign
+                if ev_rate:
+                    bmat[idx[ts[k]], j] = ev_rate
 
     eq = [starting_equity]
     daily: List[float] = []
@@ -122,9 +151,12 @@ def backtest_pead(
         if leg in ("short", "both") and shorts.any():
             w[shorts] = -(1.0 if leg == "short" else 0.5) / shorts.sum()
         turnover = np.abs(w - prev_w).sum()
-        # daily borrow fee on the short notional (apr/periods_per_year per name held short)
+        # daily borrow fee on the short notional (apr/periods_per_year per name held short).
+        # adverse model -> per-event rate matrix aligned with the held position (bmat[t-1]);
+        # otherwise the flat/per-symbol apr vector.
         short_w = np.where(w < 0, -w, 0.0)
-        borrow_drag = float((short_w * apr).sum()) / periods_per_year
+        short_rate = bmat[t - 1] if ab is not None else apr
+        borrow_drag = float((short_w * short_rate).sum()) / periods_per_year
         port_ret = float(w @ ret[t]) - turnover * (cost_bps / 10_000.0) - borrow_drag
         eq.append(eq[-1] * (1 + port_ret))
         daily.append(port_ret)
@@ -137,4 +169,4 @@ def backtest_pead(
         sharpe=sharpe_of(eq, periods_per_year), max_drawdown=max_drawdown_of(eq),
         n_days=len(daily), n_events_used=n_used,
         avg_active=float(np.mean(actives)) if actives else 0.0,
-        periods_per_year=periods_per_year, daily_returns=daily)
+        periods_per_year=periods_per_year, daily_returns=daily, n_no_locate=n_no_locate)

@@ -172,6 +172,41 @@ def test_pead_threshold_filters_events():
     assert r.n_events_used == 2
 
 
+def test_pead_adverse_borrow_drops_no_locate_shorts():
+    # the worst miss (|surprise| past no_locate) is dropped; the moderate miss is kept
+    base = 1_600_000_000
+    bars = [{"timestamp": base + i * 86400, "close": 100.0 + i} for i in range(300)]
+    bars_by = {"A": bars, "B": bars, "C": bars}
+    events = {"A": [{"date": base + 100 * 86400, "surprise_pct": 9.0}],     # long  -> kept
+              "B": [{"date": base + 100 * 86400, "surprise_pct": -300.0}],  # short -> no-locate drop
+              "C": [{"date": base + 120 * 86400, "surprise_pct": -8.0}]}    # short -> kept (special)
+    r = backtest_pead(bars_by, events, hold=20, entry_thr=2.0, leg="both",
+                      adverse_borrow={"no_locate": 200.0})
+    assert r.n_no_locate == 1
+    assert r.n_events_used == 2          # A long + C short; B dropped no-locate
+
+
+def test_pead_adverse_borrow_costlier_than_gc_for_worse_miss():
+    # a worse miss carries a higher (special) borrow rate -> more drag than a mild miss
+    import random
+    rng = random.Random(11)
+    base = 1_600_000_000
+    bars_by, events_by = {}, {}                       # one fixed book, reused for both runs
+    for j in range(6):
+        p, bars = 100.0, []
+        for i in range(400):
+            p *= (1 + rng.gauss(0.0, 0.012))
+            bars.append({"timestamp": base + i * 86400, "close": p})
+        bars_by[f"S{j}"] = bars
+        events_by[f"S{j}"] = [{"date": base + 150 * 86400, "surprise_pct": -5.0}]
+
+    ab = {"base": 0.01, "special": 0.40, "sat": 50.0, "no_locate": 1e9}  # never no-locate here
+    mild = backtest_pead(bars_by, events_by, hold=60, entry_thr=2.0, leg="short", adverse_borrow=ab)
+    severe = backtest_pead(bars_by, events_by, hold=60, entry_thr=2.0, leg="short",
+                           adverse_borrow={**ab, "base": 0.40})  # force fully-special rate
+    assert severe.total_return < mild.total_return   # higher borrow rate -> larger short drag
+
+
 # ---- earnings parsing ----
 def test_earnings_epoch_parsing():
     assert _epoch("01/15/2024", "%m/%d/%Y") is not None

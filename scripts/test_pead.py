@@ -138,8 +138,44 @@ def main() -> int:
           f"Borrow drag on a dollar-neutral book (0.5 short notional) is ~apr/2 per year — modest for "
           f"GC names, material only if shorts become hard-to-borrow.")
 
+    # ---- ADVERSE-SELECTION borrow stress: the honest one ----
+    # The names you most want to short just printed the worst miss -> crowded shorts whose borrow
+    # goes special and whose locate can vanish. Rate ramps base->special over |surprise| in
+    # [thr, sat] (saturating, since surprise_pct is wildly fat-tailed); |surprise|>=no_locate dropped.
+    print("\n" + "=" * 80)
+    print("ADVERSE-SELECTION borrow — rate scales with miss severity + worst misses go no-locate "
+          f"(dollar-neutral, thr {args.entry_thr}):")
+    print(f"{'scenario':>22}{'special':>8}{'no_loc':>8}{'sharpe':>8}{'OOS':>7}{'ret':>8}"
+          f"{'PSR':>7}{'DSR':>7}{'drop':>6}")
+    print("-" * 82)
+    # base 1% GC; special = fully-crowded rate; no_locate = |surprise| ceiling beyond which no borrow
+    adverse_scens = [
+        ("mild  (special 10%)",  {"base": 0.01, "special": 0.10, "sat": 50.0, "no_locate": 500.0}),
+        ("realistic (sp 30%)",   {"base": 0.01, "special": 0.30, "sat": 50.0, "no_locate": 200.0}),
+        ("harsh (sp 60%, tight)",{"base": 0.01, "special": 0.60, "sat": 30.0, "no_locate": 100.0}),
+    ]
+    adverse_rows = []
+    for name, ab in adverse_scens:
+        r = backtest_pead(bars_by, events_by, hold=args.hold, entry_thr=args.entry_thr, leg="both",
+                          cost_bps=args.cost_bps, adverse_borrow=ab, periods_per_year=PPY)
+        _, oos_sh = oos(r.equity_curve)
+        psr_a = probabilistic_sharpe_ratio(r.equity_curve)
+        dsr_a = deflated_sharpe_ratio(r.equity_curve, n_trials=args.n_trials,
+                                      sharpe_variance=(var_trials if both else 1e-5))
+        adverse_rows.append({"scenario": name, **ab, "sharpe": r.sharpe, "oos": oos_sh,
+                             "ret": r.total_return, "psr": psr_a, "dsr": dsr_a,
+                             "n_no_locate": r.n_no_locate})
+        print(f"{name:>22}{ab['special']*100:>7.0f}%{ab['no_locate']:>8.0f}{r.sharpe:>8.2f}"
+              f"{oos_sh:>7.2f}{r.total_return*100:>7.0f}%{psr_a:>7.2f}{dsr_a:>7.2f}{r.n_no_locate:>6}")
+    real = next((x for x in adverse_rows if "realistic" in x["scenario"]), adverse_rows[0])
+    print(f"\n  Under REALISTIC adverse selection (special 30%, worst misses no-locate): "
+          f"Sharpe {real['sharpe']:.2f}, OOS {real['oos']:.2f}, DSR {real['dsr']:.2f}, "
+          f"{real['n_no_locate']} shorts dropped. This is the binding short-side stress — "
+          f"if the edge holds here it is not a borrow artifact.")
+
     Path(args.out).write_text(json.dumps({"n_symbols": len(events_by), "n_events": n_events,
-                                          "grid": rows, "borrow_stress": borrow_rows}, indent=2))
+                                          "grid": rows, "borrow_stress": borrow_rows,
+                                          "adverse_borrow_stress": adverse_rows}, indent=2))
     print(f"\n[done] wrote {args.out}")
     return 0
 

@@ -35,7 +35,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 11 | TSMOM (vol-scaled ETF panel) | Diversified | momentum 1.62 < vol-scale 1.76 < buy-hold 1.93 (OOS) | ❌ Illusory (Kim 2016) |
 | 12 | Crypto funding-rate tilt | Sentiment overlay | Mild DD reduction in a 1yr bear; no alpha | ⚠️ Weak / inconclusive |
 | 13 | News / sentiment alt-data | Alt-data | Free API exposes ~50 articles / ~8 days | ❌ Not backtestable here |
-| 14 | **PEAD** (post-earnings drift, L/S) | Market-neutral event | Dollar-neutral Sh 0.60–0.78, IS & OOS both +, DSR 0.92 | 🟢 **Strongest new candidate** (5yr, near-significant) |
+| 14 | **PEAD** (post-earnings drift, L/S) | Market-neutral event | Flat-borrow DSR 0.92, but **DSR 0.58 under adverse-selection borrow**; short leg −0.47 standalone | 🟡 **Downgraded** — long leg is beta, short leg fails realistic shorting frictions (24/195 symbols; revisit at full breadth) |
 | 15 | Seasonality (turn-of-month, pre-FOMC) | Event-clock overlay | Standalone Sharpe 0.24–0.34, exposure 3–34% | ⚠️ Weak alone; ✅ uncorrelated leg |
 | 16 | **Portfolio combination** (inverse-vol blend) | Allocation | 5 legs avg \|corr\| 0.05; combined ~0.87 ≈ null | ⚙️ Method works; edge-supply-limited |
 
@@ -197,21 +197,48 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   surprise outperforms low-surprise) **even though the short leg alone is negative (−0.47)** —
   shorting low-surprise names in a bull market loses; the edge is the long-minus-short *spread*,
   not the short leg in isolation (this corrects the earlier theory note).
-- **Shorting realism (now modeled).** `backtest_pead` charges a daily stock-borrow fee on the
-  short notional (`borrow_apr`, flat or per-symbol) and drops names with no locate (`no_borrow`).
-  Stress on the dollar-neutral leg: Sharpe **0.61 → 0.58** at a realistic large-cap general-
-  collateral borrow (~1%/yr) → **0.53** at 3% → **0.34** only under a 10% hard-to-borrow stress.
-  Our universe is liquid S&P large-caps (GC, ~0.3–1%), so **the edge is robust to realistic
-  borrow** — the drag is ~apr/2 per year on a dollar-neutral book. Shorting realism is *not* the
-  binding constraint.
-- **Verdict.** 🟢 **The strongest new candidate — the first thing besides the pairs basket that
-  looks like a genuine, diversifying, market-neutral edge,** and it survives realistic borrow
-  costs. *Near* significant after deflation (DSR 0.92, just under 0.95). The one binding
-  limitation is **breadth** — only 23 symbols (free-tier 25 req/day), 5-year window.
-- **Next step.** The daily `avearnings` job is filling the full 195-symbol universe (~8 days),
-  which tightens the cross-sectional deciles and shrinks the Sharpe standard error — the direct
-  route to DSR > 0.95. Then PEAD becomes the combiner's second leg (uncorrelated to the pairs
-  basket by construction).
+- **Shorting realism, flat borrow (first pass — the optimistic case).** `backtest_pead` charges
+  a daily stock-borrow fee on the short notional (`borrow_apr`, flat or per-symbol) and drops
+  names with no locate (`no_borrow`). Flat stress: Sharpe **0.61 → 0.58** at large-cap general-
+  collateral borrow (~1%/yr) → **0.53** at 3% → **0.34** at a 10% HTB. Under a *flat* assumption
+  the edge looks robust. **But a flat rate is the optimistic case** — it ignores *which* names go
+  special.
+- **Shorting realism, ADVERSE SELECTION (the honest stress — this is the one that binds).** The
+  names you most want to short on PEAD are exactly the ones that just printed the worst miss —
+  i.e. **crowded shorts** whose borrow goes special and whose locate can vanish. `adverse_borrow`
+  models this: the per-event short borrow apr ramps from 1% GC up to a "special" rate as the miss
+  worsens, **saturating** (raw `surprise_pct` is wildly fat-tailed — p50 |s|≈6%, p99≈200%, max
+  34,000% — so a 300% miss is no more borrowable than a 50% miss), and events past a `no_locate`
+  ceiling on |surprise| are **dropped entirely** (the crowded short went no-locate). Calibrated to
+  the real distribution:
+
+  | Stress | Sharpe | OOS | DSR | shorts dropped |
+  |---|---|---|---|---|
+  | Flat GC 1% (optimistic) | 0.58 | 0.60 | 0.83 | — |
+  | **Adverse: realistic (special 30%, no-locate \|s\|≥200%)** | **0.25** | **0.20** | **0.58** | 15 |
+  | Adverse: harsh (special 60%, no-locate \|s\|≥100%) | −0.23 | −0.05 | 0.19 | 22 |
+
+  Realistic adverse selection **more than halves the Sharpe and collapses DSR 0.92 → 0.58** — far
+  below the 0.90 bar. Root cause: the short leg is **already a standalone loser (−0.47 at zero
+  borrow)** — post-miss names drifted *up* over this window, so there is no short-side drift to
+  harvest. The dollar-neutral 0.61 was carried entirely by the **long leg (0.83/1.13 — but that
+  is beta)**. Adverse borrow piles real cost onto an already-edgeless, costly-to-implement short
+  side.
+- **Verdict (downgraded 🟢 → 🟡).** On the current sample PEAD is **not** the validated second
+  market-neutral edge: its long leg is beta, its short leg has no edge here and is the most
+  expensive part to actually trade, and the dollar-neutral combo **does not survive realistic
+  short-side adverse selection** (DSR 0.58). The 84-symbol cointegrated-pairs basket (OOS Sh 0.54)
+  remains the **only** validated edge.
+- **The one caveat that keeps PEAD alive.** Only **24 / 195** symbols are cached (free-tier 25
+  req/day). Full breadth tightens the short deciles and could flip the short-leg sign. So this is
+  **not a kill** — but **adverse-selection borrow is now the #1 hurdle PEAD must clear, and today
+  it does not.** That is the real reason to finish the universe, not just to shrink the standard
+  error.
+- **Next step.** The daily `avearnings` job (writing to `My Passport/AlpcaData/earnings_av`) fills
+  the full 195-symbol universe (~8 days). The decisive test is no longer "does DSR clear 0.95 on a
+  flat borrow" — it is **"does the dollar-neutral leg survive `adverse_borrow` at full breadth."**
+  A better signal than raw `surprise_pct` (SUE — standardized unexpected earnings) is the obvious
+  next research lever, since the crude % surprise may itself be why the short leg has no drift.
 
 ## Case 15 — Calendar seasonality (turn-of-month, pre-FOMC) ⚠️/✅
 
@@ -280,10 +307,14 @@ selection bias. Use DSR > 0.95 — not a raw p<0.05 — as the real significance
 
 **Bottom line:** after equities (all families), crypto (daily + hourly), market-making, two
 sizing/factor generalizations, a CTA edge, an alt-data probe, a funding signal, seasonality,
-and a portfolio combiner — the **84-symbol cointegrated-pairs market-neutral basket (OOS
-Sharpe ~0.5)** remains the fully-validated edge, now joined by **PEAD as a strong second
-candidate** (dollar-neutral Sharpe 0.6–0.8, IS & OOS both positive over a real 5-year walk-
-forward, DSR 0.92 — just shy of significance, held back mainly by the 23-symbol breadth the
-free API quota allowed). If broader data pushes PEAD's DSR over 0.95, it becomes the combiner's
-second leg — and being event-clock cross-sectional, it's uncorrelated to the pairs basket by
-construction, exactly the kind of leg that lifts a combined Sharpe.
+a portfolio combiner, and now a realistic **adverse-selection borrow** model — the **84-symbol
+cointegrated-pairs market-neutral basket (OOS Sharpe ~0.5)** remains the **only** fully-validated
+edge. **PEAD has been downgraded from "strong second candidate" to 🟡:** on a *flat* borrow
+assumption it cleared DSR 0.92, but once you model that the worst-miss names you most want to
+short are exactly the crowded shorts that go special/no-locate, the dollar-neutral Sharpe more
+than halves and **DSR falls to 0.58**. The short leg is a standalone loser (−0.47); the apparent
+edge was the long (beta) leg. PEAD is **not dead** — only 24/195 symbols are cached, and full
+breadth (plus a real SUE signal instead of raw `surprise_pct`) could revive the short side — but
+the bar it now has to clear is **"survive `adverse_borrow` at full breadth,"** not "flat-borrow
+DSR > 0.95." This is the anti-delusion machinery working as designed: a realistic friction model
+caught an edge that the optimistic friction model had waved through.
