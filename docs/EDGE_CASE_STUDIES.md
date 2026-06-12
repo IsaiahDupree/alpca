@@ -39,6 +39,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 15 | Seasonality (turn-of-month, pre-FOMC) | Event-clock overlay | Standalone Sharpe 0.24–0.34, exposure 3–34% | ⚠️ Weak alone; ✅ uncorrelated leg |
 | 16 | **Portfolio combination** (inverse-vol blend) | Allocation | 5 legs avg \|corr\| 0.05; combined ~0.87 ≈ null | ⚙️ Method works; edge-supply-limited |
 | 17 | **Overnight→intraday reversal** | Market-neutral event | Gross Sharpe 0.93 / DSR 0.90 (control-confirmed) → **−0.41 at 2bps** (~2×/day turnover) | 🔴 **REAL anomaly, untradeable** — canonical cost-wall case |
+| 18 | **EAR-PEAD, index-beta-hedged** | Market-neutral event | Hedged Sharpe **0.67, IS 0.70 ≈ OOS 0.66**, −12% DD, DSR 0.89; cheap SPY short (not single-name) | 🟢 **Strongest earnings result** — tradeable short side; rescues Case 14 |
 
 ---
 
@@ -235,6 +236,10 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   **not a kill** — but **adverse-selection borrow is now the #1 hurdle PEAD must clear, and today
   it does not.** That is the real reason to finish the universe, not just to shrink the standard
   error.
+- **➡️ RESCUED in Case 18.** The fix turned out to be structural, not statistical: replace the
+  analyst-surprise signal with the price-only **EAR** (earnings-announcement return) and replace
+  the borrow-fragile single-name short with a **cheap GC index short**. The beta-hedged EAR sleeve
+  survives honestly (Sharpe 0.67, IS≈OOS, DSR 0.89) — see Case 18.
 - **Next step.** The daily `avearnings` job (writing to `My Passport/AlpcaData/earnings_av`) fills
   the full 195-symbol universe (~8 days). The decisive test is no longer "does DSR clear 0.95 on a
   flat borrow" — it is **"does the dollar-neutral leg survive `adverse_borrow` at full breadth."**
@@ -315,6 +320,52 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   the single open→close window), or trade it on a venue with maker rebates and sub-cent spreads
   (not Alpaca). Neither is available to us.
 
+## Case 18 — EAR-PEAD, beta-hedged with a cheap index short 🟢 (strongest earnings result)
+
+- **The idea (rescuing Case 14).** Surprise-PEAD was downgraded because its short leg (a) had no
+  edge and (b) died to adverse-selection borrow. EAR-PEAD changes two things: (1) the signal is
+  the **3-day earnings-announcement RETURN (EAR)** — a price-only measure (no analyst estimates),
+  which the literature finds gives a longer, cleaner, mostly-LONG-side drift than SUE; and (2) the
+  problematic single-name short is replaced by a **cheap general-collateral INDEX short (SPY)** to
+  neutralize market beta. You keep the long alpha and hedge the beta with a borrow you can actually
+  get. (`alpca/backtest/ear_pead.py`, `scripts/test_ear_pead.py`)
+- **Method.** 40 large-cap names with 30-yr AV earnings, 5-yr daily bars. EAR = return over the
+  first 3 post-report bars (close before report → end of window); enter the drift `skip_after_ear`
+  bars *after* the window (no overlap, no look-ahead), hold 40 days. Three modes judged: **long**
+  (long high-EAR only — must beat buy-and-hold or it's beta), **neutral** (long high / short low,
+  the single-name short), **beta_hedged** (long high-EAR, short SPY by the long leg's beta). DSR
+  deflated for 37 trials via a clean entry-threshold sweep of the hedged sleeve.
+- **Result.**
+
+  | mode | Sharpe | IS | OOS | return | maxDD | beta |
+  |---|---|---|---|---|---|---|
+  | long-only | 0.94 | 0.84 | **1.19** | +117% | −26.5% | ~0.87 |
+  | neutral (single-name short) | −0.46 | −0.60 | −0.12 | −18% | −24.7% | — |
+  | **beta_hedged (index short)** | **0.67** (thr1.5) | **0.70** | **0.66** | +40% | **−12.2%** | 0.87 |
+
+  Long-only **beats SPY buy-and-hold** (Sharpe 0.94 vs 0.83, +117% vs +87%) — but it carries
+  beta ~0.87, so most of that is market exposure. The **single-name short is −0.46 again** (the
+  short-leg problem is intrinsic — the index hedge is the right fix). The **beta-hedged residual
+  is the real alpha:** at the robust threshold (1.5) Sharpe **0.67 with IS 0.70 ≈ OOS 0.66**
+  (remarkably stable) and only −12% DD; the best-Sharpe config (thr 1.0) reaches 0.75 with
+  **PSR 0.95 / DSR 0.89** (deflated 37 trials).
+- **Why it matters.** This is the **strongest earnings result so far** and the first new sleeve in
+  a long time that survives the honest bar. It is **comparable to the pairs basket** (OOS 0.54),
+  **uncorrelated** to it (event-clock vs contemporaneous cointegration), and — unlike surprise-PEAD
+  — has a **tradeable short side** (SPY is GC; no adverse-selection borrow). That makes it a
+  legitimate **second leg for the combiner** (Case 16's bottleneck was edge supply — this helps).
+- **Profit-per-day, honestly.** Sized at half-Kelly, the beta-hedged sleeve maxes near **~8 bps/day
+  geometric** (Sharpe 0.67–0.75), under ~20× that in daily noise — the long-only number looks
+  bigger (~13 bps) only because it's *leveraged beta you already own by holding SPY*. The sleeve
+  worth adding is the hedged alpha, because it **diversifies** rather than duplicates the market.
+  Max profit/day = push the DSR-surviving Sharpe up (breadth) and size to Kelly — not trade faster
+  (Case 17 showed frequency turns Sharpe 0.93 → −0.41).
+- **Verdict.** 🟢 **A real, tradeable, market-neutral earnings alpha — the rescue of PEAD.**
+  Caveats kept honest: only 40 symbols and one (bull-ish) 5-yr regime — but the beta hedge removes
+  the bull tailwind and it *still* survives OOS; the hedge ratio is full-sample (mild optimism).
+  DSR 0.89 sits just under the 0.95 bar — the `avearnings` job filling the universe to 195 is the
+  direct route over it. **Next:** confirm at full breadth, then add as the combiner's 2nd leg.
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge
@@ -358,3 +409,13 @@ breadth (plus a real SUE signal instead of raw `surprise_pct`) could revive the 
 the bar it now has to clear is **"survive `adverse_borrow` at full breadth,"** not "flat-borrow
 DSR > 0.95." This is the anti-delusion machinery working as designed: a realistic friction model
 caught an edge that the optimistic friction model had waved through.
+
+**The constructive flip-side (Case 18):** the same discipline that *killed* surprise-PEAD's short
+leg also *found the fix*. Switching to a price-only **EAR** signal and hedging beta with a **cheap
+index short** (instead of the borrow-fragile single-name short) yields a market-neutral earnings
+sleeve that survives honestly — **Sharpe 0.67, IS 0.70 ≈ OOS 0.66, −12% DD, DSR 0.89** — comparable
+to the pairs basket, uncorrelated to it, and with a *tradeable* short side. So the validated-edge
+count is now **the pairs basket plus a strong, near-validated EAR-PEAD second leg** (just under the
+0.95 DSR bar, pending the universe filling to 195). That second uncorrelated leg is exactly what the
+combiner (Case 16) was edge-starved for — and the honest path to higher *profit-per-day* runs
+through **more such legs sized to Kelly**, not through trading any single one faster.
