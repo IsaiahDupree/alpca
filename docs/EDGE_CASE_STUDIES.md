@@ -40,6 +40,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 16 | **Portfolio combination** (inverse-vol blend) | Allocation | 6 legs avg \|corr\| 0.04; **EAR-PEAD leg lifted combined 0.83 → 0.99** | ⚙️ Method works; edge-supply bottleneck easing |
 | 17 | **Overnight→intraday reversal** | Market-neutral event | Gross Sharpe 0.93 / DSR 0.90 (control-confirmed) → **−0.41 at 2bps** (~2×/day turnover) | 🔴 **REAL anomaly, untradeable** — canonical cost-wall case |
 | 18 | **EAR-PEAD, index-beta-hedged** | Market-neutral event | Hedged Sharpe **0.67, IS 0.70 ≈ OOS 0.66**, −12% DD, DSR 0.89; cheap SPY short (not single-name) | 🟢 **Strongest earnings result** — tradeable short side; rescues Case 14 |
+| 19 | **Lead-lag cross-predictability** | Market-neutral (learned) | Walk-forward real −1.02 ≈ shuffle placebo −1.14 (+0.11); gross only 0.27, dies by 1bp | ❌ **Fitted noise** — fails placebo *and* cost wall |
 
 ---
 
@@ -373,6 +374,42 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   the bull tailwind and it *still* survives OOS; the hedge ratio is full-sample (mild optimism).
   DSR 0.89 sits just under the 0.95 bar — the `avearnings` job filling the universe to 195 is the
   direct route over it. **Next:** confirm at full breadth, then add as the combiner's 2nd leg.
+
+## Case 19 — Lead-lag cross-predictability (price-only, walk-forward) ❌ (fitted noise)
+
+- **Hypothesis (scout's strongest *new* mechanism).** Some stocks' returns lead others' (slow
+  information diffusion / inattention): if leader *i* moves today, follower *j* moves tomorrow.
+  Estimate the leader→follower map, trade followers on their leaders' lagged moves, dollar-neutral.
+  A genuinely new clock (info-diffusion), uncorrelated to everything we have. (`alpca/backtest/lead_lag.py`)
+- **Method (built to *not* fool ourselves).** The source repo reports Sharpe ~1.95 — but the
+  leader→follower map is itself a fitted object (195 candidate leaders per follower, pick the top
+  few = a selection-bias minefield). So: (1) **WALK-FORWARD** — `C[i,j]=corr(lead i, follow j)`
+  estimated only on a 252-day train window, traded on the next 63-day held-out window, rolled;
+  (2) the decisive **SHUFFLE PLACEBO** — re-run with each follower's leaders assigned *at random*.
+  If the real map doesn't beat the placebo, the structure is noise. 195 symbols, 15 OOS windows.
+- **Result — rejected on two independent grounds.**
+
+  | n_leaders | real Sharpe | placebo Sharpe | real − placebo |
+  |---|---|---|---|
+  | 3 | −1.70 | −1.61 | −0.09 |
+  | 5 | −1.27 | −1.60 | +0.33 |
+  | 10 | −1.02 | −1.14 | **+0.11** |
+
+  (1) **The real map barely beats its own shuffled placebo** (+0.11 at best, within noise) — the
+  leader→follower structure carries essentially no information a random assignment doesn't. (2)
+  Even at **zero cost** the best config is only Sharpe 0.27 (DSR 0.26), and the daily signal's
+  turnover turns it **negative by 1 bp** (−1.02 / DSR 0.00 at 2 bps). So the *mechanism* fails the
+  placebo **and** the tiny gross residual fails the cost wall.
+- **The engine is sound (true negative, not a bug).** On synthetic data with a *built-in* lead-lag,
+  the real map cleanly beats the placebo (locked by `test_lead_lag.py`). So the negative on real
+  data means the market has no exploitable *price-only* lead-lag at daily frequency — not that the
+  test is broken.
+- **Scope honesty.** This rejects the **data-driven, price-only** version (the one we can test on
+  our panel). The academic *supervised* version (customer/supplier or shared-analyst economic
+  links) might fare better, but it needs a linkage graph we do not have — untested, not endorsed.
+- **Verdict.** ❌ **Fitted noise.** Exactly the overfit the scout flagged: a gaudy in-sample Sharpe
+  that the walk-forward + placebo dissolve. A clean win for the discipline — the placebo control is
+  now part of the toolkit for any "learned structure" edge.
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 
