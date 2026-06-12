@@ -41,6 +41,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 17 | **Overnight→intraday reversal** | Market-neutral event | Gross Sharpe 0.93 / DSR 0.90 (control-confirmed) → **−0.41 at 2bps** (~2×/day turnover) | 🔴 **REAL anomaly, untradeable** — canonical cost-wall case |
 | 18 | **EAR-PEAD, index-beta-hedged** | Market-neutral event | Hedged Sharpe **0.67, IS 0.70 ≈ OOS 0.66**, −12% DD, DSR 0.89; cheap SPY short (not single-name) | 🟢 **Strongest earnings result** — tradeable short side; rescues Case 14 |
 | 19 | **Lead-lag cross-predictability** | Market-neutral (learned) | Walk-forward real −1.02 ≈ shuffle placebo −1.14 (+0.11); gross only 0.27, dies by 1bp | ❌ **Fitted noise** — fails placebo *and* cost wall |
+| 20 | **Gap reversion** (multi-day hold) | Market-neutral event | No gross edge (−0.14 @ 0bps); gap-momentum control *beats* it on large caps | ❌ **Signal failure** — large-cap gaps are informational, not reverting |
 
 ---
 
@@ -410,6 +411,37 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 - **Verdict.** ❌ **Fitted noise.** Exactly the overfit the scout flagged: a gaudy in-sample Sharpe
   that the walk-forward + placebo dissolve. A clean win for the discipline — the placebo control is
   now part of the toolkit for any "learned structure" edge.
+
+## Case 20 — Gap reversion, multi-day hold ❌ (large-cap gaps are informational, not mean-reverting)
+
+- **Hypothesis (scout #1, statarb "gap" signal).** A stock that gaps down at the open over-reacted
+  and bounces back; a gap-up fades. Long the biggest gap-DOWNs / short the gap-UPs, dollar-neutral.
+  Built deliberately *different* from Case 17 (which was intraday-only, flat overnight, ~2×/day
+  turnover): here the position is **held for `hold` days via overlapping tranches**, so only ~1/hold
+  of the book rotates daily — the one structural way past the cost wall that killed Case 17.
+  (`alpca/backtest/gap_reversion.py`; no look-ahead — the gap of day *t* is entered at *t*'s close
+  and the held book that earns day *t*'s return excludes that day's gap.)
+- **Result — no edge, even gross.** Unlike Case 17 (real gross intraday reversal), the multi-day
+  gap-reversion has **no gross edge on large caps**: hold 10 is Sharpe −0.14 at **zero cost**,
+  −0.39 at 2 bps (DSR 0.05). And the tell — the **gap-MOMENTUM control is consistently *better*
+  than reversion** at longer holds (hold 20: momentum OOS +0.56 vs reversion −0.83).
+
+  | hold | reversion Sharpe | momentum Sharpe | turn/day |
+  |---|---|---|---|
+  | 1 | −0.80 | −0.95 | 1.52 |
+  | 5 | −0.50 | −0.23 | 0.30 |
+  | 10 | −0.39 | −0.10 | 0.15 |
+  | 20 | −0.57 | **+0.20** | 0.08 |
+- **Why (the economic read).** Gap reversion is documented in *small/illiquid* stocks, where the
+  gap is liquidity-driven over-reaction that snaps back. In **S&P large caps the overnight gap is
+  mostly information** (earnings, macro, guidance) that *continues*, not noise that reverts — so the
+  reversion sign is wrong and the momentum control mildly works. Lowering turnover (the Case-17 fix)
+  doesn't help because **there is no gross edge to protect** here in the first place.
+- **Verdict.** ❌ **Rejected on our universe.** Not a cost-wall casualty like Case 17 — a *signal*
+  failure: the gap-reversion anomaly does not exist in liquid large caps. (It might in a small-cap
+  universe we don't trade; out of scope.) Useful boundary on the reversal family: Case 17's edge
+  was intraday microstructure, real but uncapturable; the multi-day large-cap version isn't even
+  there to capture.
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 
