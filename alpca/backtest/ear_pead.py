@@ -39,6 +39,7 @@ class EARResult:
     periods_per_year: float
     beta: float = 0.0                       # market beta of the long leg (0 for neutral modes)
     daily_returns: List[float] = field(default_factory=list)
+    dates: List[int] = field(default_factory=list)   # epoch per daily return (for regime breakdown)
 
 
 def _ear_signal_events(bars_by_sym, events_by_sym, ear_window, skip_after_ear):
@@ -81,6 +82,7 @@ def backtest_ear_pead(
     entry_thr: float = 2.0,
     mode: str = "long",                     # "long" | "neutral" | "beta_hedged"
     bench_bars: Optional[List[dict]] = None,
+    hedge_window: int = 0,                   # 0 = full-sample beta (has lookahead); >0 = trailing beta
     cost_bps: float = 2.0,
     periods_per_year: float = 252.0,
     starting_equity: float = 100_000.0,
@@ -159,20 +161,36 @@ def backtest_ear_pead(
     if mode == "beta_hedged" and bench_bars:
         bl = bench[1:]                       # align with daily (t=1..T-1)
         ld = np.array(long_daily)
-        var = float(np.var(bl))
-        beta = float(np.cov(ld, bl)[0, 1] / var) if var > 1e-12 else 0.0
-        # re-derive the hedged equity: long return minus beta*index return each day (GC index short)
-        hedged = ld - beta * bl
+        if hedge_window and hedge_window > 0:
+            # TRAILING beta: each day's hedge uses only the prior `hedge_window` days -> NO lookahead.
+            hedged = np.zeros_like(ld)
+            betas = []
+            for i in range(len(ld)):
+                if i >= hedge_window:
+                    wl, wb = ld[i - hedge_window:i], bl[i - hedge_window:i]
+                    v = float(np.var(wb))
+                    bt = float(np.cov(wl, wb)[0, 1] / v) if v > 1e-12 else 0.0
+                else:
+                    bt = 0.0                 # not enough history yet -> unhedged
+                hedged[i] = ld[i] - bt * bl[i]
+                betas.append(bt)
+            beta = float(np.mean(betas))
+        else:
+            # full-sample beta (uses the whole window -> mild lookahead; the audit compares the two)
+            var = float(np.var(bl))
+            beta = float(np.cov(ld, bl)[0, 1] / var) if var > 1e-12 else 0.0
+            hedged = ld - beta * bl
         eq = [starting_equity]
         daily = []
         for x in hedged:
             eq.append(eq[-1] * (1 + float(x)))
             daily.append(float(x))
 
+    dates = master[1:]                       # epoch aligned with daily (t=1..T-1)
     from alpca.backtest.evaluation import max_drawdown_of, sharpe_of
     return EARResult(
         mode=mode, equity_curve=eq, total_return=(eq[-1] - eq[0]) / eq[0],
         sharpe=sharpe_of(eq, periods_per_year), max_drawdown=max_drawdown_of(eq),
         n_days=len(daily), n_events_used=n_used,
         avg_active=float(np.mean(actives)) if actives else 0.0,
-        periods_per_year=periods_per_year, beta=beta, daily_returns=daily)
+        periods_per_year=periods_per_year, beta=beta, daily_returns=daily, dates=dates)

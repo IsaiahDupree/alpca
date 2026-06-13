@@ -62,6 +62,18 @@ def test_beta_hedge_removes_market_beta():
     hed = backtest_ear_pead(bars_by, events_by, hold=25, entry_thr=2.0, mode="beta_hedged", bench_bars=bench)
     assert hed.beta != 0.0                          # a beta was estimated and removed
     assert all(math.isfinite(e) and e > 0 for e in hed.equity_curve)
+    assert len(hed.dates) == len(hed.daily_returns)  # dates aligned with returns (regime breakdown)
+
+
+def test_trailing_hedge_no_lookahead_runs():
+    # the trailing-beta hedge (audit's no-lookahead variant) runs and stays finite
+    bars_by, events_by, bench = _drift_book()
+    full = backtest_ear_pead(bars_by, events_by, hold=25, entry_thr=2.0, mode="beta_hedged",
+                             bench_bars=bench, hedge_window=0)
+    trail = backtest_ear_pead(bars_by, events_by, hold=25, entry_thr=2.0, mode="beta_hedged",
+                              bench_bars=bench, hedge_window=60)
+    assert all(math.isfinite(e) and e > 0 for e in trail.equity_curve)
+    assert trail.beta != full.beta                  # trailing avg-beta differs from full-sample beta
 
 
 def test_entry_threshold_filters_events():

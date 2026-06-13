@@ -371,11 +371,24 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   worth adding is the hedged alpha, because it **diversifies** rather than duplicates the market.
   Max profit/day = push the DSR-surviving Sharpe up (breadth) and size to Kelly — not trade faster
   (Case 17 showed frequency turns Sharpe 0.93 → −0.41).
-- **Verdict.** 🟢 **A real, tradeable, market-neutral earnings alpha — the rescue of PEAD.**
-  Caveats kept honest: only 40 symbols and one (bull-ish) 5-yr regime — but the beta hedge removes
-  the bull tailwind and it *still* survives OOS; the hedge ratio is full-sample (mild optimism).
-  DSR 0.89 sits just under the 0.95 bar — the `avearnings` job filling the universe to 195 is the
-  direct route over it. **Next:** confirm at full breadth, then add as the combiner's 2nd leg.
+- **OVERFIT AUDIT (passed — `scripts/audit_overfit.py`).** Because this is the one leg we put in
+  the combiner, it got a dedicated audit built to *catch* overfit, with **fixed a-priori params
+  (thr 2.0, not the cherry-picked 1.5)**:
+  - **Hedge lookahead** — replacing the full-sample beta with a **trailing 126-day** beta (no
+    lookahead) does not hurt: Sharpe 0.54 → **0.68** (it actually improves; Δ +0.14). So the result
+    was *not* leaning on the full-sample hedge ratio.
+  - **Regime stability** — per-calendar-year Sharpe on the trailing-hedge sleeve is **positive in
+    6/6 years**, including the 2022 bear (+0.19) and the flat 2024 (+0.05); strong in 2021 (1.80),
+    2025 (0.81), 2026 (1.55). Not concentrated in one lucky period — the key anti-overfit signal.
+  - **Deflation honesty** — DSR is stable as the trial count escalates to the project's true search
+    breadth: **0.86 @37 → 0.83 @200 → 0.82 @400 trials** (PSR 0.94). The significance is not an
+    artifact of under-counting trials.
+  Honest residual caveats: still only 40 symbols and one 5-yr span (per-year is sub-period
+  stability, not a truly independent holdout); 2022/2024 are thin-positive.
+- **Verdict.** 🟢 **A real, tradeable, market-neutral earnings alpha — the rescue of PEAD, and the
+  one surviving sleeve that has passed a dedicated overfit audit.** Even at fixed a-priori params
+  with a no-lookahead trailing hedge it holds ~0.68 with positive regime stability. **Next:** confirm
+  at full breadth (195) and add as the combiner's 2nd leg.
 
 ## Case 19 — Lead-lag cross-predictability (price-only, walk-forward) ❌ (fitted noise)
 
@@ -493,6 +506,34 @@ families here), naive p-values overstate significance. The harness now includes 
 **Probabilistic** and **Deflated Sharpe Ratio** (Bailey & López de Prado): the DSR tests a
 Sharpe against the *expected maximum* Sharpe over the number of trials, so it accounts for
 selection bias. Use DSR > 0.95 — not a raw p<0.05 — as the real significance bar going forward.
+
+## Anti-overfitting discipline — "are we fooling ourselves?"
+
+Every reported edge is one query against the same data, so the standing risk is that our
+*survivors* are overfit even though our *rejections* are honest. The controls that keep us honest,
+each having actually killed or saved a candidate:
+
+1. **Buy-and-hold benchmark** — a long sleeve must beat B&H on return *and* Sharpe or it is labelled
+   beta (Cases 2, 18-long).
+2. **Walk-forward, not tail-split** — re-fit on train, trade held-out, roll (pairs basket, lead-lag).
+   A 70/30 chronological split of one regime is the *weak* form and is flagged as such.
+3. **Shuffle placebo** — for any *learned* structure, re-run with the structure randomized; it must
+   beat its own placebo (killed lead-lag, Case 19).
+4. **Adversarial friction models** — realistic borrow/slippage applied in the direction that hurts
+   (adverse-selection borrow downgraded surprise-PEAD, Case 14; the 2bps cost wall killed Cases 17/20).
+5. **Regime stability** — per-calendar-year Sharpe; a real edge is positive in most years incl. the
+   bear, not concentrated in one lucky period (EAR-PEAD: 6/6 years, Case 18 audit).
+6. **No-lookahead hedge/feature** — trailing, not full-sample, estimates (EAR-PEAD's trailing beta).
+7. **Honest trial counting** — deflate DSR by the project's *true* search breadth (hundreds of
+   configs, not the ~37 of one sweep); an edge that only clears at low trial counts isn't one.
+
+**Honest scorecard (as of Case 21):** EAR-PEAD passed a dedicated overfit audit (`scripts/audit_
+overfit.py`: trailing≈full hedge, 6/6 positive years, DSR 0.82 even at 400 trials). The pairs basket
+was quarterly walk-forward validated. **Known-soft, not hidden:** the combiner's 0.99 uses in-sample
+weights; the SI tilt is one year (can't take the regime test — held as a *lead*, sized at zero);
+everything rests on 40-195 symbols over a single 5-yr span, so a truly independent (new symbols / new
+years) holdout is still the one test we have not run. We do not claim a validated edge until it clears
+these — and we say plainly which ones each survivor has and has not passed.
 
 ## What we learned
 
