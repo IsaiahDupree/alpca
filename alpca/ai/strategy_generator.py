@@ -24,6 +24,7 @@ from typing import Dict, List, Optional
 from alpca.backtest.accruals import backtest_accruals
 from alpca.backtest.cross_sectional import backtest_cross_sectional_momentum
 from alpca.backtest.evaluation import deflated_sharpe_ratio, sharpe_of
+from alpca.backtest.value import backtest_value_composite
 
 PPY = 252.0
 
@@ -39,6 +40,10 @@ STRATEGY_SPACE: Dict[str, Dict] = {
                       "params": {"top_frac_pct": (10, 33)},
                       "desc": "long low-accrual / short high-accrual (Sloan earnings-quality; "
                               "fundamental, annual rebalance, ~free turnover, diversifies price edges)"},
+    "value_composite": {"family": "fundamental",
+                        "params": {"top_frac_pct": (10, 33), "rebalance_days": (10, 63)},
+                        "desc": "long cheap / short expensive on an E/P + FCF/P + B/P composite "
+                                "(the value premium; fundamental, low turnover, diversifies momentum)"},
 }
 
 # a-priori regime -> template (the deterministic fallback / cold-start)
@@ -122,6 +127,10 @@ def _run(config: Dict, bars: Dict, funds: Optional[Dict], cost_bps: float):
     if spec["family"] == "fundamental":
         if not funds:
             return None
+        if config["strategy_type"] == "value_composite":
+            return backtest_value_composite(bars, funds, top_frac=p["top_frac_pct"] / 100.0,
+                                            rebalance_days=int(p.get("rebalance_days", 21)),
+                                            reverse=False, cost_bps=cost_bps, periods_per_year=PPY)
         return backtest_accruals(bars, funds, top_frac=p["top_frac_pct"] / 100.0,
                                  reverse=False, cost_bps=cost_bps, periods_per_year=PPY)
     return None

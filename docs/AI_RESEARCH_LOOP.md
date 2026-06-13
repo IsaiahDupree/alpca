@@ -30,6 +30,7 @@ detect regime  →  PROPOSE a strategy config  →  RUN it through the harness  
 **Strategy space (what the model may configure — never code):**
 - `xsec_momentum`, `xsec_reversal` — price-only cross-sectional (lookback / hold / top_k)
 - `accruals` — **fundamental** (Sloan earnings-quality, EDGAR; top_frac); diversifies price edges
+- `value_composite` — **fundamental** (E/P + FCF/P + B/P, EDGAR; top_frac, rebalance_days); the value premium
 
 **Automation:** `scripts/ai_research_loop.py`, scheduled as launchd `com.alpca.airesearch` (weekly
 Sat 11:00 ET). Both model tiers verified live under launchd.

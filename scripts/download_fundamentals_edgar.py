@@ -63,20 +63,45 @@ def _annual_stock(units):
     return out
 
 
+def _nearest(stock_map, end, max_days=120):
+    """Pick the value whose period-end is closest to `end` within max_days (for tags whose cover
+    date differs slightly from the fiscal year-end, e.g. dei shares outstanding)."""
+    best = None
+    for e, (v, f) in stock_map.items():
+        d = _days(e, end)
+        if d <= max_days and (best is None or d < best[0]):
+            best = (d, v)
+    return best[1] if best else None
+
+
 def extract_annual_fundamentals(facts: dict):
     g = facts.get("facts", {}).get("us-gaap", {})
-    def units(tag):
-        return g.get(tag, {}).get("units", {}).get("USD", [])
-    ni = _annual_flow(units("NetIncomeLoss"))
-    cfo = _annual_flow(units("NetCashProvidedByUsedInOperatingActivities"))
-    assets = _annual_stock(units(STOCK_TAG))
+    dei = facts.get("facts", {}).get("dei", {})
+    def gaap(tag, unit="USD"):
+        return g.get(tag, {}).get("units", {}).get(unit, [])
+    def dei_u(tag, unit):
+        return dei.get(tag, {}).get("units", {}).get(unit, [])
+    # accruals tags
+    ni = _annual_flow(gaap("NetIncomeLoss"))
+    cfo = _annual_flow(gaap("NetCashProvidedByUsedInOperatingActivities"))
+    assets = _annual_stock(gaap(STOCK_TAG))
+    # value tags (optional per firm): CapEx (flow), book equity (instant), shares outstanding (dei instant)
+    capex = _annual_flow(gaap("PaymentsToAcquirePropertyPlantAndEquipment"))
+    equity = _annual_stock(gaap("StockholdersEquity"))
+    shares = _annual_stock(dei_u("EntityCommonStockSharesOutstanding", "shares"))
     rows = []
     for e in sorted(set(ni) & set(cfo) & set(assets)):
         nival, nif = ni[e]; cfval, cff = cfo[e]; aval, af = assets[e]
         if aval <= 0:
             continue
-        rows.append({"fy_end": e, "filed": max(nif, cff, af),    # known when the last of the three filed
-                     "net_income": nival, "cfo": cfval, "total_assets": aval})
+        cap = capex.get(e, (None, None))[0]
+        row = {"fy_end": e, "filed": max(nif, cff, af),
+               "net_income": nival, "cfo": cfval, "total_assets": aval,
+               # value extras (None when the firm doesn't tag them)
+               "capex": cap, "fcf": (cfval - cap) if cap is not None else cfval,
+               "book_equity": equity.get(e, (None, None))[0],
+               "shares": _nearest(shares, e)}
+        rows.append(row)
     return rows
 
 

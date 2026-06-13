@@ -45,6 +45,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 21 | **Short-interest (borrow-fee) tilt** | Market-neutral positioning | 1-yr Nasdaq looked great (2.34) but 9-yr FINRA (188 sym): gross 0.91, **net −0.42 after DTC borrow**, +3/6 yrs | ❌ **Rejected** — weak, regime-specific, net-negative after borrow; the 1-yr lead was a lucky window |
 | 22 | **52-week-high momentum** (George-Hwang) | Cross-sectional | Anomaly INVERTS here: near-high −0.58, reversal +0.6 but carried by 2023 alone | ❌ **Rejected** — famous anomaly doesn't replicate on our universe; reversal regime-concentrated |
 | 23 | **Accruals anomaly** (Sloan, EDGAR fundamentals) | Fundamental MN | In-universe great (+5/6 yrs, cost-free) but **fresh-16 holdout −0.47** (train +0.30) | 🟡→❌ **Fails out-of-universe** — same as EAR-PEAD; 3rd candidate killed by the fresh-symbol test |
+| 24 | **Value composite** (E/P+FCF/P+B/P, EDGAR) | Fundamental MN | Main ~0.14, **fresh-holdout +0.11..+0.54 (GENERALIZES)** but weak + regime-timed (2022 +1.85 / 2026 −1.58) | ⚠️ **Real but too thin** — 1st fundamental to pass the fresh test; fails on magnitude, not overfit |
 
 ---
 
@@ -612,6 +613,31 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   sector-neutral accrual on a *broad* fresh set is a legitimate future refinement — but we do **not**
   claim it as a rescue (EAR-PEAD's sector-rescue was refuted, Case 18). Held as ❌ until a clean
   broad-universe fresh test says otherwise.
+
+## Case 24 — Value composite (E/P + FCF/P + B/P), on SEC EDGAR ⚠️ (generalizes, but too weak)
+
+- **Hypothesis.** The value premium — long cheap / short expensive — is the most-studied anomaly and
+  orthogonal to momentum/positioning/accruals, so a surviving version diversifies the combiner. A
+  cross-sectional composite of three yield metrics: **E/P, FCF/P, B/P** (mean of percentile ranks),
+  long the cheap quantile / short the expensive, dollar-neutral, monthly-ish rebalance.
+  (`alpca/backtest/value.py`; the EDGAR fetcher was extended for shares / CapEx / book equity.)
+- **Data + no look-ahead.** Market cap = shares × price, so each yield re-prices daily; the
+  fundamental is the most recent 10-K known at the rebalance day (EDGAR `filed` date). 164 symbols
+  with shares. Low turnover (~0.009/day).
+- **Result — the FIRST fundamental that does NOT fail the fresh-symbol holdout, but it's thin.**
+  Main-universe Sharpe **~0.14** (tf 0.2), and crucially the **fresh-symbol holdout is *positive*
+  (+0.11 to +0.54 across runs ≈ the in-sample level)** — value *generalizes* to unseen symbols, unlike
+  EAR-PEAD (Case 18) and accruals (Case 23) which went negative out-of-universe. But it is **weak and
+  regime-dependent**: strongly positive in the **2022 value rotation (+1.85)**, negative in the
+  growth-led **2026 (−1.58)** — the value premium's well-known cyclicality. DSR ~0.3.
+- **Verdict.** ⚠️ **Real and generalizing, but too weak to clear the bar.** A *different* failure mode
+  from the others: it is **not overfit** (fresh-symbol holdout positive — a genuine first for the
+  fundamental family), it just doesn't carry enough Sharpe (~0.14 < the 0.2 cost-survival floor, DSR
+  far below 0.95) and is heavily regime-timed. Honest read: the value premium is faintly present in
+  this large-cap universe but not a standalone edge here. *Possible future lift* (not pursued as a
+  rescue): sector-neutralization, a small-cap tilt (where value is stronger), or as a **regime-timed
+  overlay** (only on in the conditions where its 2022-type payoff concentrates) — but that risks
+  regime-fitting. For now it joins the combiner's bench as a real-but-thin diversifier, not a leg.
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 
