@@ -385,10 +385,24 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
     artifact of under-counting trials.
   Honest residual caveats: still only 40 symbols and one 5-yr span (per-year is sub-period
   stability, not a truly independent holdout); 2022/2024 are thin-positive.
+- **SYMBOL-GENERALIZATION TEST (`scripts/test_ear_pead_holdout.py`) — mixed, reported in full.**
+  The true fresh-symbol holdout was blocked by an exhausted AV quota (the 23 disjoint names all
+  returned empty), so we ran the subset version on the 40 with fixed params:
+  - **Random-subset resampling** (200 draws of 20 symbols): **91% positive**, median Sharpe **0.35**
+    (p10 0.02 / p90 0.69). A *random* slice usually works → the edge is **not carried by a few
+    cherry-picked names** (the main symbol-overfit failure mode is ruled out).
+  - **But one disjoint split-half was negative** (half A 0.90, half B −0.14), and the typical subset
+    Sharpe (**0.35**) is **well below the full-40 aggregate (~0.6)**. So the headline number
+    **benefits from breadth/aggregation**, the effect is **dispersed**, and a single unlucky 20-name
+    slice can go negative. Real and broad, but more modest than the aggregate implies.
+  - The **true fresh-symbol holdout runs automatically** once `earnings_av_holdout` fills (AV quota
+    resets / the nightly job adds disjoint names) — the one cleaner test still pending.
 - **Verdict.** 🟢 **A real, tradeable, market-neutral earnings alpha — the rescue of PEAD, and the
-  one surviving sleeve that has passed a dedicated overfit audit.** Even at fixed a-priori params
-  with a no-lookahead trailing hedge it holds ~0.68 with positive regime stability. **Next:** confirm
-  at full breadth (195) and add as the combiner's 2nd leg.
+  one surviving sleeve that has passed a dedicated overfit audit + symbol-generalization test.** At
+  fixed a-priori params with a no-lookahead trailing hedge it holds ~0.68 on the full 40 with 6/6
+  positive years; the honest caveat from the subset test is that a *typical* slice is ~0.35, so the
+  edge is **real and broad but breadth-dependent and modest**, not a strong uniform signal. **Next:**
+  the clean fresh-symbol holdout (pending AV quota) + confirm at full breadth (195) before sizing up.
 
 ## Case 19 — Lead-lag cross-predictability (price-only, walk-forward) ❌ (fitted noise)
 
@@ -527,13 +541,17 @@ each having actually killed or saved a candidate:
 7. **Honest trial counting** — deflate DSR by the project's *true* search breadth (hundreds of
    configs, not the ~37 of one sweep); an edge that only clears at low trial counts isn't one.
 
-**Honest scorecard (as of Case 21):** EAR-PEAD passed a dedicated overfit audit (`scripts/audit_
-overfit.py`: trailing≈full hedge, 6/6 positive years, DSR 0.82 even at 400 trials). The pairs basket
-was quarterly walk-forward validated. **Known-soft, not hidden:** the combiner's 0.99 uses in-sample
-weights; the SI tilt is one year (can't take the regime test — held as a *lead*, sized at zero);
-everything rests on 40-195 symbols over a single 5-yr span, so a truly independent (new symbols / new
-years) holdout is still the one test we have not run. We do not claim a validated edge until it clears
-these — and we say plainly which ones each survivor has and has not passed.
+**Honest scorecard (as of Case 21 + the overfit work):** EAR-PEAD passed a dedicated audit
+(`scripts/audit_overfit.py`: trailing≈full hedge, 6/6 positive years, DSR 0.82 even at 400 trials)
+**and** a symbol-generalization test (`scripts/test_ear_pead_holdout.py`: 91% of random 20-symbol
+subsets positive → not carried by a few names). The pairs basket was quarterly walk-forward
+validated. **Known-soft, stated not hidden:** (a) the symbol test also showed the *typical* subset
+Sharpe is **~0.35, below the full-40 ~0.6** — the headline benefits from breadth, and an unlucky
+20-name half went −0.14, so the edge is real-but-modest-and-dispersed, not uniform; (b) the combiner's
+0.99 uses in-sample weights; (c) the SI tilt is one year (can't take the regime test — held as a
+*lead*, sized at zero); (d) the **true fresh-symbol holdout** (disjoint names, not subsets) is the one
+clean test still pending, blocked only by AV quota and queued to run automatically. We do not call an
+edge validated until it clears these, and we say plainly which each survivor has and has not passed.
 
 ## What we learned
 
