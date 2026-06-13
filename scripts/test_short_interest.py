@@ -17,6 +17,7 @@ import argparse
 import json
 import statistics
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -26,6 +27,13 @@ from alpca.backtest.evaluation import (  # noqa: E402
 from alpca.backtest.short_interest import backtest_short_interest_tilt  # noqa: E402
 
 PPY = 252.0
+
+
+def _eq_from(daily, start=100_000.0):
+    eq = [start]
+    for x in daily:
+        eq.append(eq[-1] * (1 + x))
+    return eq
 
 
 def _active_equity(r):
@@ -118,27 +126,48 @@ def main() -> int:
         psr = probabilistic_sharpe_ratio(aeq)
         dsr = deflated_sharpe_ratio(aeq, n_trials=args.n_trials, sharpe_variance=var_trials)
 
+    # per-calendar-year regime breakdown on the realistic (DTC-borrow) sleeve — the cross-regime
+    # test the 1yr Nasdaq feed couldn't take; FINRA's multi-year depth makes it meaningful.
+    by_year = {}
+    if dtc_brw is not None:
+        rr = backtest_short_interest_tilt(bars_by, si_by, top_frac=0.2, reverse=True, borrow=brw_cfg,
+                                          cost_bps=2.0, periods_per_year=PPY)
+        first = next((i for i, x in enumerate(rr.daily_returns) if abs(x) > 1e-12), 0)
+        for ep, x in zip(rr.dates[first:], rr.daily_returns[first:]):
+            by_year.setdefault(time.gmtime(ep).tm_year, []).append(x)
+    yr_sh = {y: sharpe_of(_eq_from(v), PPY) for y, v in by_year.items() if len(v) >= 30}
+    n_years = len(yr_sh)
+    pos_years = sum(1 for s in yr_sh.values() if s > 0)
+
     print("\n" + "=" * 73)
     if anomaly and control:
-        ad = anomaly.get("active_days", 0)
-        print(f"VERDICT (POWER-LIMITED: SI is ~1yr, only {ad} ACTIVE trading days / "
-              f"~{sum(len(v) for v in si_by.values())//max(len(si_by),1)} obs/symbol — judged over the active "
-              f"window only; the IS/OOS split inside one year is weak, NOT a real multi-regime OOS):")
-        print(f"  anomaly (short high-DTC) Sharpe {anomaly['sharpe']:.2f} (in-yr OOS {anomaly['oos']:.2f}); "
-              f"control {control['sharpe']:.2f} (sign-confirms the anomaly).")
+        multi = n_years >= 3
+        if multi:
+            print(f"VERDICT (MULTI-REGIME — FINRA gives {n_years} active calendar years):")
+        else:
+            ad = anomaly.get("active_days", 0)
+            print(f"VERDICT (POWER-LIMITED: only {ad} active days / {n_years} yr — not multi-regime):")
+        print(f"  anomaly (short high-DTC) Sharpe {anomaly['sharpe']:.2f}; control {control['sharpe']:.2f} "
+              f"(sign-confirms the anomaly).")
         if dtc_brw is not None:
             print(f"  under DTC-scaled borrow (the crux): Sharpe {dtc_brw['sharpe']:.2f}, PSR {psr:.2f}, "
                   f"DSR {dsr:.2f}, turnover {dtc_brw['turnover']:.3f}/day (bi-monthly = low).")
-            verdict = ("right sign + survives its own borrow at low turnover, but ONE year / DSR "
-                       f"{dsr:.2f} = a LEAD not an edge — deepen via FINRA multi-year history before trusting"
-                       if dtc_brw["sharpe"] > 0.3 else
-                       "borrow eats the short leg (same wall as surprise-PEAD) -> not a net edge here"
-                       if anomaly["sharpe"] > 0.3 else
-                       "no convincing SI signal even gross over this 1yr window")
+            if yr_sh:
+                print("  per-calendar-year Sharpe (DTC-borrow sleeve): "
+                      + ", ".join(f"{y}:{yr_sh[y]:+.2f}" for y in sorted(yr_sh)))
+                print(f"  -> positive in {pos_years}/{n_years} years")
+            if multi:
+                verdict = (f"survives ACROSS {n_years} regimes (DSR {dsr:.2f}, {pos_years}/{n_years} years +) "
+                           "-> a VALIDATED 3rd-leg candidate" if dsr > 0.9 and pos_years >= n_years - 1 and dtc_brw["sharpe"] > 0.3
+                           else f"positive but NOT robust across regimes ({pos_years}/{n_years} yrs) -> still a lead")
+            else:
+                verdict = ("right sign + survives borrow but <3yr -> a LEAD; needs more regimes"
+                           if dtc_brw["sharpe"] > 0.3 else "borrow eats the short leg -> not a net edge")
             print(f"  -> {verdict}")
 
     Path(args.out).write_text(json.dumps({"n_symbols": len(si_by), "n_obs": n_obs, "grid": grid,
-                                          "dtc_borrow_dsr": dsr, "dtc_borrow_psr": psr}, indent=2))
+                                          "dtc_borrow_dsr": dsr, "dtc_borrow_psr": psr,
+                                          "per_year": yr_sh}, indent=2))
     print(f"\n[done] wrote {args.out}")
     return 0
 

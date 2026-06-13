@@ -42,7 +42,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 18 | **EAR-PEAD, index-beta-hedged** | Market-neutral event | Hedged Sharpe **0.67, IS 0.70 ≈ OOS 0.66**, −12% DD, DSR 0.89; cheap SPY short (not single-name) | 🟢 **Strongest earnings result** — tradeable short side; rescues Case 14 |
 | 19 | **Lead-lag cross-predictability** | Market-neutral (learned) | Walk-forward real −1.02 ≈ shuffle placebo −1.14 (+0.11); gross only 0.27, dies by 1bp | ❌ **Fitted noise** — fails placebo *and* cost wall |
 | 20 | **Gap reversion** (multi-day hold) | Market-neutral event | No gross edge (−0.14 @ 0bps); gap-momentum control *beats* it on large caps | ❌ **Signal failure** — large-cap gaps are informational, not reverting |
-| 21 | **Short-interest (borrow-fee) tilt** | Market-neutral positioning | Real Nasdaq SI (56 sym); anomaly Sharpe 2.34 *after* DTC-scaled borrow, control mirrors −3.0, turnover 0.01/day | 🟡 **Strong lead** — right sign, survives borrow, low turnover; but only ~1yr (needs FINRA depth) |
+| 21 | **Short-interest (borrow-fee) tilt** | Market-neutral positioning | 1-yr Nasdaq looked great (2.34) but 9-yr FINRA: gross 0.92, **net −0.31 after DTC borrow**, +3/6 yrs | ❌ **Rejected** — weak, regime-specific, net-negative after borrow; the 1-yr lead was a lucky window |
 
 ---
 
@@ -471,7 +471,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   was intraday microstructure, real but uncapturable; the multi-day large-cap version isn't even
   there to capture.
 
-## Case 21 — Short-interest (borrow-fee) tilt 🟡 (strong lead, power-limited to 1 year)
+## Case 21 — Short-interest (borrow-fee) tilt ❌ (the 1-year "lead" was a lucky window)
 
 - **Hypothesis (scout #1, "hard-to-borrow" signal — on REAL data, not a proxy).** Days-to-cover
   (DTC = shares short / avg daily volume) is the fundamental driver of borrow fees; the documented
@@ -486,32 +486,33 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   Rebalances bi-monthly → **turnover ~0.010/day**, structurally cost-robust (the property Cases
   17/19/20 lacked). Judged over the **active window only** (SI covers just the last ~1 yr of the
   5-yr daily panel; scoring the flat pre-data years would fake an IS/OOS split).
-- **Result (56 symbols, ~1-yr / ~23 obs each).** *Coverage caveat:* only **56 of 195** universe
-  symbols returned data from Nasdaq's free SI endpoint (139 came back empty) — another reason the
-  full-coverage FINRA feed is the right deepening path.
+- **First pass looked great — on ONE year (Nasdaq).** On 56 symbols / ~1 yr of free Nasdaq SI, the
+  anomaly posted Sharpe 2.93 gross, **2.34 after DTC-scaled borrow**, control mirror −2.98, PSR 0.99,
+  DSR 0.98 (clean deflation), turnover 0.010/day. It looked like the only scout-#1 signal to clear the
+  bar — and we flagged it 🟡, explicitly *power-limited to one regime, validate on FINRA before trusting.*
+- **The multi-regime test (FINRA, ~9 yr / 156 symbols / ~201 obs each) DEMOLISHES it.** FINRA's
+  `consolidatedShortInterest` (public, no auth; `scripts/download_short_interest_finra.py`) covers
+  2017–2026, so the signal is active across all 6 calendar years of the daily window including the
+  2022 bear:
 
-  | variant | Sharpe | IS / within-yr OOS | turn/day |
-  |---|---|---|---|
-  | anomaly (short high-DTC), no borrow | 2.93 | 2.04 / 4.44 | 0.010 |
-  | **control (chase shorts)** | **−2.98** | −2.09 / −4.48 | 0.010 |
-  | anomaly + DTC-scaled borrow (the crux) | **2.34** | 1.37 / 3.95 | 0.010 |
+  | variant | Sharpe (6-yr) | per-calendar-year |
+  |---|---|---|
+  | anomaly, no borrow | 0.92 | weakly real, control −1.03 |
+  | anomaly + 3% flat borrow | 0.66 | not significant |
+  | **anomaly + DTC-scaled borrow (the crux)** | **−0.31** | 2021 −1.56, 2022 −1.72, 2023 +0.89, 2024 −1.57, 2025 +1.18, 2026 +0.86 |
 
-  Right sign (the control is a near-perfect mirror), **survives its own DTC-scaled borrow**
-  (Sharpe 2.34, IS *and* within-year OOS both positive), low turnover, and statistically significant
-  within the year (PSR 0.99; DSR 0.98 under a clean same-direction deflation). This is the **only
-  scout-#1 signal that clears the bar the others failed** — not a cost-wall casualty (Cases 17/20)
-  nor a placebo failure (Case 19).
-- **The binding caveat (why 🟡, not 🟢).** It is **one year, one regime.** DSR/PSR account for
-  sample length and trial count but **not regime risk**, and the free Nasdaq feed gives only ~1 yr
-  (24 settlement points) — there is no true multi-year out-of-sample. A Sharpe of ~2.7 over a single
-  year is exactly the kind of number that can be regime-specific. So this is a **strong lead, not a
-  validated edge.**
-- **Verdict.** 🟡 **The most promising new candidate of the session — but unvalidated on depth.**
-  Next step is concrete: pull **multi-year FINRA short-interest history** (the API is reachable) to
-  get a real walk-forward across regimes; if it holds, this becomes a genuine third leg — and being
-  positioning-driven (not price), it should be uncorrelated to both the pairs basket and EAR-PEAD.
-  Until then it stays a lead, sized at zero. (Both the ~1-yr depth *and* Nasdaq's 56/195 coverage
-  are limits FINRA fixes at once.)
+  Three independent failures: (1) the **gross** signal is *weak* (0.92, not ~3) and **regime-specific
+  — positive in only 3/6 years**, badly negative through 2021/2022/2024; (2) under the **realistic
+  DTC-scaled borrow** it goes **net-negative (−0.31, DSR 0.08)** — you must pay top borrow to short
+  exactly the crowded high-DTC names, and that eats the thin gross signal (the *same* wall that sank
+  surprise-PEAD, Case 14); (3) the gaudy 1-year Nasdaq number was a **lucky window** — Nasdaq's free
+  feed only covered 2025–2026, the one good stretch (+1.18 / +0.86).
+- **Verdict.** ❌ **Downgraded 🟡 → ❌ — not a tradeable edge, and a textbook 1-year artifact.** The
+  short-interest anomaly is *real but weak* gross, regime-specific, and **net-negative after the borrow
+  cost on the very names it tells you to short.** It is NOT a third leg. The constructive payoff is
+  methodological: **the multi-regime FINRA test caught an edge that a 1-year sample had rated DSR 0.98**
+  — the single cleanest demonstration in this whole document of *why we do not trust short windows*, and
+  a direct vindication of holding it as a "lead, sized at zero" rather than shipping it.
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 
@@ -548,10 +549,12 @@ subsets positive → not carried by a few names). The pairs basket was quarterly
 validated. **Known-soft, stated not hidden:** (a) the symbol test also showed the *typical* subset
 Sharpe is **~0.35, below the full-40 ~0.6** — the headline benefits from breadth, and an unlucky
 20-name half went −0.14, so the edge is real-but-modest-and-dispersed, not uniform; (b) the combiner's
-0.99 uses in-sample weights; (c) the SI tilt is one year (can't take the regime test — held as a
-*lead*, sized at zero); (d) the **true fresh-symbol holdout** (disjoint names, not subsets) is the one
-clean test still pending, blocked only by AV quota and queued to run automatically. We do not call an
-edge validated until it clears these, and we say plainly which each survivor has and has not passed.
+0.99 uses in-sample weights; (c) the **true fresh-symbol holdout** (disjoint names, not subsets) is the one
+clean test still pending for EAR-PEAD, blocked only by AV quota and queued to run automatically. We do
+not call an edge validated until it clears these, and we say plainly which each survivor has and has not
+passed. **And when a test fails, we publish the failure:** the SI tilt (Case 21) looked like a DSR-0.98
+edge on one year of Nasdaq data and was then *killed* by the multi-regime FINRA test (net −0.31 across
+6 years) — held at zero size throughout, downgraded 🟡→❌, never shipped. That is the discipline working.
 
 ## What we learned
 

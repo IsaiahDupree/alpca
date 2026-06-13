@@ -72,6 +72,13 @@ def test_low_turnover_bimonthly():
     assert r.avg_turnover < 0.2                          # bi-monthly rebalance -> low daily turnover
 
 
+def test_dates_align_with_returns_for_regime_breakdown():
+    bars, si = _si_book()
+    r = backtest_short_interest_tilt(bars, si, top_frac=0.25, cost_bps=2.0)
+    assert len(r.dates) == len(r.daily_returns)     # per-year regime breakdown needs this alignment
+    assert all(isinstance(d, int) for d in r.dates)
+
+
 def test_too_few_symbols_returns_empty():
     r = backtest_short_interest_tilt({"A": []}, {"A": []})
     assert r.n_days == 0 and r.equity_curve == [100_000.0]

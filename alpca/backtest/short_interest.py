@@ -37,6 +37,7 @@ class ShortInterestResult:
     avg_turnover: float
     equity_curve: List[float] = field(default_factory=list)
     daily_returns: List[float] = field(default_factory=list)
+    dates: List[int] = field(default_factory=list)   # epoch per daily return (for regime breakdown)
 
 
 def backtest_short_interest_tilt(
@@ -127,7 +128,7 @@ def backtest_short_interest_tilt(
         n_rebalances=rebals, top_frac=top_frac,
         avg_active=float(np.mean(actives)) if actives else 0.0,
         avg_turnover=float(np.mean(turnovers)) if turnovers else 0.0,
-        equity_curve=eq, daily_returns=daily)
+        equity_curve=eq, daily_returns=daily, dates=master[1:])
 
 
 def _borrow_apr(borrow, d, ok) -> np.ndarray:
