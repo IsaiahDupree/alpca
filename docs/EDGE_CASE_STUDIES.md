@@ -42,7 +42,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 18 | **EAR-PEAD, index-beta-hedged** | Market-neutral event | Hedged Sharpe **0.67, IS 0.70 ≈ OOS 0.66**, −12% DD, DSR 0.89; cheap SPY short (not single-name) | 🟢 **Strongest earnings result** — tradeable short side; rescues Case 14 |
 | 19 | **Lead-lag cross-predictability** | Market-neutral (learned) | Walk-forward real −1.02 ≈ shuffle placebo −1.14 (+0.11); gross only 0.27, dies by 1bp | ❌ **Fitted noise** — fails placebo *and* cost wall |
 | 20 | **Gap reversion** (multi-day hold) | Market-neutral event | No gross edge (−0.14 @ 0bps); gap-momentum control *beats* it on large caps | ❌ **Signal failure** — large-cap gaps are informational, not reverting |
-| 21 | **Short-interest (borrow-fee) tilt** | Market-neutral positioning | 1-yr Nasdaq looked great (2.34) but 9-yr FINRA: gross 0.92, **net −0.31 after DTC borrow**, +3/6 yrs | ❌ **Rejected** — weak, regime-specific, net-negative after borrow; the 1-yr lead was a lucky window |
+| 21 | **Short-interest (borrow-fee) tilt** | Market-neutral positioning | 1-yr Nasdaq looked great (2.34) but 9-yr FINRA (188 sym): gross 0.91, **net −0.42 after DTC borrow**, +3/6 yrs | ❌ **Rejected** — weak, regime-specific, net-negative after borrow; the 1-yr lead was a lucky window |
 
 ---
 
@@ -490,20 +490,20 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   anomaly posted Sharpe 2.93 gross, **2.34 after DTC-scaled borrow**, control mirror −2.98, PSR 0.99,
   DSR 0.98 (clean deflation), turnover 0.010/day. It looked like the only scout-#1 signal to clear the
   bar — and we flagged it 🟡, explicitly *power-limited to one regime, validate on FINRA before trusting.*
-- **The multi-regime test (FINRA, ~9 yr / 156 symbols / ~201 obs each) DEMOLISHES it.** FINRA's
+- **The multi-regime test (FINRA, ~9 yr / 188 symbols / ~201 obs each) DEMOLISHES it.** FINRA's
   `consolidatedShortInterest` (public, no auth; `scripts/download_short_interest_finra.py`) covers
   2017–2026, so the signal is active across all 6 calendar years of the daily window including the
   2022 bear:
 
   | variant | Sharpe (6-yr) | per-calendar-year |
   |---|---|---|
-  | anomaly, no borrow | 0.92 | weakly real, control −1.03 |
-  | anomaly + 3% flat borrow | 0.66 | not significant |
-  | **anomaly + DTC-scaled borrow (the crux)** | **−0.31** | 2021 −1.56, 2022 −1.72, 2023 +0.89, 2024 −1.57, 2025 +1.18, 2026 +0.86 |
+  | anomaly, no borrow | 0.91 | weakly real, control −1.03 |
+  | anomaly + 3% flat borrow | 0.63 | not significant |
+  | **anomaly + DTC-scaled borrow (the crux)** | **−0.42** | 2021 −1.09, 2022 −2.38, 2023 +1.14, 2024 −1.12, 2025 +0.87, 2026 +0.28 |
 
-  Three independent failures: (1) the **gross** signal is *weak* (0.92, not ~3) and **regime-specific
+  Three independent failures: (1) the **gross** signal is *weak* (0.91, not ~3) and **regime-specific
   — positive in only 3/6 years**, badly negative through 2021/2022/2024; (2) under the **realistic
-  DTC-scaled borrow** it goes **net-negative (−0.31, DSR 0.08)** — you must pay top borrow to short
+  DTC-scaled borrow** it goes **net-negative (−0.42, DSR 0.07)** — you must pay top borrow to short
   exactly the crowded high-DTC names, and that eats the thin gross signal (the *same* wall that sank
   surprise-PEAD, Case 14); (3) the gaudy 1-year Nasdaq number was a **lucky window** — Nasdaq's free
   feed only covered 2025–2026, the one good stretch (+1.18 / +0.86).
