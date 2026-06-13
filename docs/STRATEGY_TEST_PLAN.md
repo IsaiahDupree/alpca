@@ -22,7 +22,16 @@ Status: ⬜ pending · 🔄 in progress · ✅ done (kept) · ❌ done (rejected
 | 9 | **Gross profitability** (Novy-Marx) | EDGAR + fetch (Rev, COGS) | ❌ | main −0.31, regime-flipping (Case 34) |
 | 10 | **Sector-neutral value + financials-excl accruals** | EDGAR + SIC fetch | ⚠️/❌ | accruals +0.70 in-sample/6-of-6 but **fresh −0.51** (sector-rescue refuted); value unchanged (Case 35) |
 | 11 | **VIX term-structure overlay** | fetch ^VIX/^VIX3M | ⏸️ | deferred — data-gated + marginal a priori |
-| 12 | **Final combiner** of all surviving sleeves | — | 🔄 | pairs (0.83) + value (thin) |
+| 12 | **Final combiner** of all surviving sleeves | — | ✅ | pairs 0.83 + value 0.11, corr 0.02; inverse-vol blend **0.53 (DILUTES** — value too thin); deploy pairs alone |
+
+## Outcome
+**Plan complete (11 tested, 1 deferred).** Of the whole untested-factor backlog, **zero new deployable
+edges** — the classic factor zoo (Cases 26–34) is absent on our large-caps, BAB needs leverage, and the
+sector-rescue for accruals was refuted (Case 35). The one validated edge remains the **cointegrated-pairs
+basket, corrected upward to WF ~0.83** (top-10 + 5% ADF), −4% DD. Value composite generalizes but is too
+thin to add. Net: the deployable portfolio is the pairs basket alone; the search continues for a *second*
+genuinely-good uncorrelated leg (the binding constraint). The reusable factor engine + AI loop make the
+next candidate a quick, gated test.
 
 ## Reference points
 - The bar that rejects: 3 candidates (EAR-PEAD, SI-level, accruals) passed every in-universe test and

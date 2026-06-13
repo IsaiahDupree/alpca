@@ -1,6 +1,6 @@
 # Alpca — Findings Synthesis
 
-*The high-altitude "what we learned." For the per-experiment detail see `EDGE_CASE_STUDIES.md` (25
+*The high-altitude "what we learned." For the per-experiment detail see `EDGE_CASE_STUDIES.md` (35
 cases), the loop see `AI_RESEARCH_LOOP.md`, the platform see `SYSTEM_MAP.md`. This is the executive
 summary of the honest-evaluation program: the scoreboard, the hard-won lessons, and the direction.*
 
@@ -8,7 +8,7 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **25 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+Across **35 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
 fundamental, run both by hand and by an AI research loop — **exactly one edge has cleared the honest
 out-of-sample bar**: a cointegrated-pairs market-neutral basket. Re-measured and *corrected* this
 session, its honest walk-forward Sharpe is **~0.83** at the concentrated **top-10 + 5% ADF screen**
@@ -23,7 +23,7 @@ is a genuinely useful core; the lever for *more* is additional uncorrelated surv
 
 ---
 
-## The scoreboard (25 experiments, by outcome)
+## The scoreboard (35 experiments, by outcome)
 
 **✅ Validated (1):**
 - **Cointegrated-pairs basket** — market-neutral, walk-forward (re-screen each quarter, trade the
@@ -51,9 +51,21 @@ is a genuinely useful core; the lever for *more* is additional uncorrelated surv
 - **Betting-Against-Beta / low-vol** — unlevered dollar-neutral version is short-beta in a bull
   (−0.63 / −0.95); the risk-adjusted premium needs leverage we lack.
 
+**❌ Rejected — the factor zoo on large caps (Cases 26–35):**
+- Nine documented cross-sectional factors — asset growth, net issuance, ROA, MAX/lottery, idio-vol,
+  residual & vol-managed momentum, short-interest *change*, **gross profitability** — all rejected on
+  the 195-name large-cap 2021–26 universe (thin/absent; these premia live in small/mid-caps + longer
+  histories). Financials-excluded accruals improved in-sample (+0.70/6-of-6) but its fresh-symbol
+  holdout stayed −0.51 — the sector-rescue refuted by measurement.
+
 **❌ Rejected — infeasible on the venue / data (several):**
 - Market-making / HFT / microstructure (Alpaca ~1.2 s fills, no L2, no rebates), crypto (daily +
   hourly), news/alt-data (free APIs too thin), 52-week-high momentum (inverts on our universe).
+
+**Combiner of survivors:** pairs (0.83) + value (0.11) are uncorrelated (|corr| 0.02), but an
+inverse-vol blend *dilutes* to 0.53 — value is too thin to add and equal-risk weighting over-weights
+it. **The deployable portfolio is the pairs basket alone.** The binding constraint stays *edge
+supply* — a second genuinely-good uncorrelated leg.
 
 ---
 
@@ -82,7 +94,7 @@ is a genuinely useful core; the lever for *more* is additional uncorrelated surv
    crowded shorts you most want are exactly the ones that go special/no-locate) turned surprise-PEAD
    from a "DSR 0.92 candidate" into a reject. The optimistic friction model had waved it through.
 
-6. **Real edges are scarce, and that's the truth — not a tuning problem.** After 25 experiments, one
+6. **Real edges are scarce, and that's the truth — not a tuning problem.** After 35 experiments, one
    survivor. The constraint on profit is **edge supply**, and more search (now AI-accelerated)
    does not lower the bar — it just lets us reject faster.
 
