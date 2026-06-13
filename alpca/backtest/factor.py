@@ -166,6 +166,30 @@ def gross_profitability_signal(fund_by_sym):
     return _fundamental_step(fund_by_sym, v)
 
 
+def si_change_signal(si_by_sym, pub_lag: int = 10):
+    """Change in days-to-cover vs the prior FINRA settlement, lagged to the public dissemination date
+    (settlement + pub_lag trading days). NOT the SI *level* (rejected, Case 21) — the *change*."""
+    def fn(master, syms, price):
+        T, N = len(master), len(syms)
+        sig = np.full((T, N), np.nan)
+        for j, s in enumerate(syms):
+            obs = []
+            for r in (si_by_sym.get(s) or []):
+                ep = _epoch(r.get("settlement", ""), "%m/%d/%Y")
+                if ep is not None and r.get("days_to_cover") is not None:
+                    obs.append((int(ep), float(r["days_to_cover"])))
+            obs.sort()
+            for i in range(1, len(obs)):
+                settle_ep, dtc = obs[i]
+                change = dtc - obs[i - 1][1]
+                k0 = next((m for m, t in enumerate(master) if t >= settle_ep), None)
+                if k0 is None:
+                    continue
+                sig[min(k0 + pub_lag, T - 1):, j] = change
+        return sig
+    return fn
+
+
 def max_return_signal(window: int = 21):
     def fn(master, syms, price):
         T, N = price.shape

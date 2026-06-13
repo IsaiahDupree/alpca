@@ -18,9 +18,9 @@ Status: ⬜ pending · 🔄 in progress · ✅ done (kept) · ❌ done (rejected
 | 5 | **Idiosyncratic volatility** | daily bars + SPY | ❌ | −0.88 / fresh −0.08 (Case 30) |
 | 6 | **Residual momentum** | daily bars + SPY | ❌ | OOS +0.65 but fresh −0.15 (overfit, Case 31) |
 | 7 | **Vol-managed momentum** | daily bars | ❌ | OOS +0.77 but fresh −0.08 (overfit, Case 32) |
-| 8 | **Short-interest CHANGE** (ΔSI) | FINRA (cached) | 🔄 | next |
-| 9 | **Gross profitability** (Novy-Marx) | EDGAR + fetch (Rev, COGS) | ⬜ | — |
-| 10 | **Sector-neutral value + financials-excl accruals** | EDGAR + SIC fetch | ⬜ | — |
+| 8 | **Short-interest CHANGE** (ΔSI) | FINRA (cached) | ❌ | main −0.27, 2/6 yrs (Case 33) |
+| 9 | **Gross profitability** (Novy-Marx) | EDGAR + fetch (Rev, COGS) | ❌ | main −0.31, regime-flipping (Case 34) |
+| 10 | **Sector-neutral value + financials-excl accruals** | EDGAR + SIC fetch | 🔄 | next |
 | 11 | **VIX term-structure overlay** | fetch ^VIX/^VIX3M | ⬜ | data-gated, marginal |
 | 12 | **Final combiner** of all surviving sleeves | — | ⬜ | blended Sharpe + honest ROI |
 

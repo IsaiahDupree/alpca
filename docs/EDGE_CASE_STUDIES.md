@@ -48,6 +48,8 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 24 | **Value composite** (E/P+FCF/P+B/P, EDGAR) | Fundamental MN | Main ~0.14, **fresh-holdout +0.11..+0.54 (GENERALIZES)** but weak + regime-timed (2022 +1.85 / 2026 −1.58) | ⚠️ **Real but too thin** — 1st fundamental to pass the fresh test; fails on magnitude, not overfit |
 | 25 | **Betting-Against-Beta / low-vol** | Factor MN | Unlevered dollar-neutral: beta −0.63, vol −0.95 (only 2022 +); needs leverage to harvest | ❌ **Rejected** — risk-adjusted premium needs leverage we lack; raw version is short-beta in a bull |
 | 26–32 | **Factor zoo** (asset-growth, net-issuance, ROA, MAX, idio-vol, residual-mom, vol-managed-mom) | Cross-sectional | All −0.9..+0.1 main, fresh-holdouts ≤ 0; none clear the rail | ❌ **All rejected** — documented premia are thin/absent on large-caps; the two momentum variants overfit (fresh < 0) |
+| 33 | **Short-interest CHANGE** (ΔDTC, not level) | Positioning MN | main −0.27, only 2/6 yrs, fresh +0.68 inconsistent w/ negative main | ❌ **Rejected** — not regime-robust, dies to cost; the *change* is no better than the *level* (Case 21) |
+| 34 | **Gross profitability** (Novy-Marx, EDGAR Rev−COGS/Assets) | Fundamental MN | main −0.31, OOS −1.72, fresh −0.40, regime-flipping (2021 +2.08 → 2026 −2.51) | ❌ **Rejected** — the "most robust factor" is net-negative on our large-caps |
 
 ---
 
@@ -694,6 +696,13 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   don't survive the fresh-symbol bar. *Where they might live (not pursued here): a small/mid-cap
   universe — a different venue/data scope.* The reusable factor engine makes any future factor a
   one-liner to test at the same rigor.
+- **Meta-finding (Cases 26–34, nine documented factors).** Adding **short-interest change (33)** and
+  **gross profitability (34)** — *all nine* well-cited cross-sectional factors are rejected on the
+  195-name large-cap 2021–26 universe. This is itself a result: **the classic factor zoo is essentially
+  absent in liquid US large-caps over this window** (decayed post-2015; the premia concentrate in
+  small/mid-caps and longer histories we don't trade). The only cross-sectional things that have shown
+  *any* edge here are the cointegrated-pairs basket (real) and the value composite (generalizes but
+  thin). Factor investing, naively ported to our venue, does not work — and now we've *measured* it.
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 

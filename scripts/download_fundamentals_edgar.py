@@ -89,6 +89,9 @@ def extract_annual_fundamentals(facts: dict):
     capex = _annual_flow(gaap("PaymentsToAcquirePropertyPlantAndEquipment"))
     equity = _annual_stock(gaap("StockholdersEquity"))
     shares = _annual_stock(dei_u("EntityCommonStockSharesOutstanding", "shares"))
+    # gross-profitability tags (flows): revenue + cost of revenue (try the common tag variants)
+    rev = _annual_flow(gaap("Revenues")) or _annual_flow(gaap("RevenueFromContractWithCustomerExcludingAssessedTax"))
+    cogs = _annual_flow(gaap("CostOfRevenue")) or _annual_flow(gaap("CostOfGoodsAndServicesSold"))
     rows = []
     for e in sorted(set(ni) & set(cfo) & set(assets)):
         nival, nif = ni[e]; cfval, cff = cfo[e]; aval, af = assets[e]
@@ -100,7 +103,8 @@ def extract_annual_fundamentals(facts: dict):
                # value extras (None when the firm doesn't tag them)
                "capex": cap, "fcf": (cfval - cap) if cap is not None else cfval,
                "book_equity": equity.get(e, (None, None))[0],
-               "shares": _nearest(shares, e)}
+               "shares": _nearest(shares, e),
+               "revenue": rev.get(e, (None, None))[0], "cogs": cogs.get(e, (None, None))[0]}
         rows.append(row)
     return rows
 
