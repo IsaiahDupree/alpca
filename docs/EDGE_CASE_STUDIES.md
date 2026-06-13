@@ -47,6 +47,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 23 | **Accruals anomaly** (Sloan, EDGAR fundamentals) | Fundamental MN | In-universe great (+5/6 yrs, cost-free) but **fresh-16 holdout −0.47** (train +0.30) | 🟡→❌ **Fails out-of-universe** — same as EAR-PEAD; 3rd candidate killed by the fresh-symbol test |
 | 24 | **Value composite** (E/P+FCF/P+B/P, EDGAR) | Fundamental MN | Main ~0.14, **fresh-holdout +0.11..+0.54 (GENERALIZES)** but weak + regime-timed (2022 +1.85 / 2026 −1.58) | ⚠️ **Real but too thin** — 1st fundamental to pass the fresh test; fails on magnitude, not overfit |
 | 25 | **Betting-Against-Beta / low-vol** | Factor MN | Unlevered dollar-neutral: beta −0.63, vol −0.95 (only 2022 +); needs leverage to harvest | ❌ **Rejected** — risk-adjusted premium needs leverage we lack; raw version is short-beta in a bull |
+| 26–32 | **Factor zoo** (asset-growth, net-issuance, ROA, MAX, idio-vol, residual-mom, vol-managed-mom) | Cross-sectional | All −0.9..+0.1 main, fresh-holdouts ≤ 0; none clear the rail | ❌ **All rejected** — documented premia are thin/absent on large-caps; the two momentum variants overfit (fresh < 0) |
 
 ---
 
@@ -664,6 +665,35 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   risk-adjusted, and capturing it needs leverage we can't readily apply on the venue.
 - **Verdict.** ❌ **Rejected** — a beta/leverage artifact in disguise on this venue, not a tradeable
   market-neutral edge. (Confirmed across both the beta and vol signals.)
+
+## Cases 26–32 — The factor zoo on large caps ❌ (documented premia, thin/absent here)
+
+- **What.** Seven well-cited cross-sectional factors run through one generic engine
+  (`alpca/backtest/factor.py`) with the full bar (main + disjoint fresh universe + per-year + cost +
+  DSR + rail): **asset growth** (26), **net share issuance** (27), **ROA** (28), **MAX/lottery** (29),
+  **idiosyncratic vol** (30), **residual momentum** (31), **vol-managed momentum** (32). Fundamental
+  ones use the cached EDGAR multi-year data; price ones use the daily bars + SPY. Zero new data.
+- **Result — none clear the rail.**
+
+  | factor | main | OOS | fresh-holdout | +yrs | DSR |
+  |---|---|---|---|---|---|
+  | asset growth | −0.24 | −0.24 | −0.06 | 1/6 | 0.09 |
+  | net issuance | −0.50 | −1.11 | −0.47 | 1/6 | 0.03 |
+  | ROA | −0.23 | −1.49 | −0.18 | 3/6 | 0.09 |
+  | MAX / lottery | −0.83 | −1.61 | −0.12 | 1/6 | 0.00 |
+  | idio-vol | −0.88 | −1.47 | −0.08 | 2/6 | 0.00 |
+  | residual momentum | +0.05 | +0.65 | **−0.15** | 1/6 | 0.25 |
+  | vol-managed momentum | +0.11 | +0.77 | **−0.08** | 2/6 | 0.29 |
+- **Why.** These premia are documented in **broad universes (incl. small/mid-caps) over long
+  histories**, and most have **decayed in large caps post-2015**. Our universe is 195 liquid
+  large-caps over 2021–26 — exactly where they're weakest. The fundamental factors are weak/negative
+  even in-sample; the two momentum variants show a positive in-sample tail but a **negative
+  fresh-symbol holdout** (the overfit signature we now reflexively check).
+- **Verdict.** ❌ **All seven rejected on our universe.** Not a coding issue (the engine is unit-tested
+  and the synthetic-signal control profits); it's that large-cap factor premia are thin and these
+  don't survive the fresh-symbol bar. *Where they might live (not pursued here): a small/mid-cap
+  universe — a different venue/data scope.* The reusable factor engine makes any future factor a
+  one-liner to test at the same rigor.
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 
