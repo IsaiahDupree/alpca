@@ -174,9 +174,18 @@ data.
    **`gate()`** (GO only if rail-pass AND Haiku-GO). *Proven live:* on the real accruals result it
    returned NO-GO (rail veto + Haiku conf 0.98: "fresh-symbol holdout catastrophically negative…
    severe overfitting"). The model cannot talk its way past the data.
-4. ▶ **Next:** wrap the loop as a launchd research job (regime-classify → propose via OpenAI → code+test
-   through the harness → `gate()` → survivors to combiner+forward-track), and connect a candidate
-   generator so it runs unattended.
+4. ✅ **The loop is built and runs live** — `alpca/ai/regime.py` (detector), `alpca/ai/strategy_generator.py`
+   (SAFE generator: the model only *configures* known tested templates, never codes), and
+   `scripts/ai_research_loop.py` (detect regime → OpenAI proposes → harness runs it on MAIN + a DISJOINT
+   fresh universe → `gate()` → log + flag GO survivors). *Proven live:* 195+30-symbol universe, both
+   models live (Haiku OAuth + OpenAI), regime=bull, 4 OpenAI proposals, all rail-FAIL + Haiku NO-GO →
+   0 survivors (correct — the known-weak cross-sectional space rejects cleanly; the discipline holds with
+   AI driving). Both tiers' creds are live (Haiku via Claude Code OAuth keychain; OpenAI via a reused
+   `sk-svcacct` key in the gitignored `.env`).
+5. ▶ **Next:** (a) wrap `ai_research_loop.py` as a launchd job for unattended runs; (b) widen
+   `STRATEGY_SPACE` beyond cross-sectional templates (the fundamental/EDGAR families) so the loop has
+   richer, more-likely-to-generalize candidates to propose — the infra now applies the full bar to anything
+   added.
 
 **Near-term edge veins (human or AI-proposed) that fit the data + bar:** financials-excluded
 sector-neutral accruals (broad fresh universe), value composite (E/P, FCF/P via EDGAR), post-earnings
