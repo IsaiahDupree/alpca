@@ -44,7 +44,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 20 | **Gap reversion** (multi-day hold) | Market-neutral event | No gross edge (−0.14 @ 0bps); gap-momentum control *beats* it on large caps | ❌ **Signal failure** — large-cap gaps are informational, not reverting |
 | 21 | **Short-interest (borrow-fee) tilt** | Market-neutral positioning | 1-yr Nasdaq looked great (2.34) but 9-yr FINRA (188 sym): gross 0.91, **net −0.42 after DTC borrow**, +3/6 yrs | ❌ **Rejected** — weak, regime-specific, net-negative after borrow; the 1-yr lead was a lucky window |
 | 22 | **52-week-high momentum** (George-Hwang) | Cross-sectional | Anomaly INVERTS here: near-high −0.58, reversal +0.6 but carried by 2023 alone | ❌ **Rejected** — famous anomaly doesn't replicate on our universe; reversal regime-concentrated |
-| 23 | **Accruals anomaly** (Sloan, EDGAR fundamentals) | Fundamental MN | Decile Sharpe ~0.44, **+5/6 yrs**, cost-free, sign-confirmed; subset-resample 76%+ (median 0.23) | 🟡 **Strongest fundamental lead** — clears cost/regime traps; truly-fresh-symbol holdout still pending |
+| 23 | **Accruals anomaly** (Sloan, EDGAR fundamentals) | Fundamental MN | In-universe great (+5/6 yrs, cost-free) but **fresh-16 holdout −0.47** (train +0.30) | 🟡→❌ **Fails out-of-universe** — same as EAR-PEAD; 3rd candidate killed by the fresh-symbol test |
 
 ---
 
@@ -575,7 +575,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   re-examined later with a fresh-symbol + out-of-2023 holdout, but regime-concentration makes it a
   low-priority maybe, not an edge.)
 
-## Case 23 — Accruals anomaly (Sloan), on SEC EDGAR fundamentals 🟡 (strongest fundamental lead)
+## Case 23 — Accruals anomaly (Sloan), on SEC EDGAR fundamentals 🟡→❌ (fails the fresh-symbol holdout)
 
 - **Hypothesis.** The first FUNDAMENTAL edge we've tested — orthogonal to all our price/positioning
   work, so a real one would *diversify* the combiner. Earnings made of accruals (vs cash) are
@@ -595,13 +595,23 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   Sharpe +0.23)** — *weaker* than EAR-PEAD's 91% was, and EAR-PEAD then **failed** its truly-fresh
   holdout. These halves/subsets are all drawn from the same 164 symbols, i.e. the *same evidence
   class* that misled us before. So we explicitly do **not** call this validated.
-- **Verdict.** 🟡 **The strongest fundamental lead of the project — regime-robust, cost-free,
-  sign-confirmed, and diversifying — but modest (Sharpe ~0.4, median subset ~0.23, DSR 0.75) and not
-  yet proven on truly-fresh symbols.** It clears the cost-wall and regime-concentration traps that
-  rejected 17/19/20/21/22; it has **not** yet cleared the out-of-universe holdout that rejected
-  EAR-PEAD (18). **Decisive next test:** fetch daily bars + EDGAR fundamentals for a set of symbols
-  *outside* the current 164 and re-run frozen params; only then does it count. Having been fooled by
-  subset evidence once, we hold it as a lead — not a second edge — until that test passes.
+- **⛔ THE TRULY-FRESH-SYMBOL HOLDOUT FAILS.** Fetched bars + EDGAR fundamentals for **16 genuinely
+  disjoint** large/mid-caps (ABNB, ADP, AIG, AON, CAG, CLX, DAL, EL, HLT, HSY, KDP, PYPL, ROP, STZ,
+  UBER, WM) and ran the **frozen** rule. Result: **TRAIN-164 +0.30 vs FRESH-16 −0.47 (tf 0.25) /
+  −0.28 (tf 0.33)** — negative in 4/6 years (2021 −1.6, 2022 −0.7, 2024 −0.5, 2025 −0.4). Consistent
+  across quantiles. The accrual edge **does not generalize to unseen symbols** — exactly EAR-PEAD's
+  failure mode (Case 18).
+- **Verdict.** 🟡→❌ **DOWNGRADED — fails out-of-universe, same as EAR-PEAD.** The regime-robust,
+  cost-free, sign-confirmed *in-universe* profile (the best of any candidate) was, once again, **not
+  sufficient** — only the fresh-symbol holdout adjudicated, and it came back negative. This is the
+  **third** candidate (after EAR-PEAD-18 and SI-tilt-21) where in-sample/in-universe evidence —
+  even regime stability, DSR, and subset resampling — passed on an edge that then died out-of-sample.
+  *Legitimate (not post-hoc) caveat:* the academic accruals literature conventionally **excludes
+  financials/insurers** (AIG/AON/MMC and banks have non-standard accruals), and the fresh-16 skews to
+  insurers + recent IPOs (ABNB/UBER/PYPL) where the ratio is ill-defined; a financials-excluded,
+  sector-neutral accrual on a *broad* fresh set is a legitimate future refinement — but we do **not**
+  claim it as a rescue (EAR-PEAD's sector-rescue was refuted, Case 18). Held as ❌ until a clean
+  broad-universe fresh test says otherwise.
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 
