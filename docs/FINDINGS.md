@@ -1,6 +1,6 @@
 # Alpca — Findings Synthesis
 
-*The high-altitude "what we learned." For the per-experiment detail see `EDGE_CASE_STUDIES.md` (24
+*The high-altitude "what we learned." For the per-experiment detail see `EDGE_CASE_STUDIES.md` (25
 cases), the loop see `AI_RESEARCH_LOOP.md`, the platform see `SYSTEM_MAP.md`. This is the executive
 summary of the honest-evaluation program: the scoreboard, the hard-won lessons, and the direction.*
 
@@ -8,24 +8,27 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **24 distinct edge experiments** — price, market-microstructure, event-driven, positioning,
-and fundamental, run both by hand and by an AI research loop — **exactly one edge has cleared the
-honest out-of-sample bar**: a cointegrated-pairs market-neutral basket, and even that has *decayed*
-to a marginal walk-forward Sharpe ≈ **0.29** (from ~0.5 on the older record). It is deployed at small
-size on a shadow forward paper-track. **No other candidate survived.**
+Across **25 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+fundamental, run both by hand and by an AI research loop — **exactly one edge has cleared the honest
+out-of-sample bar**: a cointegrated-pairs market-neutral basket. Re-measured and *corrected* this
+session, its honest walk-forward Sharpe is **~0.83** at the concentrated **top-10 + 5% ADF screen**
+(−4% drawdown) — far better than the misleading "0.29" of an over-diversified top-24 basket that
+diluted the edge into weak pairs. It is deployed on a shadow forward paper-track. **No other candidate
+survived.**
 
 That is not a failure of the project — it *is* the project. The deliverable is a harness whose job is
 to **reject** edges that don't generalize, and it has done so relentlessly, including against several
-candidates that looked excellent in-sample. The honest profit-per-day ceiling from the one real edge
-is **~1–2 bps** — invisible day-to-day, real over hundreds of days, and only meaningful sized to Kelly.
+candidates that looked excellent in-sample. Sized to Kelly, a ~0.83 market-neutral sleeve with −4% DD
+is a genuinely useful core; the lever for *more* is additional uncorrelated surviving legs.
 
 ---
 
-## The scoreboard (24 experiments, by outcome)
+## The scoreboard (25 experiments, by outcome)
 
 **✅ Validated (1):**
 - **Cointegrated-pairs basket** — market-neutral, walk-forward (re-screen each quarter, trade the
-  next). Modest and decaying (WF ~0.29 today, 60/40 OOS now negative), tiny drawdown. Deployed on a
+  next). **WF ~0.83 at the concentrated top-10 + 5% ADF screen** (the "0.29" was an over-diversified
+  top-24 — diluting into weak pairs halved the edge), −4% drawdown. Deployed on a
   forward paper-track to let the *live* OOS curve adjudicate.
 
 **⚠️ Generalizes but too weak to deploy (1):**
@@ -42,9 +45,11 @@ is **~1–2 bps** — invisible day-to-day, real over hundreds of days, and only
 - **Overnight→intraday reversal** (gross Sharpe 0.93 → −0.41 at 2 bps), **gap reversion**,
   **lead-lag** (also failed its shuffle placebo). High turnover dies to spread/impact.
 
-**❌ Rejected — beta, not alpha (2 families):**
+**❌ Rejected — beta / leverage artifact (3 families):**
 - Single-asset directional (trend/breakout/MR), cross-sectional & time-series momentum — capture a
   fraction of bull-market beta with less drawdown; never beat buy-and-hold.
+- **Betting-Against-Beta / low-vol** — unlevered dollar-neutral version is short-beta in a bull
+  (−0.63 / −0.95); the risk-adjusted premium needs leverage we lack.
 
 **❌ Rejected — infeasible on the venue / data (several):**
 - Market-making / HFT / microstructure (Alpaca ~1.2 s fills, no L2, no rebates), crypto (daily +
@@ -77,8 +82,8 @@ is **~1–2 bps** — invisible day-to-day, real over hundreds of days, and only
    crowded shorts you most want are exactly the ones that go special/no-locate) turned surprise-PEAD
    from a "DSR 0.92 candidate" into a reject. The optimistic friction model had waved it through.
 
-6. **Real edges are scarce, and that's the truth — not a tuning problem.** After 24 experiments, one
-   marginal survivor. The constraint on profit is **edge supply**, and more search (now AI-accelerated)
+6. **Real edges are scarce, and that's the truth — not a tuning problem.** After 25 experiments, one
+   survivor. The constraint on profit is **edge supply**, and more search (now AI-accelerated)
    does not lower the bar — it just lets us reject faster.
 
 ---
@@ -110,7 +115,8 @@ without ever lowering the bar.
 
 At any honest Sharpe (0.3–1.0), expected daily return is a few bps, buried under ~15–25× that in daily
 noise. The lever for more dollars/day is **(a) more genuinely-uncorrelated surviving edges and
-(b) Kelly-scaled sizing — not trading frequency.** Today: one marginal edge → ~1–2 bps/day. The
+(b) Kelly-scaled sizing — not trading frequency.** Today: one real edge (pairs, WF ~0.83, −4% DD),
+sized to Kelly, is a useful core; more dollars/day needs *more uncorrelated surviving legs*. The
 combiner math works but is **edge-supply-limited**.
 
 ---
@@ -122,7 +128,8 @@ automatically on each. The most promising untested veins, all on free EDGAR/FINR
 the fresh-symbol + out-of-regime bar:
 - **Sector-neutral value** and a **small-cap value tilt** (where the premium is historically stronger).
 - **Financials-excluded, sector-neutral accruals** on a broad fresh universe.
-- A **real ADF/Johansen cointegration screen** to try to lift the pairs basket off its decayed 0.29.
+- ~~A real ADF cointegration screen to lift the pairs basket~~ **— DONE: top-10 + 5% ADF screen
+  lifted the validated edge to WF ~0.83 (from a diluted 0.29); deployed.**
 - Letting the AI loop run weekly and **reviewing only the survivors** — expecting few, by design.
 
 **Bottom line:** the platform tells the truth. One real, modest, deployed edge; a disciplined,

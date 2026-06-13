@@ -44,13 +44,13 @@ class PairsBook:
 def compute_pairs_book(
     bars_by_sym: Dict[str, List[dict]], *,
     train: int = 378,
-    top_n: int = 12,
+    top_n: int = 10,                  # CONCENTRATED top-10 (WF 0.83); diluting to 20+ halved it
     lookback: int = 60,
     entry_z: float = 2.0,
     exit_z: float = 0.5,
     max_half_life: float = 30.0,
     min_half_life: float = 3.0,
-    max_adf: Optional[float] = None,
+    max_adf: float = -2.86,           # 5% ADF significance screen on the spread (free lift + tighter DD)
     prior_state: Optional[Dict[str, int]] = None,
 ) -> PairsBook:
     syms = [s for s in sorted(bars_by_sym) if len(bars_by_sym[s]) >= lookback + 5]

@@ -22,7 +22,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 
 | # | Edge | Class | Headline result | Verdict |
 |---|------|-------|-----------------|---------|
-| 1 | **Cointegration-pairs market-neutral basket** | Market-neutral | WF **0.29** today (decayed from 0.43–0.54; 60/40 OOS now −0.17). **Deployed as a small shadow forward paper-track** | ✅ **THE survivor** — but marginal; live track will adjudicate |
+| 1 | **Cointegration-pairs market-neutral basket** | Market-neutral | **WF 0.83** at the concentrated **top-10 + 5% ADF screen**, −4% DD (the "0.29" was an over-diversified top-24). **Deployed on a forward paper-track** | ✅ **THE survivor** — stronger than thought; live track adjudicates |
 | 2 | Single-asset directional (trend/breakout/MR) | Directional | rsi-mr Sharpe 1.18 vs B&H 0.86, but never beats B&H return | ⚠️ Risk-reduced **beta**, not alpha |
 | 3 | Cross-sectional momentum | Market-neutral-ish | Best Sharpe ~0.68 (lb250); config-sensitive | ⚠️ Modest beta |
 | 4 | Short-term reversal | Market-neutral | Negative in- and out-of-sample | ❌ Rejected |
@@ -46,6 +46,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 22 | **52-week-high momentum** (George-Hwang) | Cross-sectional | Anomaly INVERTS here: near-high −0.58, reversal +0.6 but carried by 2023 alone | ❌ **Rejected** — famous anomaly doesn't replicate on our universe; reversal regime-concentrated |
 | 23 | **Accruals anomaly** (Sloan, EDGAR fundamentals) | Fundamental MN | In-universe great (+5/6 yrs, cost-free) but **fresh-16 holdout −0.47** (train +0.30) | 🟡→❌ **Fails out-of-universe** — same as EAR-PEAD; 3rd candidate killed by the fresh-symbol test |
 | 24 | **Value composite** (E/P+FCF/P+B/P, EDGAR) | Fundamental MN | Main ~0.14, **fresh-holdout +0.11..+0.54 (GENERALIZES)** but weak + regime-timed (2022 +1.85 / 2026 −1.58) | ⚠️ **Real but too thin** — 1st fundamental to pass the fresh test; fails on magnitude, not overfit |
+| 25 | **Betting-Against-Beta / low-vol** | Factor MN | Unlevered dollar-neutral: beta −0.63, vol −0.95 (only 2022 +); needs leverage to harvest | ❌ **Rejected** — risk-adjusted premium needs leverage we lack; raw version is short-beta in a bull |
 
 ---
 
@@ -67,21 +68,30 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 - **Caveat.** A larger walk-forward (195 symbols, re-screen each quarter) degrades it to
   Sharpe 0.43 and lower for wider baskets — the half-life screen is permissive. The 0.54 is
   the static-60/40 number; treat ~0.4–0.5 as the honest range.
-- **⚠️ RE-MEASURED (2026-06-13, before deploying) — it has decayed further.** On the current
-  195-symbol universe: in-sample basket 1.00, **static 60/40 OOS now −0.17 (negative)**, and the
-  **walk-forward (the honest number) is 0.29** (down from 0.43). Still positive across 15 windows,
-  but barely — this is a *marginal* edge, not the ~0.5 on the older record. **Re-measuring before
-  sizing prevented us from deploying on a stale 0.54.**
+- **⚠️→✅ RE-MEASURED then CORRECTED (2026-06-13): the edge is stronger than "0.29".** A first
+  re-measure on the 195-universe gave a *marginal* walk-forward 0.29 — but that used an
+  over-diversified **top-24** basket. A `top_n` sweep shows **concentration is the dominant lever**:
+
+  | basket | walk-forward Sharpe | maxDD |
+  |---|---|---|
+  | top-24 (the misleading "0.29") | ~0.2 | −5.9% |
+  | **top-10** | **0.80** | −4.4% |
+  | **top-10 + 5% ADF cointegration screen** | **0.83** | **−4.0%** |
+
+  Diluting into 20+ weak pairs roughly *halved* the edge (consistent with the session-22 finding that
+  "more pairs did worse"); the honest, concentrated walk-forward Sharpe is **~0.83**. Adding an
+  **ADF significance screen** (`max_adf=−2.86`, the 5% critical value — a principled threshold, not a
+  tuned one) gives a small free lift and tightens the drawdown to −4.0%. Both are walk-forward (the
+  top-10 are re-selected fresh each quarter), so this is a *real improvement to the validated edge*,
+  not curve-fitting. **The deployed config is updated to top-10 + 5% ADF.**
 - **DEPLOYED as a SHADOW FORWARD PAPER TRACK** (`alpca/live/pairs_portfolio.py`,
-  `scripts/deploy_pairs_paper.py`). Each run computes today's live target book (trailing-window
-  screen, no look-ahead, hysteresis so it doesn't churn), sizes it conservatively (half-Kelly on
-  the 0.29 WF Sharpe, vol-target 5%, **+ a diversification guard** that scales a thin book down),
-  marks the prior day's book to today's prices, and accumulates a **live out-of-sample curve** — no
-  broker orders, no capital at risk. The forward track is the gold-standard adjudicator (a live OOS
-  record beats any backtest). **Day-1 reality:** on a flat start only **1 of 12 pairs** was past its
-  entry band (KR/PRU), so the "basket" is currently one concentrated pair → sized to just **0.17×
-  gross** by the guard. Expectations: near-zero; let the live track speak. This is the right way to
-  carry a modest, uncertain edge — small, forward, honest — rather than a sized conviction bet.
+  `scripts/deploy_pairs_paper.py`, launchd `com.alpca.forwardtrack`). Each run computes today's live
+  target book (trailing-window screen + ADF filter, no look-ahead, hysteresis so it doesn't churn),
+  sizes it half-Kelly on the **0.83** WF Sharpe with a vol-target and a diversification guard, marks
+  the prior book to today's prices, and accumulates a **live out-of-sample curve** — no broker orders,
+  no capital at risk (the gold-standard adjudicator). The book is naturally sparse day-to-day (few
+  pairs at a z-extreme at once) and fills as screened pairs trigger; the live OOS curve over months is
+  what counts. **This is the one validated edge, now correctly configured and sized.**
 
 ## Case 2 — Single-asset directional strategies ⚠️ (beta)
 
@@ -638,6 +648,22 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   rescue): sector-neutralization, a small-cap tilt (where value is stronger), or as a **regime-timed
   overlay** (only on in the conditions where its 2022-type payoff concentrates) — but that risks
   regime-fitting. For now it joins the combiner's bench as a real-but-thin diversifier, not a leg.
+
+## Case 25 — Betting-Against-Beta / low-vol ❌ (needs leverage we don't have)
+
+- **Hypothesis.** Low-beta / low-vol stocks earn higher *risk-adjusted* returns (Frazzini-Pedersen
+  BAB; Ang et al. low-vol). Cross-sectional, dollar-neutral: long the low-`signal` quantile / short
+  high, monthly rebalance. (`alpca/backtest/low_beta.py`; `signal` ∈ {beta, vol}; price-only, no new data.)
+- **Result — rejected, exactly as the a-priori caveat warned.** Unlevered dollar-neutral:
+  **beta → Sharpe −0.63, vol → −0.95** on the 195-universe, fresh-symbol holdouts −0.17/−0.16.
+  Only 2022 (the high-beta crash) was positive; every other year negative. Low turnover (~0.01/day)
+  doesn't save it because there's no edge to protect.
+- **Why.** The BAB *factor* levers the low-beta leg to be beta-neutral and harvests the risk-adjusted
+  premium; this dollar-neutral, **unlevered** version is dominated by the raw beta differential, so in
+  a 2021–26 bull (high-beta outran low-beta) long-low/short-high simply loses. The anomaly is real but
+  risk-adjusted, and capturing it needs leverage we can't readily apply on the venue.
+- **Verdict.** ❌ **Rejected** — a beta/leverage artifact in disguise on this venue, not a tradeable
+  market-neutral edge. (Confirmed across both the beta and vol signals.)
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 

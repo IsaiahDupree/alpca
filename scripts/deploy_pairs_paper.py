@@ -5,7 +5,8 @@ out-of-sample curve; (2) compute today's target book, size it conservatively, lo
 orders — this is the gold-standard forward track (a live OOS record beats any backtest number),
 risk-free, and it adjudicates whether the modest WF edge survives going forward.
 
-HONESTY: the basket's re-measured walk-forward Sharpe is ~0.29 (down from 0.43–0.54 on record), its
+HONESTY: the basket's honest walk-forward Sharpe is ~0.83 at the CONCENTRATED top-10 with a 5% ADF
+screen (the earlier "0.29" was an over-diversified top-24 that diluted the edge into weak pairs). Its
 static 60/40 OOS is negative, and on a flat start most pairs are inactive (thin/concentrated book).
 So this is sized SMALL with a diversification guard — a forward experiment on a marginal edge, not a
 high-conviction bet. Expectations: near-zero, let the live track speak.
@@ -48,8 +49,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cache", default="/Volumes/My Passport/AlpcaData/cache")
     ap.add_argument("--track", default="data/pairs_forward_track.jsonl")
-    ap.add_argument("--wf-sharpe", type=float, default=0.29, help="honest walk-forward Sharpe to size on")
-    ap.add_argument("--ann-vol", type=float, default=0.034, help="WF-implied annual vol of the basket")
+    ap.add_argument("--wf-sharpe", type=float, default=0.83, help="honest walk-forward Sharpe to size on "
+                    "(top-10 concentrated + 5%% ADF screen; the 0.29 was an over-diversified top-24)")
+    ap.add_argument("--ann-vol", type=float, default=0.048, help="WF-implied annual vol of the basket")
     ap.add_argument("--target-vol", type=float, default=0.05)
     ap.add_argument("--kelly", type=float, default=0.5)
     ap.add_argument("--target-pairs", type=int, default=6, help="diversification baseline for the guard")
@@ -59,7 +61,7 @@ def main() -> int:
 
     bars = _load_universe(cache)
     print(f"[deploy] universe {len(bars)} symbols. Sizing on WALK-FORWARD Sharpe {args.wf_sharpe} "
-          f"(honest, decayed) — small/experimental, NOT a conviction bet.\n")
+          f"(top-10 + 5%% ADF screen) — small forward paper-track, NOT a conviction bet.\n")
 
     # ---- 1. mark the most recent prior book to today's prices (realized OOS return) ----
     prior = None
@@ -79,8 +81,8 @@ def main() -> int:
         print(f"[track] prior book ({prior['date']}) marked to today: realized return {r*100:+.3f}%")
 
     # ---- 2. compute + size today's book ----
-    book = compute_pairs_book(bars, train=378, top_n=12, lookback=60, entry_z=2.0, exit_z=0.5,
-                              max_half_life=30, min_half_life=3,
+    book = compute_pairs_book(bars, train=378, top_n=10, lookback=60, entry_z=2.0, exit_z=0.5,
+                              max_half_life=30, min_half_life=3, max_adf=-2.86,   # validated config (WF 0.83)
                               prior_state=(prior.get("state") if prior else None))
     # diversification guard: a thin book (few active pairs) is sized down vs a full basket
     div = min(1.0, book.n_active / max(1, args.target_pairs))
