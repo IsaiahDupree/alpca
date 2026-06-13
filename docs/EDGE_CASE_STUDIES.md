@@ -37,9 +37,9 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 13 | News / sentiment alt-data | Alt-data | Free API exposes ~50 articles / ~8 days | ❌ Not backtestable here |
 | 14 | **PEAD** (post-earnings drift, L/S) | Market-neutral event | Flat-borrow DSR 0.92, but **DSR 0.58 under adverse-selection borrow**; short leg −0.47 standalone | 🟡 **Downgraded** — long leg is beta, short leg fails realistic shorting frictions (24/195 symbols; revisit at full breadth) |
 | 15 | Seasonality (turn-of-month, pre-FOMC) | Event-clock overlay | Standalone Sharpe 0.24–0.34, exposure 3–34% | ⚠️ Weak alone; ✅ uncorrelated leg |
-| 16 | **Portfolio combination** (inverse-vol blend) | Allocation | 6 legs avg \|corr\| 0.04; **EAR-PEAD leg lifted combined 0.83 → 0.99** | ⚙️ Method works; edge-supply bottleneck easing |
+| 16 | **Portfolio combination** (inverse-vol blend) | Allocation | EAR-PEAD lift (0.83→0.99) **RETRACTED** — that leg failed its holdout; back to ~0.83 on one real leg | ⚙️ Method works; still edge-supply-limited |
 | 17 | **Overnight→intraday reversal** | Market-neutral event | Gross Sharpe 0.93 / DSR 0.90 (control-confirmed) → **−0.41 at 2bps** (~2×/day turnover) | 🔴 **REAL anomaly, untradeable** — canonical cost-wall case |
-| 18 | **EAR-PEAD, index-beta-hedged** | Market-neutral event | Hedged Sharpe **0.67, IS 0.70 ≈ OOS 0.66**, −12% DD, DSR 0.89; cheap SPY short (not single-name) | 🟢 **Strongest earnings result** — tradeable short side; rescues Case 14 |
+| 18 | **EAR-PEAD, index-beta-hedged** | Market-neutral event | TRAIN 40 → +0.68, but **fresh-symbol HOLDOUT (19 disjoint) → −0.52**; passed in-universe audits, failed out-of-universe | 🟡→❌ **Does not generalize** — edge was specific to the fitted universe |
 | 19 | **Lead-lag cross-predictability** | Market-neutral (learned) | Walk-forward real −1.02 ≈ shuffle placebo −1.14 (+0.11); gross only 0.27, dies by 1bp | ❌ **Fitted noise** — fails placebo *and* cost wall |
 | 20 | **Gap reversion** (multi-day hold) | Market-neutral event | No gross edge (−0.14 @ 0bps); gap-momentum control *beats* it on large caps | ❌ **Signal failure** — large-cap gaps are informational, not reverting |
 | 21 | **Short-interest (borrow-fee) tilt** | Market-neutral positioning | 1-yr Nasdaq looked great (2.34) but 9-yr FINRA (188 sym): gross 0.91, **net −0.42 after DTC borrow**, +3/6 yrs | ❌ **Rejected** — weak, regime-specific, net-negative after borrow; the 1-yr lead was a lucky window |
@@ -273,24 +273,27 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   in Case 18)**, rsi-mr (beta), cross-sectional (MN), turn-of-month, pre-FOMC.
 - **Result.** The legs are genuinely uncorrelated (avg |off-diagonal corr| **0.04**), and the
   inverse-vol blend beats the equal-weight null (0.99 vs 0.97).
-- **➡️ The edge-supply bottleneck, eased (the EAR-PEAD update).** The original 5-leg blend was
-  edge-starved — one good leg (pairs) plus weak diversifiers, combined Sharpe **0.83**, *below*
-  the best single leg. Adding the **EAR-PEAD beta-hedged leg (Case 18)** — the first genuinely
-  *new* uncorrelated edge (corr **0.04**) with a real standalone Sharpe — lifted the combined
-  inverse-vol Sharpe **0.83 → 0.99 (+0.16)**, measured cleanly with/without the leg. This is the
-  combiner doing exactly what the math promises *once you actually feed it a second real edge* —
-  the first time a new leg moved the combined number rather than diluting it. (The combined still
+- **➡️ The EAR-PEAD lift (+0.16) is RETRACTED — the leg didn't generalize.** We had reported that
+  adding the EAR-PEAD beta-hedged leg lifted the combined inverse-vol Sharpe **0.83 → 0.99 (+0.16)**,
+  hailing it as the combiner finally doing what the math promises once fed a second real edge. But
+  EAR-PEAD subsequently **failed its fresh-symbol holdout (−0.52, Case 18)** — its in-sample Sharpe
+  was specific to the fitted universe — so that +0.16 was a lift from a **non-generalizing leg** and
+  must be discounted. Honest status: the combiner still works *mechanically* (uncorrelated legs, beats
+  the null), but the edge-supply bottleneck is **NOT** eased — we are back to one validated leg (pairs)
+  plus weak diversifiers, combined ≈ **0.83**. The lesson compounds: a leg must pass an out-of-universe
+  holdout *before* its combiner contribution counts. (The combined still
   trails the rsi-mr *beta* leg's raw 1.18, but that leg is pure market exposure; the blend is
   near-market-neutral with a far better drawdown profile — a different, more durable risk object.)
 - **Honest ROI translation.** At the achieved combined Sharpe (~0.99) and a 6% vol target:
   ~6% / year ≈ **~2.3 bps/day expected, under ~36 bps/day of noise (noise ≈ 16× the edge).**
   The edge is *invisible* day-to-day. **"X% per day" targets are noise-mining** — the right
   scoreboard is combined OOS Sharpe (deflated for trial count via DSR) and max drawdown.
-- **Verdict.** ⚙️ **The method is real and is the single biggest lever** — and the bottleneck
-  (edge supply) is now *easing*: EAR-PEAD became the second real uncorrelated leg and lifted the
-  blend +0.16. The path to higher combined Sharpe (and thus higher honest profit-per-day) is
-  **more legs like it** — the scout's statarb borrow-fee/order-flow signals and the lead-lag
-  family are the next veins to mine — not faster trading of any single one.
+- **Verdict.** ⚙️ **The method is real and is the single biggest lever — but it remains
+  edge-supply-starved.** EAR-PEAD briefly looked like the second leg (+0.16) but **failed its
+  fresh-symbol holdout (Case 18)**, so the lift is retracted and we are back to one validated leg
+  (pairs) plus weak diversifiers. The path to higher combined Sharpe is still **more genuinely
+  uncorrelated legs** — but each must clear an *out-of-universe* holdout before its contribution
+  counts; this session supplied none. Not faster trading of any single one.
 
 ## Case 17 — Overnight→intraday cross-sectional reversal 🔴 (REAL anomaly, untradeable here)
 
@@ -331,7 +334,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   the single open→close window), or trade it on a venue with maker rebates and sub-cent spreads
   (not Alpaca). Neither is available to us.
 
-## Case 18 — EAR-PEAD, beta-hedged with a cheap index short 🟢 (strongest earnings result)
+## Case 18 — EAR-PEAD, beta-hedged with a cheap index short 🟡→❌ (failed the fresh-symbol holdout)
 
 - **The idea (rescuing Case 14).** Surprise-PEAD was downgraded because its short leg (a) had no
   edge and (b) died to adverse-selection borrow. EAR-PEAD changes two things: (1) the signal is
@@ -385,24 +388,35 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
     artifact of under-counting trials.
   Honest residual caveats: still only 40 symbols and one 5-yr span (per-year is sub-period
   stability, not a truly independent holdout); 2022/2024 are thin-positive.
-- **SYMBOL-GENERALIZATION TEST (`scripts/test_ear_pead_holdout.py`) — mixed, reported in full.**
-  The true fresh-symbol holdout was blocked by an exhausted AV quota (the 23 disjoint names all
-  returned empty), so we ran the subset version on the 40 with fixed params:
-  - **Random-subset resampling** (200 draws of 20 symbols): **91% positive**, median Sharpe **0.35**
-    (p10 0.02 / p90 0.69). A *random* slice usually works → the edge is **not carried by a few
-    cherry-picked names** (the main symbol-overfit failure mode is ruled out).
-  - **But one disjoint split-half was negative** (half A 0.90, half B −0.14), and the typical subset
-    Sharpe (**0.35**) is **well below the full-40 aggregate (~0.6)**. So the headline number
-    **benefits from breadth/aggregation**, the effect is **dispersed**, and a single unlucky 20-name
-    slice can go negative. Real and broad, but more modest than the aggregate implies.
-  - The **true fresh-symbol holdout runs automatically** once `earnings_av_holdout` fills (AV quota
-    resets / the nightly job adds disjoint names) — the one cleaner test still pending.
-- **Verdict.** 🟢 **A real, tradeable, market-neutral earnings alpha — the rescue of PEAD, and the
-  one surviving sleeve that has passed a dedicated overfit audit + symbol-generalization test.** At
-  fixed a-priori params with a no-lookahead trailing hedge it holds ~0.68 on the full 40 with 6/6
-  positive years; the honest caveat from the subset test is that a *typical* slice is ~0.35, so the
-  edge is **real and broad but breadth-dependent and modest**, not a strong uniform signal. **Next:**
-  the clean fresh-symbol holdout (pending AV quota) + confirm at full breadth (195) before sizing up.
+- **Subset resampling (within the 40) looked fine — and gave false comfort.** 200 random 20-symbol
+  draws were 91% positive (median 0.35); we read that as "not carried by a few names." But every
+  subset shares names with the 40 — it tests *sub-sampling*, not *generalization to new names*.
+- **⛔ THE TRUE FRESH-SYMBOL HOLDOUT FAILS (`scripts/test_ear_pead_holdout.py`, Mode A).** With the
+  AV quota reset we fetched **19 disjoint large-caps the strategy had never seen** (BKNG, BLK, C,
+  COF, CME, CI, BMY, BSX, COST, CSCO… — finance/health/consumer-heavy) and ran the **frozen a-priori
+  params** on them. Result:
+
+  | set | symbols | Sharpe |
+  |---|---|---|
+  | TRAIN (original 40) | 40 | +0.68 |
+  | **HOLDOUT (19 fresh, disjoint)** | 19 | **−0.52** |
+  | pooled | 59 | +0.37 |
+
+  On the fresh names the **long leg has no drift at all** (long-only Sharpe **+0.07** ≈ zero), the
+  hedged sleeve is **negative across every threshold** (−0.09 @1.0 → −0.52 @2.0 → −0.93 @3.0), and it
+  is positive in only 2/6 years (2021/2022) then negative 2023–26. **The earnings-drift signal is
+  simply absent out-of-universe.** Advocate's caveat (kept honest): the holdout skews to heavily-
+  arbitraged mega-cap financials, where PEAD drift is documented to be weaker — so the kindest read is
+  the edge is *narrow and universe-dependent*, not a broad market-neutral sleeve. Either way it does
+  **not survive a fair disjoint test.**
+- **Verdict.** 🟡→❌ **DOWNGRADED — does not generalize to fresh symbols.** The audit it *did* pass
+  (regime stability, trailing hedge, DSR) and the 91%-positive subsampling were all **inside the
+  original 40**; the one test that left the universe — the gold-standard fresh-symbol holdout — comes
+  back **−0.52**. So EAR-PEAD is **not the validated, universe-wide second leg** it appeared to be; its
+  apparent edge was substantially specific to the fitted (tech-heavy mega-cap) universe. The combiner
+  lift it provided (Case 16, +0.16) is therefore **suspect and must be re-derived on a generalizing
+  leg.** This is the cleanest overfit catch in the document — the session's star edge failed the one
+  test we had not been able to run, *before* any capital was risked.
 
 ## Case 19 — Lead-lag cross-predictability (price-only, walk-forward) ❌ (fitted noise)
 
@@ -542,19 +556,19 @@ each having actually killed or saved a candidate:
 7. **Honest trial counting** — deflate DSR by the project's *true* search breadth (hundreds of
    configs, not the ~37 of one sweep); an edge that only clears at low trial counts isn't one.
 
-**Honest scorecard (as of Case 21 + the overfit work):** EAR-PEAD passed a dedicated audit
-(`scripts/audit_overfit.py`: trailing≈full hedge, 6/6 positive years, DSR 0.82 even at 400 trials)
-**and** a symbol-generalization test (`scripts/test_ear_pead_holdout.py`: 91% of random 20-symbol
-subsets positive → not carried by a few names). The pairs basket was quarterly walk-forward
-validated. **Known-soft, stated not hidden:** (a) the symbol test also showed the *typical* subset
-Sharpe is **~0.35, below the full-40 ~0.6** — the headline benefits from breadth, and an unlucky
-20-name half went −0.14, so the edge is real-but-modest-and-dispersed, not uniform; (b) the combiner's
-0.99 uses in-sample weights; (c) the **true fresh-symbol holdout** (disjoint names, not subsets) is the one
-clean test still pending for EAR-PEAD, blocked only by AV quota and queued to run automatically. We do
-not call an edge validated until it clears these, and we say plainly which each survivor has and has not
-passed. **And when a test fails, we publish the failure:** the SI tilt (Case 21) looked like a DSR-0.98
-edge on one year of Nasdaq data and was then *killed* by the multi-regime FINRA test (net −0.31 across
-6 years) — held at zero size throughout, downgraded 🟡→❌, never shipped. That is the discipline working.
+**Honest scorecard (final, after the fresh-symbol holdouts):** only **one** edge remains validated —
+the **cointegrated-pairs basket** (quarterly walk-forward, OOS ~0.5). **EAR-PEAD has been downgraded:**
+it passed everything *inside its fitted universe* (audit: 6/6 regime-positive, trailing hedge, DSR 0.82
+@400 trials; subset resampling 91% positive) but **failed the gold-standard fresh-symbol holdout
+(−0.52 on 19 disjoint names, long-leg drift +0.07 ≈ zero)** — its apparent edge was specific to the
+tech-heavy mega-cap universe it was built on, and its combiner lift (+0.16) is retracted. **Two stars
+of this session were caught by the two cleanest tests:** the SI tilt (DSR 0.98 on 1 yr of Nasdaq) died
+on the **multi-regime FINRA** test (net −0.31 / 6 yr); EAR-PEAD (0.68, audit-passed) died on the
+**fresh-symbol holdout**. Both were held at zero size and never shipped. **The lesson, paid for twice
+in one session:** in-universe and in-sample tests — even regime stability and DSR — can all pass on an
+edge that is still overfit; only *out-of-universe* (new symbols) and *out-of-regime* (new years) holdouts
+catch it. That is the discipline working exactly as intended, and the honest answer to "are we overfitting?"
+— we were on two of three candidates, and the harness caught both before a dollar was at risk.
 
 ## What we learned
 
@@ -592,12 +606,14 @@ the bar it now has to clear is **"survive `adverse_borrow` at full breadth,"** n
 DSR > 0.95." This is the anti-delusion machinery working as designed: a realistic friction model
 caught an edge that the optimistic friction model had waved through.
 
-**The constructive flip-side (Case 18):** the same discipline that *killed* surprise-PEAD's short
-leg also *found the fix*. Switching to a price-only **EAR** signal and hedging beta with a **cheap
-index short** (instead of the borrow-fragile single-name short) yields a market-neutral earnings
-sleeve that survives honestly — **Sharpe 0.67, IS 0.70 ≈ OOS 0.66, −12% DD, DSR 0.89** — comparable
-to the pairs basket, uncorrelated to it, and with a *tradeable* short side. So the validated-edge
-count is now **the pairs basket plus a strong, near-validated EAR-PEAD second leg** (just under the
-0.95 DSR bar, pending the universe filling to 195). That second uncorrelated leg is exactly what the
-combiner (Case 16) was edge-starved for — and the honest path to higher *profit-per-day* runs
-through **more such legs sized to Kelly**, not through trading any single one faster.
+**The EAR-PEAD arc — promising, then retracted (Case 18).** The same discipline that killed
+surprise-PEAD's short leg appeared to *find a fix*: a price-only **EAR** signal hedged with a **cheap
+index short** posted Sharpe ~0.68 on the 40, passed a regime audit (6/6 years) and 91%-positive subset
+resampling, and lifted the combiner +0.16 — we provisionally called it a second leg. **Then the
+fresh-symbol holdout failed it (−0.52 on 19 disjoint names).** The edge was specific to the fitted
+tech-heavy mega-cap universe and does not generalize. So the validated-edge count is back to **one —
+the cointegrated-pairs basket.** The honest path to higher *profit-per-day* still runs through **more
+genuinely-uncorrelated legs sized to Kelly** — but a candidate only counts *after* it clears an
+out-of-universe holdout, not before. We found zero such legs this session; we correctly rejected five
+candidates (Cases 17, 18, 19, 20, 21) and shipped none. That is the right outcome: no false edge reached
+capital, and the bar for "validated" is now explicitly out-of-universe + out-of-regime.
