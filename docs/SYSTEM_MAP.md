@@ -181,7 +181,7 @@ data.
    models live (Haiku OAuth + OpenAI), regime=bull, 4 OpenAI proposals, all rail-FAIL + Haiku NO-GO →
    0 survivors (correct — the known-weak cross-sectional space rejects cleanly; the discipline holds with
    AI driving). Both tiers' creds are live (Haiku via Claude Code OAuth keychain; OpenAI via a reused
-   `sk-svcacct` key in the gitignored `.env`).
+   service-account key in the gitignored `.env`).
 5. ▶ **Next:** (a) wrap `ai_research_loop.py` as a launchd job for unattended runs; (b) widen
    `STRATEGY_SPACE` beyond cross-sectional templates (the fundamental/EDGAR families) so the loop has
    richer, more-likely-to-generalize candidates to propose — the infra now applies the full bar to anything
