@@ -43,6 +43,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 19 | **Lead-lag cross-predictability** | Market-neutral (learned) | Walk-forward real −1.02 ≈ shuffle placebo −1.14 (+0.11); gross only 0.27, dies by 1bp | ❌ **Fitted noise** — fails placebo *and* cost wall |
 | 20 | **Gap reversion** (multi-day hold) | Market-neutral event | No gross edge (−0.14 @ 0bps); gap-momentum control *beats* it on large caps | ❌ **Signal failure** — large-cap gaps are informational, not reverting |
 | 21 | **Short-interest (borrow-fee) tilt** | Market-neutral positioning | 1-yr Nasdaq looked great (2.34) but 9-yr FINRA (188 sym): gross 0.91, **net −0.42 after DTC borrow**, +3/6 yrs | ❌ **Rejected** — weak, regime-specific, net-negative after borrow; the 1-yr lead was a lucky window |
+| 22 | **52-week-high momentum** (George-Hwang) | Cross-sectional | Anomaly INVERTS here: near-high −0.58, reversal +0.6 but carried by 2023 alone | ❌ **Rejected** — famous anomaly doesn't replicate on our universe; reversal regime-concentrated |
 
 ---
 
@@ -549,6 +550,29 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   methodological: **the multi-regime FINRA test caught an edge that a 1-year sample had rated DSR 0.98**
   — the single cleanest demonstration in this whole document of *why we do not trust short windows*, and
   a direct vindication of holding it as a "lead, sized at zero" rather than shipping it.
+
+## Case 22 — 52-week-high momentum (George-Hwang) ❌ (the anomaly inverts on our universe)
+
+- **Hypothesis (from the literature, not our prior set).** Proximity to the trailing 52-week high
+  predicts returns: long stocks near their high (ratio = close / 252-day-high ≈ 1), short those far
+  below, dollar-neutral. George & Hwang (2004) found this *subsumes* traditional momentum and is more
+  durable — attributed to anchoring/underreaction. Picked as a "more-likely-to-generalize" momentum
+  form. (`alpca/backtest/high_52w.py`; overlapping-tranche hold → low turnover; no look-ahead.)
+- **Result — it does NOT replicate; it inverts.** On the 195-name large-cap universe, 2021–2026, the
+  **near-high (momentum) leg is NEGATIVE at every hold (−0.58 to −0.66)**, while the **reversal leg
+  (long far-below-high) is positive (+0.53 to +0.64)**. Here, names near their 52-week high
+  *underperform* and beaten-down names mean-revert — the opposite of the published anomaly.
+- **And the reversal side is regime-concentrated, not a free edge.** Its positivity is carried by
+  **2023 (+2.39, the post-2022-bear bounce)**; per-year it is +0.0/+0.24/**+2.39**/−0.55/+0.96/−0.68
+  — negative in 2024 and 2026. Low turnover (0.045/day) and a tidy −8% DD make it *look* attractive,
+  but it is the same regime-dependence trap (mean-reversion works in recovery years) that we now know
+  to distrust.
+- **Verdict.** ❌ **Rejected.** The momentum direction fails outright (negative, regime-unstable, DSR
+  0.07); the reversal direction is positive only because one recovery year dominates. A famous
+  documented anomaly **did not survive contact with our universe/period** — a useful reminder that
+  "it's in the literature" is not a substitute for testing it here. (The reversal lead could be
+  re-examined later with a fresh-symbol + out-of-2023 holdout, but regime-concentration makes it a
+  low-priority maybe, not an edge.)
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 
