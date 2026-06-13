@@ -50,6 +50,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 26–32 | **Factor zoo** (asset-growth, net-issuance, ROA, MAX, idio-vol, residual-mom, vol-managed-mom) | Cross-sectional | All −0.9..+0.1 main, fresh-holdouts ≤ 0; none clear the rail | ❌ **All rejected** — documented premia are thin/absent on large-caps; the two momentum variants overfit (fresh < 0) |
 | 33 | **Short-interest CHANGE** (ΔDTC, not level) | Positioning MN | main −0.27, only 2/6 yrs, fresh +0.68 inconsistent w/ negative main | ❌ **Rejected** — not regime-robust, dies to cost; the *change* is no better than the *level* (Case 21) |
 | 34 | **Gross profitability** (Novy-Marx, EDGAR Rev−COGS/Assets) | Fundamental MN | main −0.31, OOS −1.72, fresh −0.40, regime-flipping (2021 +2.08 → 2026 −2.51) | ❌ **Rejected** — the "most robust factor" is net-negative on our large-caps |
+| 35 | **Financials-excluded accruals & value** (SIC fetch) | Fundamental MN | accruals in-sample +0.70/6-of-6 but **fresh still −0.51**; value unchanged (+0.22 fresh) | ⚠️/❌ **Sector-rescue refuted** — excluding financials cleans accruals in-sample but doesn't fix its out-of-universe failure |
 
 ---
 
@@ -703,6 +704,25 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   small/mid-caps and longer histories we don't trade). The only cross-sectional things that have shown
   *any* edge here are the cointegrated-pairs basket (real) and the value composite (generalizes but
   thin). Factor investing, naively ported to our venue, does not work — and now we've *measured* it.
+
+## Case 35 — Financials-excluded accruals & value (the sector refinement) ⚠️/❌
+
+- **What.** The legitimate refinement flagged in Cases 23–24: the accruals literature conventionally
+  **excludes financials/insurers** (their accruals are ill-defined). Fetched SIC codes (EDGAR
+  submissions API, `sic_codes.json`), dropped the 35 financials (SIC 6000–6799), and re-ran accruals
+  and the value composite on the 136 non-financial names + a 22-name fresh holdout.
+- **Result.**
+  - **Accruals ex-financials:** in-sample **improves markedly — main +0.70, +6/6 years** (vs +0.44
+    with financials), *confirming the literature*. **But the fresh-symbol holdout is still −0.51.**
+    Excluding financials cleaned the in-sample yet **did not rescue the out-of-universe failure** — the
+    overfit is real and deeper than a sector artifact. This **refutes the sector-rescue hypothesis** I
+    flagged in Case 23: tested honestly, it does not save accruals.
+  - **Value ex-financials:** main +0.09, **fresh +0.22 (still generalizes)**, 3/6 years — no material
+    change; still real-but-thin (Case 24 stands).
+- **Verdict.** ⚠️/❌ **The refinement was worth testing and is now resolved:** accruals' fresh-holdout
+  failure is **not** a financials artifact (it stays −0.51 even excluded) → accruals confirmed dead
+  out-of-universe; value is unchanged (generalizes but too thin). A clean closure of the last
+  open fundamental hypothesis — by measurement, not assumption.
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 

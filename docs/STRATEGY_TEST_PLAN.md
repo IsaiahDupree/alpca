@@ -20,9 +20,9 @@ Status: ⬜ pending · 🔄 in progress · ✅ done (kept) · ❌ done (rejected
 | 7 | **Vol-managed momentum** | daily bars | ❌ | OOS +0.77 but fresh −0.08 (overfit, Case 32) |
 | 8 | **Short-interest CHANGE** (ΔSI) | FINRA (cached) | ❌ | main −0.27, 2/6 yrs (Case 33) |
 | 9 | **Gross profitability** (Novy-Marx) | EDGAR + fetch (Rev, COGS) | ❌ | main −0.31, regime-flipping (Case 34) |
-| 10 | **Sector-neutral value + financials-excl accruals** | EDGAR + SIC fetch | 🔄 | next |
-| 11 | **VIX term-structure overlay** | fetch ^VIX/^VIX3M | ⬜ | data-gated, marginal |
-| 12 | **Final combiner** of all surviving sleeves | — | ⬜ | blended Sharpe + honest ROI |
+| 10 | **Sector-neutral value + financials-excl accruals** | EDGAR + SIC fetch | ⚠️/❌ | accruals +0.70 in-sample/6-of-6 but **fresh −0.51** (sector-rescue refuted); value unchanged (Case 35) |
+| 11 | **VIX term-structure overlay** | fetch ^VIX/^VIX3M | ⏸️ | deferred — data-gated + marginal a priori |
+| 12 | **Final combiner** of all surviving sleeves | — | 🔄 | pairs (0.83) + value (thin) |
 
 ## Reference points
 - The bar that rejects: 3 candidates (EAR-PEAD, SI-level, accruals) passed every in-universe test and
