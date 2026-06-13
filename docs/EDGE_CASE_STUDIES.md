@@ -44,6 +44,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 20 | **Gap reversion** (multi-day hold) | Market-neutral event | No gross edge (−0.14 @ 0bps); gap-momentum control *beats* it on large caps | ❌ **Signal failure** — large-cap gaps are informational, not reverting |
 | 21 | **Short-interest (borrow-fee) tilt** | Market-neutral positioning | 1-yr Nasdaq looked great (2.34) but 9-yr FINRA (188 sym): gross 0.91, **net −0.42 after DTC borrow**, +3/6 yrs | ❌ **Rejected** — weak, regime-specific, net-negative after borrow; the 1-yr lead was a lucky window |
 | 22 | **52-week-high momentum** (George-Hwang) | Cross-sectional | Anomaly INVERTS here: near-high −0.58, reversal +0.6 but carried by 2023 alone | ❌ **Rejected** — famous anomaly doesn't replicate on our universe; reversal regime-concentrated |
+| 23 | **Accruals anomaly** (Sloan, EDGAR fundamentals) | Fundamental MN | Decile Sharpe ~0.44, **+5/6 yrs**, cost-free, sign-confirmed; subset-resample 76%+ (median 0.23) | 🟡 **Strongest fundamental lead** — clears cost/regime traps; truly-fresh-symbol holdout still pending |
 
 ---
 
@@ -573,6 +574,34 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   "it's in the literature" is not a substitute for testing it here. (The reversal lead could be
   re-examined later with a fresh-symbol + out-of-2023 holdout, but regime-concentration makes it a
   low-priority maybe, not an edge.)
+
+## Case 23 — Accruals anomaly (Sloan), on SEC EDGAR fundamentals 🟡 (strongest fundamental lead)
+
+- **Hypothesis.** The first FUNDAMENTAL edge we've tested — orthogonal to all our price/positioning
+  work, so a real one would *diversify* the combiner. Earnings made of accruals (vs cash) are
+  lower-quality and mean-revert: ACC = (NetIncome − OperatingCashFlow) / avg(TotalAssets); LONG
+  low-ACC (cash-backed) / SHORT high-ACC, dollar-neutral, annual rebalance.
+- **Data — SEC EDGAR `companyfacts` (free, NO quota, no auth).** The right foundation: full multi-year
+  fundamentals for the whole universe, sidestepping the AV quota wall that limited everything else.
+  `scripts/download_fundamentals_edgar.py` (ticker→CIK map → NetIncomeLoss / operating CFO / Assets,
+  annual 10-K) cached 164/195 symbols. **No look-ahead:** the accrual is acted on only from the 10-K
+  **filing** date (~2 months after fiscal year-end), not the period-end. (`alpca/backtest/accruals.py`)
+- **Result — the structural profile the rejects all lacked.** Best decile/quintile **Sharpe ~0.44**
+  (control mirror −0.45 → sign-confirmed), **turnover 0.006/day** (annual → essentially cost-free,
+  escapes the wall that killed Cases 17/19/20/22), and **regime-robust: +5/6 calendar years**
+  (+1.15 / +0.33 / +1.07 / +0.31 / −0.62 / +0.98), positive through the 2022 bear. DSR ~0.75.
+- **Generalization — promising but NOT proven (the EAR-PEAD lesson applied).** Disjoint split-halves
+  are both positive (+0.50 / +0.31), BUT random-subset resampling is only **76% positive (median
+  Sharpe +0.23)** — *weaker* than EAR-PEAD's 91% was, and EAR-PEAD then **failed** its truly-fresh
+  holdout. These halves/subsets are all drawn from the same 164 symbols, i.e. the *same evidence
+  class* that misled us before. So we explicitly do **not** call this validated.
+- **Verdict.** 🟡 **The strongest fundamental lead of the project — regime-robust, cost-free,
+  sign-confirmed, and diversifying — but modest (Sharpe ~0.4, median subset ~0.23, DSR 0.75) and not
+  yet proven on truly-fresh symbols.** It clears the cost-wall and regime-concentration traps that
+  rejected 17/19/20/21/22; it has **not** yet cleared the out-of-universe holdout that rejected
+  EAR-PEAD (18). **Decisive next test:** fetch daily bars + EDGAR fundamentals for a set of symbols
+  *outside* the current 164 and re-run frozen params; only then does it count. Having been fooled by
+  subset evidence once, we hold it as a lead — not a second edge — until that test passes.
 
 ## Methodology upgrade — Deflated Sharpe Ratio
 
