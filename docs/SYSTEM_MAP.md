@@ -159,13 +159,24 @@ The harness is the safety rail: **AI can propose anything, but nothing counts un
 fresh-symbol + out-of-regime holdout.** This makes an AI loop *safe* — it can't talk its way past the
 data.
 
-**Concrete next steps to enable it:**
-1. Add `ANTHROPIC_API_KEY` + `OPENAI_API_KEY` to `.env` (gitignored). *(Claude Code's own OAuth login
-   is for the CLI; programmatic loop calls need API keys.)*
-2. `alpca/ai/router.py` — a thin multi-model router (scaffolded; reads keys from env, picks Haiku vs
-   OpenAI-medium by task size). No keys in code.
-3. A regime classifier (`alpca/backtest/regime.py`) — cheap, deterministic, feeds the loop.
-4. Wire the loop as a launchd research job that proposes → tests → logs, gated by the harness.
+**Status — the Haiku per-regime gate is WIRED and LIVE (2026-06-13):**
+1. ✅ **Auth via the local Claude Code OAuth token** (same mechanism as the ACD project) — no
+   separate API key needed for Haiku. `alpca/ai/oauth.py` reads the macOS Keychain
+   (`Claude Code-credentials`), auto-refreshes the ~8h token via `api.anthropic.com/v1/oauth/token`
+   and writes the rotated creds back (read-mostly; only writes after a successful refresh). The
+   Messages API is called with `Authorization: Bearer …` + `anthropic-beta: oauth-2025-04-20` + the
+   Claude Code system prefix. (OpenAI medium still needs `OPENAI_API_KEY` in `.env` when we want it.)
+2. ✅ `alpca/ai/router.py` — multi-model router. `small()`→Haiku (OAuth), `think()`→OpenAI medium,
+   `route(heavy=)` picks the tier. Keys/tokens read from env/keychain only, never logged.
+3. ✅ `alpca/ai/strategy_gate.py` — **`classify_regime()`** (deterministic bull/bear/chop/high-vol) +
+   **`falsification_gate()`** (the deterministic hard rail: fresh-symbol holdout, regime-robustness,
+   cost-survival, DSR — VETO power) + **`haiku_verdict()`** (live per-regime GO/NO-GO + rationale) +
+   **`gate()`** (GO only if rail-pass AND Haiku-GO). *Proven live:* on the real accruals result it
+   returned NO-GO (rail veto + Haiku conf 0.98: "fresh-symbol holdout catastrophically negative…
+   severe overfitting"). The model cannot talk its way past the data.
+4. ▶ **Next:** wrap the loop as a launchd research job (regime-classify → propose via OpenAI → code+test
+   through the harness → `gate()` → survivors to combiner+forward-track), and connect a candidate
+   generator so it runs unattended.
 
 **Near-term edge veins (human or AI-proposed) that fit the data + bar:** financials-excluded
 sector-neutral accruals (broad fresh universe), value composite (E/P, FCF/P via EDGAR), post-earnings

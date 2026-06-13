@@ -10,17 +10,31 @@ from alpca.ai.router import AIRouter, MissingCredential, DEFAULT_HAIKU, DEFAULT_
 
 def test_available_reflects_keys_without_revealing_them():
     r = AIRouter(anthropic_key="sk-ant-secret", openai_key=None)
-    assert r.available() == {"haiku": True, "openai": False}
-    # available() exposes booleans only, never the key string
-    assert "secret" not in json.dumps(r.available())
+    av = r.available()
+    assert av["haiku"] is True and av["openai"] is False and av["anthropic_mode"] == "api_key"
+    # available() exposes booleans/mode only, never the key string
+    assert "secret" not in json.dumps(av)
 
 
 def test_missing_credential_raises_clearly():
-    r = AIRouter(anthropic_key=None, openai_key=None)
+    # force api_key mode with no key so it doesn't fall back to the (real) keychain OAuth token
+    r = AIRouter(anthropic_key=None, openai_key=None, anthropic_mode="api_key")
     with pytest.raises(MissingCredential):
         r.build_anthropic("hi")
     with pytest.raises(MissingCredential):
         r.build_openai("hi")
+
+
+def test_oauth_mode_uses_bearer_beta_and_claude_code_prefix(monkeypatch):
+    import alpca.ai.router as R
+    monkeypatch.setattr(R, "get_oauth_token", lambda *a, **k: "sk-ant-oat-FAKE")
+    r = AIRouter(anthropic_key=None, anthropic_mode="oauth")
+    assert r.available()["anthropic_mode"] == "oauth" and r.available()["haiku"] is True
+    url, headers, body = r.build_anthropic("classify this", system="be terse")
+    assert headers["Authorization"] == "Bearer sk-ant-oat-FAKE"
+    assert headers["anthropic-beta"] == R.OAUTH_BETA and "x-api-key" not in headers
+    d = json.loads(body)
+    assert d["system"].startswith(R.CLAUDE_CODE_SYSTEM) and "be terse" in d["system"]
 
 
 def test_anthropic_request_shape():

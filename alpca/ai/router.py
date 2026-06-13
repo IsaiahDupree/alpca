@@ -23,10 +23,15 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
+from alpca.ai.oauth import get_oauth_token
+
 ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 DEFAULT_HAIKU = "claude-haiku-4-5"          # cheap/fast tier (override via env ALPCA_HAIKU_MODEL)
 DEFAULT_OPENAI = "gpt-4o"                    # medium reasoning tier (override via env ALPCA_OPENAI_MODEL)
+# OAuth (Claude Code subscription) tokens require these on the Messages API:
+OAUTH_BETA = "oauth-2025-04-20"
+CLAUDE_CODE_SYSTEM = "You are Claude Code, Anthropic's official CLI for Claude."
 
 
 class MissingCredential(RuntimeError):
@@ -40,26 +45,46 @@ class AIRouter:
     haiku_model: str = ""
     openai_model: str = ""
 
+    # auth mode for Anthropic: "api_key" (x-api-key) or "oauth" (Claude Code subscription Bearer)
+    anthropic_mode: str = ""
+
     def __post_init__(self):
-        self.anthropic_key = self.anthropic_key or os.environ.get("ANTHROPIC_API_KEY")
         self.openai_key = self.openai_key or os.environ.get("OPENAI_API_KEY")
         self.haiku_model = self.haiku_model or os.environ.get("ALPCA_HAIKU_MODEL", DEFAULT_HAIKU)
         self.openai_model = self.openai_model or os.environ.get("ALPCA_OPENAI_MODEL", DEFAULT_OPENAI)
+        # Anthropic auth: an explicit/ env API key wins; else fall back to the Claude Code OAuth token.
+        if self.anthropic_key or os.environ.get("ANTHROPIC_API_KEY"):
+            self.anthropic_key = self.anthropic_key or os.environ.get("ANTHROPIC_API_KEY")
+            self.anthropic_mode = self.anthropic_mode or "api_key"
+        elif not self.anthropic_mode:
+            self.anthropic_mode = "oauth"     # token fetched lazily from the keychain at call time
+
+    def _anthropic_token(self) -> Optional[str]:
+        return self.anthropic_key if self.anthropic_mode == "api_key" else get_oauth_token()
 
     # ---- introspection (never reveals key values) ----
     def available(self) -> dict:
-        return {"haiku": bool(self.anthropic_key), "openai": bool(self.openai_key)}
+        return {"haiku": bool(self._anthropic_token()), "openai": bool(self.openai_key),
+                "anthropic_mode": self.anthropic_mode}
 
     # ---- request builders (pure; testable without a key or network) ----
     def build_anthropic(self, prompt: str, *, system: str = "", max_tokens: int = 1024) -> Tuple[str, dict, bytes]:
-        if not self.anthropic_key:
-            raise MissingCredential("ANTHROPIC_API_KEY not set — add it to .env (gitignored) for Haiku tasks.")
+        tok = self._anthropic_token()
+        if not tok:
+            raise MissingCredential("No Anthropic credential — set ANTHROPIC_API_KEY, or log in to "
+                                    "Claude Code (the keychain OAuth token is used automatically).")
         body = {"model": self.haiku_model, "max_tokens": max_tokens,
                 "messages": [{"role": "user", "content": prompt}]}
-        if system:
-            body["system"] = system
-        headers = {"x-api-key": self.anthropic_key, "anthropic-version": "2023-06-01",
-                   "content-type": "application/json"}
+        if self.anthropic_mode == "oauth":
+            # subscription tokens require the Claude Code system prefix + the oauth beta header
+            body["system"] = (CLAUDE_CODE_SYSTEM + ("\n\n" + system if system else ""))
+            headers = {"Authorization": f"Bearer {tok}", "anthropic-version": "2023-06-01",
+                       "anthropic-beta": OAUTH_BETA, "content-type": "application/json"}
+        else:
+            if system:
+                body["system"] = system
+            headers = {"x-api-key": tok, "anthropic-version": "2023-06-01",
+                       "content-type": "application/json"}
         return ANTHROPIC_URL, headers, json.dumps(body).encode()
 
     def build_openai(self, prompt: str, *, system: str = "", max_tokens: int = 2048) -> Tuple[str, dict, bytes]:
