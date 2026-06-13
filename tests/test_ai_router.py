@@ -8,7 +8,8 @@ import pytest
 from alpca.ai.router import AIRouter, MissingCredential, DEFAULT_HAIKU, DEFAULT_OPENAI
 
 
-def test_available_reflects_keys_without_revealing_them():
+def test_available_reflects_keys_without_revealing_them(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)   # hermetic: ignore ambient .env
     r = AIRouter(anthropic_key="sk-ant-secret", openai_key=None)
     av = r.available()
     assert av["haiku"] is True and av["openai"] is False and av["anthropic_mode"] == "api_key"
@@ -16,7 +17,9 @@ def test_available_reflects_keys_without_revealing_them():
     assert "secret" not in json.dumps(av)
 
 
-def test_missing_credential_raises_clearly():
+def test_missing_credential_raises_clearly(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     # force api_key mode with no key so it doesn't fall back to the (real) keychain OAuth token
     r = AIRouter(anthropic_key=None, openai_key=None, anthropic_mode="api_key")
     with pytest.raises(MissingCredential):
