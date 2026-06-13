@@ -405,18 +405,25 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   On the fresh names the **long leg has no drift at all** (long-only Sharpe **+0.07** ≈ zero), the
   hedged sleeve is **negative across every threshold** (−0.09 @1.0 → −0.52 @2.0 → −0.93 @3.0), and it
   is positive in only 2/6 years (2021/2022) then negative 2023–26. **The earnings-drift signal is
-  simply absent out-of-universe.** Advocate's caveat (kept honest): the holdout skews to heavily-
-  arbitraged mega-cap financials, where PEAD drift is documented to be weaker — so the kindest read is
-  the edge is *narrow and universe-dependent*, not a broad market-neutral sleeve. Either way it does
-  **not survive a fair disjoint test.**
-- **Verdict.** 🟡→❌ **DOWNGRADED — does not generalize to fresh symbols.** The audit it *did* pass
-  (regime stability, trailing hedge, DSR) and the 91%-positive subsampling were all **inside the
-  original 40**; the one test that left the universe — the gold-standard fresh-symbol holdout — comes
-  back **−0.52**. So EAR-PEAD is **not the validated, universe-wide second leg** it appeared to be; its
-  apparent edge was substantially specific to the fitted (tech-heavy mega-cap) universe. The combiner
-  lift it provided (Case 16, +0.16) is therefore **suspect and must be re-derived on a generalizing
-  leg.** This is the cleanest overfit catch in the document — the session's star edge failed the one
-  test we had not been able to run, *before* any capital was risked.
+  simply absent out-of-universe.**
+- **The "it's just a sector effect" rescue — TESTED and REFUTED (no new data).** A fair advocate
+  asks: maybe EAR-PEAD is real in growth/tech (where PEAD drift is documented) and only failed
+  because the holdout skewed to heavily-arbitraged financials. Splitting the *original 40* by sector
+  kills that hope: the **growth/tech subset (12 names) is NEGATIVE (−0.25)**, while the
+  **value/defensive/financial subset (27) is +0.62** — the *opposite* of the hypothesis, and the
+  in-sample "edge" simply **flips sign by how you slice the universe** (the signature of noise, not a
+  signal). And the 40's value names work in-sample (+0.62) yet the *fresh* holdout (which included
+  financials) still failed (−0.52) — so fresh names of *any* sector fail. The edge lives in the
+  specific 40 symbols' realized paths, nowhere else. Chasing a fresh growth-tilted set would be
+  p-hacking a refuted hypothesis; we did not.
+- **Verdict.** 🟡→❌ **DEAD — symbol-specific overfit, sector-rescue refuted.** The audit it *did*
+  pass (regime stability, trailing hedge, DSR) and the 91%-positive subsampling were all **inside the
+  original 40**; the gold-standard fresh-symbol holdout comes back **−0.52**, and the sector split
+  shows the in-sample "edge" flips sign by slice (growth −0.25 / value +0.62) — so it is **not a
+  universe-wide edge, not even a sector edge; it lives in the specific 40 symbols' paths.** The
+  combiner lift it provided (Case 16, +0.16) is **retracted**. This is the cleanest overfit catch in
+  the document — a sleeve that passed *every in-universe test* (audit, regime stability, DSR,
+  subsampling) and still died the moment it left the fitted symbols, *before* any capital was risked.
 
 ## Case 19 — Lead-lag cross-predictability (price-only, walk-forward) ❌ (fitted noise)
 
