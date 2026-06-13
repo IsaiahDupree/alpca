@@ -22,7 +22,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 
 | # | Edge | Class | Headline result | Verdict |
 |---|------|-------|-----------------|---------|
-| 1 | **Cointegration-pairs market-neutral basket** | Market-neutral | In-sample Sharpe 1.78 → **OOS 0.54**, −3% DD | ✅ **THE survivor** (modest, real) |
+| 1 | **Cointegration-pairs market-neutral basket** | Market-neutral | WF **0.29** today (decayed from 0.43–0.54; 60/40 OOS now −0.17). **Deployed as a small shadow forward paper-track** | ✅ **THE survivor** — but marginal; live track will adjudicate |
 | 2 | Single-asset directional (trend/breakout/MR) | Directional | rsi-mr Sharpe 1.18 vs B&H 0.86, but never beats B&H return | ⚠️ Risk-reduced **beta**, not alpha |
 | 3 | Cross-sectional momentum | Market-neutral-ish | Best Sharpe ~0.68 (lb250); config-sensitive | ⚠️ Modest beta |
 | 4 | Short-term reversal | Market-neutral | Negative in- and out-of-sample | ❌ Rejected |
@@ -64,6 +64,21 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 - **Caveat.** A larger walk-forward (195 symbols, re-screen each quarter) degrades it to
   Sharpe 0.43 and lower for wider baskets — the half-life screen is permissive. The 0.54 is
   the static-60/40 number; treat ~0.4–0.5 as the honest range.
+- **⚠️ RE-MEASURED (2026-06-13, before deploying) — it has decayed further.** On the current
+  195-symbol universe: in-sample basket 1.00, **static 60/40 OOS now −0.17 (negative)**, and the
+  **walk-forward (the honest number) is 0.29** (down from 0.43). Still positive across 15 windows,
+  but barely — this is a *marginal* edge, not the ~0.5 on the older record. **Re-measuring before
+  sizing prevented us from deploying on a stale 0.54.**
+- **DEPLOYED as a SHADOW FORWARD PAPER TRACK** (`alpca/live/pairs_portfolio.py`,
+  `scripts/deploy_pairs_paper.py`). Each run computes today's live target book (trailing-window
+  screen, no look-ahead, hysteresis so it doesn't churn), sizes it conservatively (half-Kelly on
+  the 0.29 WF Sharpe, vol-target 5%, **+ a diversification guard** that scales a thin book down),
+  marks the prior day's book to today's prices, and accumulates a **live out-of-sample curve** — no
+  broker orders, no capital at risk. The forward track is the gold-standard adjudicator (a live OOS
+  record beats any backtest). **Day-1 reality:** on a flat start only **1 of 12 pairs** was past its
+  entry band (KR/PRU), so the "basket" is currently one concentrated pair → sized to just **0.17×
+  gross** by the guard. Expectations: near-zero; let the live track speak. This is the right way to
+  carry a modest, uncertain edge — small, forward, honest — rather than a sized conviction bet.
 
 ## Case 2 — Single-asset directional strategies ⚠️ (beta)
 
