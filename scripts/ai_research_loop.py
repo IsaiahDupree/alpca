@@ -43,10 +43,22 @@ def _load(cache: Path):
     return bars
 
 
+def _load_funds(fdir: Path):
+    funds = {}
+    if fdir.exists():
+        for p in fdir.glob("*_fund.json"):
+            rows = json.loads(p.read_text())
+            if rows:
+                funds[p.name.replace("_fund.json", "")] = rows
+    return funds
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cache", default="/Volumes/My Passport/AlpcaData/cache")
     ap.add_argument("--cache-fresh", default="/Volumes/My Passport/AlpcaData/cache_fresh")
+    ap.add_argument("--fundamentals", default="/Volumes/My Passport/AlpcaData/fundamentals_edgar")
+    ap.add_argument("--fundamentals-fresh", default="/Volumes/My Passport/AlpcaData/fundamentals_edgar_fresh")
     ap.add_argument("--iterations", type=int, default=4)
     ap.add_argument("--no-ai", action="store_true", help="deterministic heuristic proposer only")
     ap.add_argument("--log", default="data/ai_research_log.jsonl")
@@ -54,13 +66,15 @@ def main() -> int:
 
     bars_main = _load(Path(args.cache))
     bars_fresh = _load(Path(args.cache_fresh))
+    fund_main = _load_funds(Path(args.fundamentals))
+    fund_fresh = _load_funds(Path(args.fundamentals_fresh))
     spy = bars_main.get("SPY") or bars_main.get("QQQ")
     if not bars_main or not spy:
         print("[fail] need a universe + SPY in --cache"); return 1
     router = None if args.no_ai else AIRouter()
     avail = router.available() if router else {"openai": False, "haiku": False}
-    print(f"[loop] universe {len(bars_main)} (+{len(bars_fresh)} fresh) · models {avail} · "
-          f"{args.iterations} iterations\n")
+    print(f"[loop] universe {len(bars_main)} (+{len(bars_fresh)} fresh) · funds {len(fund_main)} "
+          f"(+{len(fund_fresh)} fresh) · models {avail} · {args.iterations} iterations\n")
 
     regime = detect_regime(spy)
     print(f"REGIME: {regime.as_prompt()}\n")
@@ -69,7 +83,7 @@ def main() -> int:
     for i in range(1, args.iterations + 1):
         cfg = propose(regime.as_prompt(), regime.label, router, tried)
         tried.append(f"{cfg['strategy_type']}{cfg['params']}")
-        result = run_proposal(cfg, bars_main, bars_fresh)
+        result = run_proposal(cfg, bars_main, bars_fresh, fund_main=fund_main, fund_fresh=fund_fresh)
         # gate: deterministic rail + (live Haiku if available; else a no-AI stub that defers to the rail)
         if router and router.available().get("haiku"):
             d = gate(result, spy, router)

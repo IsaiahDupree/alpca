@@ -4,7 +4,7 @@ import random
 
 from alpca.ai.regime import detect_regime, RegimeState
 from alpca.ai.strategy_generator import (
-    PARAM_BOUNDS, STRATEGY_SPACE, _clamp, heuristic_proposal, propose, run_proposal, ai_proposal)
+    STRATEGY_SPACE, _clamp, heuristic_proposal, propose, run_proposal, ai_proposal)
 
 
 def _series(trend, vol, n=90, base=1_600_000_000):
@@ -42,15 +42,22 @@ def test_heuristic_proposal_valid_for_every_regime():
     for reg in ("bull", "bear", "chop", "high_vol", "unknown"):
         c = heuristic_proposal(reg)
         assert c["strategy_type"] in STRATEGY_SPACE
-        for k, (lo, hi) in PARAM_BOUNDS.items():
-            assert lo <= c["params"][k] <= hi
+        bounds = STRATEGY_SPACE[c["strategy_type"]]["params"]
+        for k, (lo, hi) in bounds.items():
+            assert lo <= c["params"][k] <= hi          # each param within its template's bounds
 
 
-def test_clamp_bounds_params():
-    c = _clamp({"lookback": 9999, "hold": -5, "top_k": 1.7})
-    assert c["lookback"] == PARAM_BOUNDS["lookback"][1]
-    assert c["hold"] == PARAM_BOUNDS["hold"][0]
-    assert PARAM_BOUNDS["top_k"][0] <= c["top_k"] <= PARAM_BOUNDS["top_k"][1]
+def test_clamp_bounds_params_per_template():
+    c = _clamp("xsec_momentum", {"lookback": 9999, "hold": -5, "top_k": 1.7})
+    b = STRATEGY_SPACE["xsec_momentum"]["params"]
+    assert c["lookback"] == b["lookback"][1] and c["hold"] == b["hold"][0]
+    a = _clamp("accruals", {"top_frac_pct": 99})
+    assert a["top_frac_pct"] == STRATEGY_SPACE["accruals"]["params"]["top_frac_pct"][1]
+
+
+def test_space_includes_fundamental_accruals():
+    assert STRATEGY_SPACE["accruals"]["family"] == "fundamental"
+    assert "top_frac_pct" in STRATEGY_SPACE["accruals"]["params"]
 
 
 def test_propose_falls_back_to_heuristic_without_router():
@@ -80,3 +87,30 @@ def test_run_proposal_produces_gate_ready_result():
         assert key in r
     assert isinstance(r["fresh_holdout_sharpe"], float)
     assert isinstance(r["per_year"], dict)
+
+
+def _funds(syms, base=1_600_000_000):
+    import datetime
+    out = {}
+    for j, s in enumerate(syms):
+        filed = datetime.datetime.fromtimestamp(base + 40 * 86400, datetime.timezone.utc).strftime("%Y-%m-%d")
+        fyend = datetime.datetime.fromtimestamp(base + 5 * 86400, datetime.timezone.utc).strftime("%Y-%m-%d")
+        out[s] = [{"fy_end": fyend, "filed": filed, "net_income": (j - len(syms) / 2) * 1e8,
+                   "cfo": 0.0, "total_assets": 1e9}]
+    return out
+
+
+def test_run_proposal_handles_fundamental_accruals_template():
+    main, fresh = _universe(seed=1), _universe(n_sym=8, seed=2)
+    fm, ff = _funds(list(main)), _funds(list(fresh))
+    cfg = {"strategy_type": "accruals", "params": {"top_frac_pct": 20}, "source": "heuristic"}
+    r = run_proposal(cfg, main, fresh, fund_main=fm, fund_fresh=ff)
+    assert r["strategy_type"] == "accruals" and "error" not in r
+    assert isinstance(r["fresh_holdout_sharpe"], float) and isinstance(r["dsr"], float)
+
+
+def test_run_proposal_fundamental_without_funds_flags_no_data():
+    main = _universe(seed=1)
+    cfg = {"strategy_type": "accruals", "params": {"top_frac_pct": 20}}
+    r = run_proposal(cfg, main, {}, fund_main=None, fund_fresh=None)
+    assert r.get("error") == "no_data"        # gracefully degrades, doesn't crash
