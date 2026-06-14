@@ -349,6 +349,8 @@ class DelistAwareResult:
     delisted_leg_trades: int
     delisted_names_traded: List[str] = field(default_factory=list)
     equity_curve: List[float] = field(default_factory=list)
+    daily_returns: List[float] = field(default_factory=list)
+    dates: List[int] = field(default_factory=list)         # epoch per daily return (test-window calendar)
 
 
 def delisting_aware_walkforward(
@@ -375,6 +377,7 @@ def delisting_aware_walkforward(
     if n < train + 2 * test or len(syms) < 4:
         return DelistAwareResult(len(syms), len(delisted_syms), 0, 0.0, 0.0, 0.0, 0, [], [1.0])
     oos_rets: List[float] = []
+    oos_dates: List[int] = []
     windows = 0
     del_leg_trades = 0
     del_traded: set = set()
@@ -413,6 +416,8 @@ def delisting_aware_walkforward(
             m = min(len(x) for x in per_pair)
             for t in range(m):
                 oos_rets.append(sum(x[t] for x in per_pair) / len(per_pair))
+            # map each basket return to the test-window calendar (test day t -> test_ts[t])
+            oos_dates.extend(test_ts[:m])
             windows += 1
         w += test
     eq = [1.0]
@@ -422,4 +427,5 @@ def delisting_aware_walkforward(
         n_symbols=len(syms), n_delisted=len(delisted_syms), n_windows=windows,
         sharpe=sharpe_of(eq, periods_per_year), total_return=eq[-1] - 1.0,
         max_drawdown=max_drawdown_of(eq), delisted_leg_trades=del_leg_trades,
-        delisted_names_traded=sorted(del_traded), equity_curve=eq)
+        delisted_names_traded=sorted(del_traded), equity_curve=eq,
+        daily_returns=oos_rets, dates=oos_dates)

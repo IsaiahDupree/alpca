@@ -74,3 +74,16 @@ def test_delisted_accounting_only_counts_listed_names():
                                         max_adf=None)
     assert set(aware.delisted_names_traded) <= {"DEAD"}      # only the flagged name can be counted
     assert aware.delisted_leg_trades >= 0
+
+
+def test_dated_returns_align_and_reconstruct_equity():
+    """daily_returns and dates are 1:1, dates are increasing test-window epochs, and compounding the
+    returns reproduces the equity curve — so the stream is usable for a date-aligned combiner."""
+    bars = _cointegrated_universe()
+    r = delisting_aware_walkforward(bars, train=252, test=63, top_n=6, max_adf=None)
+    assert len(r.daily_returns) == len(r.dates) > 0
+    assert r.dates == sorted(r.dates)                        # chronological
+    eq = [1.0]
+    for x in r.daily_returns:
+        eq.append(eq[-1] * (1 + x))
+    assert math.isclose(eq[-1], r.equity_curve[-1], rel_tol=1e-9)

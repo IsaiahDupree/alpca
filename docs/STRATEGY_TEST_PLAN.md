@@ -36,6 +36,7 @@ Status: ⬜ pending · 🔄 in progress · ✅ done (kept) · ❌ done (rejected
 | 23 | **Representative point-in-time universe** (all 1707 delistings, SIP) | Alpaca inactive-assets API | ✅ | **1.35 was a cherry-pick artifact** — representative delistings are mostly ACQUISITIONS; magnitude collapses to **~0.4** (0.43 gross / 0.30 borrow / **0.23 long-hedge borrow-free**) (Case 45) |
 | 24 | **Forward paper-track the momentum sleeve** | live launchd | ✅ | deployed: long/index-hedge sleeve on `com.alpca.forwardtrack` daily, sized tiny on honest 0.23, uncorrelated w/ pairs |
 | 25 | **Survivorship test of the DEPLOYED pairs edge** | SIP PIT large-cap (195+32) | ✅ | **ROBUST**: delisting-aware WF +0.83→+0.93; delisted legs rarely traded (3 names); new `delisting_aware_walkforward` banked (Case 46) |
+| 26 | **Honest two-sleeve combiner** (WF pairs + momentum, dated) | both SIP caches | ❌ | **DILUTES**: momentum −0.15 over the OOS overlap (carried by 2021); inverse-vol combined 0.47 < pairs-alone 0.83 → deploy pairs alone (Case 47) |
 
 ## Post-plan: hunting the second leg (Cases 36–40)
 With the backlog closed, the next-highest-EV move was to *strengthen the one fundamental that

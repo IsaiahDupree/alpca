@@ -1023,6 +1023,29 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   `delisting_aware_walkforward` (the survivorship-honest pairs WF). *(Caveat: 32 delistings, ~all
   acquisitions; a wave of large-cap bankruptcies — historically rare — would test the crash case harder.)*
 
+## Case 47 — The HONEST two-sleeve combined book (pairs + momentum) ❌ DILUTES (deploy pairs alone)
+
+- **What.** The combiner's whole purpose is to turn uncorrelated legs into a better book. Gate #1 (Case 42)
+  had hinted a pairs+momentum combo helps (ρ≈0, 6/6 positive years) — but it used **in-sample pairs
+  returns** and the **full** momentum window. This does it honestly: pairs leg = **walk-forward OOS**
+  daily returns (the new dated `delisting_aware_walkforward`, deployed top-10/5%-ADF config); momentum leg
+  = the borrow-free **long/index-hedge** daily returns on the mid-cap SIP universe; date-aligned on their
+  945 common OOS days and inverse-vol blended.
+- **Result.**
+  - Pairs WF leg **+0.83** (matches deployed); **momentum long/hedge over the common window −0.15** —
+    NEGATIVE. ρ = **+0.06** (uncorrelated, as gate #1 found).
+  - Equal-weight combined **0.14**, inverse-vol combined **0.47** — both **below the pairs leg alone (0.83)**.
+- **Verdict.** ❌ **The combiner DILUTES — deploy the pairs basket ALONE.** The momentum sleeve's
+  borrow-free form is **negative over the honest overlapping window (2022–2026)**; its earlier ~0.21 was
+  carried entirely by **2021**, which the pairs walk-forward (first ~252 days = training) excludes. You
+  cannot lift a +0.83 leg by blending a −0.15 leg, however uncorrelated. **This supersedes the optimistic
+  gate-#1 reading:** in-sample pairs + a momentum window that included 2021 manufactured a lift that the
+  rigorous apples-to-apples (WF pairs + same-date momentum) erases. The combiner remains **edge-supply-
+  limited** — we still have one deployable edge (pairs) and no positive-over-the-relevant-window second
+  leg. The momentum forward track stays live (sized tiny) to let reality speak, but expectations are now
+  honestly **low**. New capability banked: dated WF OOS returns → any future leg gets a clean,
+  date-aligned, in-sample-free combiner test.
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge

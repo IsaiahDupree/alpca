@@ -8,7 +8,7 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **46 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+Across **47 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
 fundamental, run both by hand and by an AI research loop — **one edge is validated and deployed** (a
 cointegrated-pairs market-neutral basket) **and a modest second-edge candidate has emerged on mid-caps:
 vol-managed momentum (~0.4 Sharpe), uncorrelated with the pairs basket.** The arc that got there is the
@@ -35,7 +35,7 @@ mid-cap blend is the first credible one.
 
 ---
 
-## The scoreboard (46 experiments, by outcome)
+## The scoreboard (47 experiments, by outcome)
 
 **✅ Validated & deployed (1):**
 - **Cointegrated-pairs basket** — market-neutral, walk-forward (re-screen each quarter, trade the
@@ -46,12 +46,13 @@ mid-cap blend is the first credible one.
   via a new delisting-aware walk-forward), the WF is **+0.83 → +0.93** — robust, not inflated. The same
   test that demoted value and right-sized momentum *clears the deployed edge.*
 
-**🚀 Now on a forward paper-track (as of this session):** the borrow-free **long/index-hedged momentum
-sleeve** (`deploy_momentum_paper.py` + `alpca/live/momentum_portfolio.py`) is wired into the daily
-`com.alpca.forwardtrack` job alongside the pairs basket — mark prior book → log sized target →
-accumulate a live OOS curve, sized tiny on the honest ~0.23 Sharpe. The two sleeves are uncorrelated
-(ρ=−0.03), so this is a genuine two-sleeve forward experiment. The live curve, not the backtest, now
-adjudicates — exactly the right next step for a modest, survivorship/borrow-honest candidate.
+**🚀 On a forward paper-track (sized tiny, low expectations):** the borrow-free **long/index-hedged
+momentum sleeve** is wired into the daily `com.alpca.forwardtrack` job alongside the pairs basket. **But
+the honest two-sleeve combiner (Case 47) shows it does NOT help:** done apples-to-apples (walk-forward
+pairs OOS + same-date momentum), the momentum sleeve is **negative over 2022–2026** (its ~0.21 was carried
+by 2021, which the pairs WF excludes), so the inverse-vol combined book (**0.47**) is *below* pairs-alone
+(**0.83**). ρ≈0 doesn't save a negative leg. **Deploy the pairs basket alone;** the forward track runs
+only to let live reality confirm or refute, sized tiny. The combiner stays edge-supply-limited.
 
 **🟡 Second-edge candidate — mid-cap momentum, modest (~0.4) and borrow-aware (Cases 41–45):**
 - **Mid-cap vol-managed momentum.** Found on mid-caps (Cases 41–42), uncorrelated with the pairs basket
@@ -64,9 +65,13 @@ adjudicates — exactly the right next step for a modest, survivorship/borrow-ho
   ≈0.23** (the long leg holds acquired winners into their buyout premium; adding representative delistings
   slightly *hurts* the L/S, confirming no survivorship boost). **Net: a real but MODEST (~0.4)
   momentum edge, uncorrelated with the pairs basket, with a plausible borrow-free deployable form (~0.2) —
-  a credible weak second leg for the combiner, pending a forward track.** The arc is itself the lesson: a
-  cherry-picked survivorship "fix" was a bias in the opposite direction; only the full outcome-blind PIT
-  universe gave the honest number. Still one validated+deployed edge (pairs).
+  a credible weak second leg for the combiner, pending a forward track.** **Update (Case 47):** the
+  *deployable* borrow-free long/index-hedge form is **negative over the pairs walk-forward's OOS window
+  (2022–2026)** — its ~0.2 was carried by 2021 — so the honest two-sleeve combiner *dilutes* (0.47 <
+  pairs-alone 0.83). The ~0.4 is the full-period borrow-aware L/S; it does **not** translate into a
+  deployable, positive-over-the-relevant-window sleeve. The arc is itself the lesson: a cherry-picked
+  survivorship "fix" was a bias in the opposite direction; only the full outcome-blind PIT universe gave
+  the honest number. **Still one validated+deployed edge (pairs); no positive second leg yet.**
 
 **⚠️ Generalizes but too weak to deploy (2):**
 - **Value composite (E/P + FCF/P + B/P)** — the *first* fundamental whose fresh-symbol holdout stayed
