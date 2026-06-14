@@ -56,6 +56,7 @@ FDA-probe filename + a 5× retry** (fixes the 2026-06-09 concurrency race; see
 | `com.alpca.livesession` | Mon–Fri 09:50 | Live PAPER donchian-adx on SPY, flatten at 15:50 | yes (PAPER) |
 | `com.alpca.swing` | Mon–Fri 09:50 | Risk-reduced basket on QQQ, holds overnight | yes (PAPER) |
 | `com.alpca.discovery` | Fri 17:30 | Re-run cointegration-pairs discovery | no |
+| **`com.alpca.forwardtrack`** | **Mon–Fri 17:15** | **Shadow forward paper-track — TWO sleeves now: (1) pairs basket, (2) mid-cap vol-managed momentum (borrow-free long/index-hedge, Case 45 ~0.23, uncorrelated ρ=−0.03). Refresh bars → mark prior book → log sized target → accumulate live OOS curve** | **no (shadow)** |
 | **`com.alpca.avearnings`** | **Daily 18:15** | **Pull next 23 symbols' AV earnings until universe full (~8 days), then no-op** | **no (data)** |
 
 **Control:** `launchctl list \| grep alpca` (status) · `launchctl bootout gui/$(id -u)/com.alpca.<job>`

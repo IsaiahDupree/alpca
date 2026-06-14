@@ -43,6 +43,13 @@ mid-cap blend is the first credible one.
   top-24 — diluting into weak pairs halved the edge), −4% drawdown. Deployed on a
   forward paper-track to let the *live* OOS curve adjudicate.
 
+**🚀 Now on a forward paper-track (as of this session):** the borrow-free **long/index-hedged momentum
+sleeve** (`deploy_momentum_paper.py` + `alpca/live/momentum_portfolio.py`) is wired into the daily
+`com.alpca.forwardtrack` job alongside the pairs basket — mark prior book → log sized target →
+accumulate a live OOS curve, sized tiny on the honest ~0.23 Sharpe. The two sleeves are uncorrelated
+(ρ=−0.03), so this is a genuine two-sleeve forward experiment. The live curve, not the backtest, now
+adjudicates — exactly the right next step for a modest, survivorship/borrow-honest candidate.
+
 **🟡 Second-edge candidate — mid-cap momentum, modest (~0.4) and borrow-aware (Cases 41–45):**
 - **Mid-cap vol-managed momentum.** Found on mid-caps (Cases 41–42), uncorrelated with the pairs basket
   (**ρ = −0.03**, gate #1). The survivorship re-test (Case 43) *appeared* to flip value→momentum and lift
