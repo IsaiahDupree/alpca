@@ -8,7 +8,7 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **45 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+Across **46 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
 fundamental, run both by hand and by an AI research loop — **one edge is validated and deployed** (a
 cointegrated-pairs market-neutral basket) **and a modest second-edge candidate has emerged on mid-caps:
 vol-managed momentum (~0.4 Sharpe), uncorrelated with the pairs basket.** The arc that got there is the
@@ -35,13 +35,16 @@ mid-cap blend is the first credible one.
 
 ---
 
-## The scoreboard (45 experiments, by outcome)
+## The scoreboard (46 experiments, by outcome)
 
 **✅ Validated & deployed (1):**
 - **Cointegrated-pairs basket** — market-neutral, walk-forward (re-screen each quarter, trade the
   next). **WF ~0.83 at the concentrated top-10 + 5% ADF screen** (the "0.29" was an over-diversified
   top-24 — diluting into weak pairs halved the edge), −4% drawdown. Deployed on a
-  forward paper-track to let the *live* OOS curve adjudicate.
+  forward paper-track to let the *live* OOS curve adjudicate. **Now SURVIVORSHIP-STAMPED (Case 46):**
+  re-run on a point-in-time large-cap universe (195 survivors + 32 representative delistings, SIP feed,
+  via a new delisting-aware walk-forward), the WF is **+0.83 → +0.93** — robust, not inflated. The same
+  test that demoted value and right-sized momentum *clears the deployed edge.*
 
 **🚀 Now on a forward paper-track (as of this session):** the borrow-free **long/index-hedged momentum
 sleeve** (`deploy_momentum_paper.py` + `alpca/live/momentum_portfolio.py`) is wired into the daily

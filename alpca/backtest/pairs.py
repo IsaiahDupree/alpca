@@ -336,3 +336,90 @@ def backtest_pairs(a_bars: List[dict], b_bars: List[dict], *, sym_a: str = "A", 
     return PairsResult(sym_a, sym_b, len(rows), total_return,
                        sharpe_of(equity, periods_per_year), max_drawdown_of(equity),
                        trades, h, equity)
+
+
+@dataclass
+class DelistAwareResult:
+    n_symbols: int
+    n_delisted: int
+    n_windows: int
+    sharpe: float
+    total_return: float
+    max_drawdown: float
+    delisted_leg_trades: int
+    delisted_names_traded: List[str] = field(default_factory=list)
+    equity_curve: List[float] = field(default_factory=list)
+
+
+def delisting_aware_walkforward(
+    bars_by_sym: Dict[str, List[dict]], *, delisted_syms: Optional[set] = None,
+    train: int = 252, test: int = 63, top_n: int = 10, max_half_life: float = 30.0,
+    min_half_life: float = 3.0, entry_z: float = 2.0, exit_z: float = 0.5, cost_bps: float = 2.0,
+    max_adf: Optional[float] = -2.86, periods_per_year: float = 252.0,
+) -> DelistAwareResult:
+    """Walk-forward pairs that ALLOWS partial-history (delisted) names — the survivorship-honest
+    version of `walkforward_pairs` (which uses a global timestamp INTERSECTION and so structurally
+    excludes any name that delists mid-sample). Master calendar = UNION of all timestamps. Each window:
+    screen among names with >=80% real bars in the TRAIN sub-window; backtest each top pair on the TEST
+    sub-window via the pair's own bars (a leg that delists mid-window runs out of bars -> the position
+    closes at its last real price, capturing an acquisition freeze or a crash). `delisted_syms` is only
+    for accounting (which delisted names actually traded). On a survivor-only universe this reproduces
+    `walkforward_pairs` exactly."""
+    from alpca.backtest.evaluation import max_drawdown_of, sharpe_of
+
+    delisted_syms = delisted_syms or set()
+    syms = sorted(bars_by_sym)
+    master = sorted({int(b["timestamp"]) for s in syms for b in bars_by_sym[s]})
+    bymap = {s: {int(b["timestamp"]): b for b in bars_by_sym[s]} for s in syms}
+    n = len(master)
+    if n < train + 2 * test or len(syms) < 4:
+        return DelistAwareResult(len(syms), len(delisted_syms), 0, 0.0, 0.0, 0.0, 0, [], [1.0])
+    oos_rets: List[float] = []
+    windows = 0
+    del_leg_trades = 0
+    del_traded: set = set()
+    w = 0
+    while w + train + test <= n:
+        train_ts = master[w:w + train]
+        test_ts = master[w + train:w + train + test]
+        cand = [s for s in syms if sum(1 for t in train_ts if t in bymap[s]) >= 0.8 * train]
+        if len(cand) < 4:
+            w += test
+            continue
+        train_slice = {s: [bymap[s][t] for t in train_ts if t in bymap[s]] for s in cand}
+        screened = screen_pairs(cand, train_slice, min_overlap=int(train * 0.8),
+                                max_half_life=max_half_life, min_half_life=min_half_life, max_adf=max_adf)
+        win_span = train_ts + test_ts
+        per_pair: List[List[float]] = []
+        for r in screened[:top_n]:
+            a, b = r["a"], r["b"]
+            for leg in (a, b):
+                if leg in delisted_syms:
+                    del_leg_trades += 1
+                    del_traded.add(leg)
+            seg_a = [bymap[a][t] for t in win_span if t in bymap[a]]
+            seg_b = [bymap[b][t] for t in win_span if t in bymap[b]]
+            if len(seg_a) < train * 0.5 or len(seg_b) < train * 0.5:
+                continue
+            lb = int(max(20, min(120, r["half_life"] * 3)))
+            res = backtest_pairs(seg_a, seg_b, lookback=lb, entry_z=entry_z, exit_z=exit_z,
+                                 cost_bps=cost_bps, hedge=r["hedge"])
+            eq = res.equity_curve
+            seg = eq[-(test + 1):] if len(eq) > test else eq
+            rr = [(seg[i] - seg[i - 1]) / seg[i - 1] for i in range(1, len(seg)) if seg[i - 1] > 0]
+            if rr:
+                per_pair.append(rr)
+        if per_pair:
+            m = min(len(x) for x in per_pair)
+            for t in range(m):
+                oos_rets.append(sum(x[t] for x in per_pair) / len(per_pair))
+            windows += 1
+        w += test
+    eq = [1.0]
+    for r in oos_rets:
+        eq.append(eq[-1] * (1 + r))
+    return DelistAwareResult(
+        n_symbols=len(syms), n_delisted=len(delisted_syms), n_windows=windows,
+        sharpe=sharpe_of(eq, periods_per_year), total_return=eq[-1] - 1.0,
+        max_drawdown=max_drawdown_of(eq), delisted_leg_trades=del_leg_trades,
+        delisted_names_traded=sorted(del_traded), equity_curve=eq)

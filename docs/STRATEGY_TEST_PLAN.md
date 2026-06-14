@@ -34,6 +34,8 @@ Status: ⬜ pending · 🔄 in progress · ✅ done (kept) · ❌ done (rejected
 | 21 | **Survivorship point-in-time re-test** (delisted names) | +50 delisted via Alpaca | ❌→🟡 | **FLIPS value→momentum**: value 0.35→−0.45 (inflated, buys traps), vol-mgd momentum 0.39→**1.35** (robust, shorts traps) — real edge is momentum, borrow-gated (Case 43) |
 | 22 | **Momentum under adverse borrow + long/index-hedge** | midcap+delisted bars | ⚠️ | L/S survives borrow at ~1.1 (PIT, dollar-neutral, winsorized) BUT **long/hedged borrow-free form DEAD** (0.08); alpha is short-side-only, magnitude bracketed 0.3–1.1 (Case 44) |
 | 23 | **Representative point-in-time universe** (all 1707 delistings, SIP) | Alpaca inactive-assets API | ✅ | **1.35 was a cherry-pick artifact** — representative delistings are mostly ACQUISITIONS; magnitude collapses to **~0.4** (0.43 gross / 0.30 borrow / **0.23 long-hedge borrow-free**) (Case 45) |
+| 24 | **Forward paper-track the momentum sleeve** | live launchd | ✅ | deployed: long/index-hedge sleeve on `com.alpca.forwardtrack` daily, sized tiny on honest 0.23, uncorrelated w/ pairs |
+| 25 | **Survivorship test of the DEPLOYED pairs edge** | SIP PIT large-cap (195+32) | ✅ | **ROBUST**: delisting-aware WF +0.83→+0.93; delisted legs rarely traded (3 names); new `delisting_aware_walkforward` banked (Case 46) |
 
 ## Post-plan: hunting the second leg (Cases 36–40)
 With the backlog closed, the next-highest-EV move was to *strengthen the one fundamental that

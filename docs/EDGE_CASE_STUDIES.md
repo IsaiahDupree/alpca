@@ -991,6 +991,38 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   cherry-picked "fix" for survivorship can itself be a survivorship bias in the opposite direction — only
   the **full, outcome-blind** point-in-time universe gives the honest number.
 
+## Case 46 — SURVIVORSHIP point-in-time re-test of the DEPLOYED edge (the pairs basket) ✅ ROBUST
+
+- **What.** We'd turned the point-in-time lens on the momentum *candidate* (Cases 43–45) but never on the
+  *deployed* edge — the cointegrated-pairs basket, also validated on a survivor-only large-cap universe.
+  If a pair's leg later delisted (an acquisition freezes its price at the deal value; a failure craters
+  it), the spread stops mean-reverting and the trade takes a loss the survivor universe never sees. Built
+  a feed-consistent SIP point-in-time large-cap universe: 195 survivors (re-pulled on SIP) + 32
+  representative large-cap delistings (Alpaca inactive-assets, filtered to large-cap-caliber in 2021,
+  outcome-blind — mostly acquisitions: CERN, XLNX, NUAN, AZPN, DNB, ACC…).
+- **Surfaced a tooling gap first:** the production `walkforward_pairs` builds its calendar from the
+  **global timestamp intersection**, so adding any short-history name collapses the window to ~zero
+  (it returned 0 windows). That intersection design **structurally excludes delisted names — survivorship
+  baked into the implementation.** So I wrote a **`delisting_aware_walkforward`** (union calendar,
+  per-window screen among names with ≥80% bars, per-pair backtest; a leg that delists mid-window closes
+  at its last real price — capturing the acquisition freeze / crash). Promoted it into `pairs.py` with
+  tests; on a survivor universe it reproduces the legacy walk-forward exactly.
+- **Result.**
+  - Legacy survivor WF **+0.831** — **reproduces the validated 0.83 exactly on the SIP feed** (independent
+    confirmation the deployed edge is real and feed-robust).
+  - Delisting-aware: survivor **+0.831 → +delisted +0.934** (delta **+0.10, slightly UP**), with only
+    **8 delisted-leg trades across 3 names** (DM, DNB, EDR) entering the traded top-10 over the whole
+    walk-forward.
+- **Verdict.** ✅ **The deployed edge is ROBUST to survivorship — it is NOT inflated.** Adding
+  representative large-cap delistings barely moves the WF Sharpe (and if anything nudges it up), because
+  (a) the strict 5% ADF + top-10-by-stability screen rejects delisted names' truncated/trending series
+  (the spurious "WBT cointegrates with everything" from a naive full-sample screen vanished under proper
+  no-lookahead walk-forward training), and (b) large-cap delistings are overwhelmingly *acquisitions*
+  (price freezes near the deal value → spreads don't blow up). The same brutal test that demoted value
+  (Case 43) and right-sized momentum (Case 45) **clears the pairs basket.** New reusable control banked:
+  `delisting_aware_walkforward` (the survivorship-honest pairs WF). *(Caveat: 32 delistings, ~all
+  acquisitions; a wave of large-cap bankruptcies — historically rare — would test the crash case harder.)*
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge
