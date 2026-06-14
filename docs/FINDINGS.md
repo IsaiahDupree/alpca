@@ -8,16 +8,18 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **44 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+Across **45 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
 fundamental, run both by hand and by an AI research loop — **one edge is validated and deployed** (a
-cointegrated-pairs market-neutral basket) **and a second-edge candidate has emerged on mid-caps —
-reframed by the survivorship test from value to MOMENTUM.** The hunt off large-caps found value and
-momentum both *appearing* to generalize on mid-caps and uncorrelated with the pairs basket (ρ = −0.03,
-gate #1 passed) — but the **survivorship-bias point-in-time re-test (Case 43) flipped it:** putting the
-delisted value-traps back in **collapsed value (0.35 → −0.45) and lifted vol-managed momentum (0.39 →
-1.35)**. Value *buys* the dying cheap names; momentum *shorts* them. So the real survivorship-robust
-mid-cap edge is **momentum**, pending an adverse-selection-borrow model (its strength is from shorting
-names going to zero) and a forward paper-track. Re-measured and *corrected* this
+cointegrated-pairs market-neutral basket) **and a modest second-edge candidate has emerged on mid-caps:
+vol-managed momentum (~0.4 Sharpe), uncorrelated with the pairs basket.** The arc that got there is the
+methodology in miniature: value and momentum both *appeared* to generalize on mid-caps (ρ = −0.03 vs the
+pairs basket, gate #1 passed); a survivorship re-test with ~50 *cherry-picked bankrupt* value-traps
+*looked* like it flipped value→momentum and lifted momentum to 1.35 — but rebuilding on the **full,
+outcome-blind point-in-time universe** (all 1,707 Alpaca delistings, SIP feed; representative mid-cap
+delistings are mostly **acquisitions, not bankruptcies**) **collapsed that 1.1+ to ~0.4** (≈0.49
+gross, ≈0.36 after adverse-selection borrow, ≈0.31 as a borrow-free long/index-hedged sleeve). A real
+but modest momentum edge — the cherry-picked "fix" had itself been a bias in the opposite direction.
+Pending a forward paper-track. Separately, the pairs basket was re-measured and *corrected* this
 session, its honest walk-forward Sharpe is **~0.83** at the concentrated **top-10 + 5% ADF screen**
 (−4% drawdown) — far better than the misleading "0.29" of an over-diversified top-24 basket that
 diluted the edge into weak pairs. It is deployed on a shadow forward paper-track. **Until this session,
@@ -34,7 +36,7 @@ mid-cap blend is the first credible one.
 
 ---
 
-## The scoreboard (44 experiments, by outcome)
+## The scoreboard (45 experiments, by outcome)
 
 **✅ Validated & deployed (1):**
 - **Cointegrated-pairs basket** — market-neutral, walk-forward (re-screen each quarter, trade the
@@ -42,19 +44,19 @@ mid-cap blend is the first credible one.
   top-24 — diluting into weak pairs halved the edge), −4% drawdown. Deployed on a
   forward paper-track to let the *live* OOS curve adjudicate.
 
-**🟡 Second-edge candidate — momentum, but short-side-only + borrow-gated (Cases 41–44):**
-- **Mid-cap vol-managed momentum.** The hunt found value AND momentum *appearing* to generalize on
-  mid-caps (Cases 41–42), uncorrelated with the pairs basket (**ρ = −0.03**, gate #1). The **survivorship
-  point-in-time re-test (Case 43) flipped it**: adding back ~50 delisted value-traps **collapsed value
-  0.35 → −0.45** (value *buys* the dying names) and **lifted momentum 0.39 → 1.35** (momentum *shorts*
-  them). **Case 44 then stress-tested momentum and found the honest limits:** (a) under **adverse-selection
-  borrow + no-locate drops + dollar-neutral + artifact-winsorization** it still holds **~1.1** on the
-  point-in-time universe (real alpha, not beta) — but (b) the **long/SPY-index-hedged, borrow-FREE form
-  has NO edge** (0.08 survivor, −0.12 PIT): the alpha is **entirely short-side**, so it **can't escape the
-  borrow wall**; and (c) the magnitude is **bracketed 0.3–1.1** — my +50 delistings are *famous* failures
-  that over-feed the short leg, so the true number needs a representative point-in-time universe or a
-  forward track. **Net: a genuine but messy short-side momentum anomaly — promising enough to
-  forward-track, not clean enough to deploy. Still one validated+deployed edge (pairs).**
+**🟡 Second-edge candidate — mid-cap momentum, modest (~0.4) and borrow-aware (Cases 41–45):**
+- **Mid-cap vol-managed momentum.** Found on mid-caps (Cases 41–42), uncorrelated with the pairs basket
+  (**ρ = −0.03**, gate #1). The survivorship re-test (Case 43) *appeared* to flip value→momentum and lift
+  it to 1.35 — but **Case 45 resolved that as a cherry-pick artifact:** rebuilt on the **full, outcome-blind
+  point-in-time universe** (all 1,707 Alpaca delistings, SIP feed, filtered to mid-cap-in-2021), where
+  representative delistings turn out to be **mostly ACQUISITIONS, not bankruptcies** (genuine mid-caps get
+  bought, not wiped out). On that honest universe the magnitude **collapses from 1.1 to ~0.4**: borrow-free
+  ≈0.49, after adverse-selection borrow ≈0.36, and — newly positive — a **borrow-free long/SPY-hedged form
+  ≈0.31** (the long leg holds acquired winners into their buyout premium). **Net: a real but MODEST (~0.4)
+  momentum edge, uncorrelated with the pairs basket, with a plausible borrow-free deployable form (~0.3) —
+  a credible weak second leg for the combiner, pending a forward track.** The arc is itself the lesson: a
+  cherry-picked survivorship "fix" was a bias in the opposite direction; only the full outcome-blind PIT
+  universe gave the honest number. Still one validated+deployed edge (pairs).
 
 **⚠️ Generalizes but too weak to deploy (2):**
 - **Value composite (E/P + FCF/P + B/P)** — the *first* fundamental whose fresh-symbol holdout stayed
@@ -144,13 +146,16 @@ supply* — a second genuinely-good uncorrelated leg.
    crowded shorts you most want are exactly the ones that go special/no-locate) turned surprise-PEAD
    from a "DSR 0.92 candidate" into a reject. The optimistic friction model had waved it through.
 
-5b. **Survivorship bias doesn't just dock a Sharpe — it can flip which signal is real.** Testing the
-   mid-cap edge on a today-exists universe inflated VALUE (it buys the cheap names; the cheapest-that-
-   went-bankrupt were missing) and *suppressed* MOMENTUM (it shorts those same falling names; its best
-   trades were missing). Putting the delisted value-traps back (Alpaca serves delisted history) sent
-   value 0.35 → −0.45 and momentum 0.39 → 1.35 (Case 43). Point-in-time universes including delistings
-   are mandatory before believing any cross-sectional equity edge — and the side that *benefits* from the
-   dead names (a short leg) then runs into the borrow wall (lesson 5).
+5b. **Survivorship bias doesn't just dock a Sharpe — it can flip which signal is real, and a careless
+   "fix" re-biases the other way.** A today-exists universe inflated VALUE and suppressed MOMENTUM; adding
+   the dead names back sent value 0.35 → −0.45 and momentum 0.39 → 1.35 (Case 43). But that "+50
+   delistings" set was *cherry-picked famous bankruptcies*, which over-fed the short leg — itself a
+   survivorship bias in the opposite direction. Only the **full, outcome-blind point-in-time universe**
+   (all 1,707 Alpaca delistings, SIP feed, filtered on 2021 characteristics) gave the honest number, and
+   it **collapsed momentum's 1.1+ back to ~0.4** (Case 45) — because representative mid-cap delistings are
+   mostly **acquisitions, not bankruptcies**. Two rules: (i) point-in-time universes are mandatory; (ii)
+   the delisting set must be *selected on entry-date characteristics, never on outcome* — or you just
+   trade one survivorship bias for its mirror image.
 
 6. **Real edges are scarce, and that's the truth — not a tuning problem.** After 35 experiments, one
    survivor. The constraint on profit is **edge supply**, and more search (now AI-accelerated)

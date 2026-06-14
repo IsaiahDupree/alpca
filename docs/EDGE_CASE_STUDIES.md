@@ -951,6 +951,45 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   not clean enough to deploy.** The honest second-leg search continues; the pairs basket remains the only
   deployed edge.
 
+## Case 45 — REPRESENTATIVE point-in-time universe: the 1.35 was a cherry-pick artifact ✅ (bracket collapses to ~0.4)
+
+- **What.** Case 44 left momentum's magnitude bracketed 0.3–1.1 because the +50 delistings were *famous
+  failures* (BBBY/ENDP/…) that over-feed the short leg. The fix: pull **all 1,707 US-listed delistings**
+  from Alpaca's inactive-assets API (no selection on outcome), and on the **SIP feed** (the free IEX feed
+  has near-zero delisted coverage; SIP has it all). Filter to mid-cap-caliber **in 2021** (median price
+  $5–500, >$3M/day dollar-volume over the first 120 bars) — selected on *start-of-window* characteristics,
+  **outcome-blind**, so bankruptcies and acquisitions both qualify. Re-ran momentum on the survivor SIP
+  universe + this representative delisting set (feed-consistent).
+- **The representative delisting set is dominated by ACQUISITIONS, not failures.** Of the kept names,
+  ~all exited *flat/up* (DNB taken private, TPTX acquired by BMS, ACC/American Campus, MTOR/Meritor by
+  Cummins, MANT/ManTech…) — **0 failure-like**. Genuine mid-caps ($300M–$10B) rarely go bankrupt; they
+  get bought at a premium. The famous bankruptcies I'd cherry-picked had mostly *already* fallen out of
+  mid-cap by 2021, so an honest 2021-mid-cap filter excludes them — correctly.
+- **Result — the survivorship "boost" was the artifact:**
+
+  | mode (point-in-time) | cherry-picked failures (Case 44) | **representative (Case 45)** |
+  |---|---|---|
+  | borrow-free L/S | 1.35 | **0.49** |
+  | adverse-borrow, dollar-neutral | 0.93 | **0.36** |
+  | long + SPY-index-hedge (borrow-FREE) | −0.12 | **+0.31** |
+
+  Adding *representative* delistings barely moves momentum (survivor 0.46 → 0.49) — the 0.39 → 1.35 jump
+  in Case 43 was entirely the cherry-picked bankruptcies over-feeding the short leg. **The 0.3–1.1 bracket
+  collapses to ~0.35–0.49.**
+- **Verdict.** ✅ **Magnitude resolved: mid-cap vol-managed momentum is a MODEST ~0.4 Sharpe edge** (≈0.49
+  gross, ≈0.36 after adverse-selection borrow), not the 1.1+ the cherry-picked test implied — and the
+  survivorship effect on momentum is **small, not dramatic**, once delistings are representative. Bonus:
+  the **borrow-free long/index-hedged form is now positive (+0.31)** — because representative delistings
+  include acquired *winners* the long leg holds into a buyout premium — so a deployable, borrow-free sleeve
+  may exist at modest Sharpe (the earlier −0.12 was the cherry-picked failures starving the long leg).
+  **Net: momentum is a real but modest (~0.4) edge, uncorrelated with the pairs basket (gate #1), with a
+  plausible borrow-free long/hedged form (~0.3) — a credible weak second leg for the combiner, pending a
+  forward track.** *(Caveat: run on the A–R portion of the 1,707-name pull, 48 representative mid-cap
+  delistings; the full set will firm the number but the direction — bracket collapses to the low end — is
+  unambiguous since ticker letter is uncorrelated with returns.)* The lesson compounds Case 43: a
+  cherry-picked "fix" for survivorship can itself be a survivorship bias in the opposite direction — only
+  the **full, outcome-blind** point-in-time universe gives the honest number.
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge
