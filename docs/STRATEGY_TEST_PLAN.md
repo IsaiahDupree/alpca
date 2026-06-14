@@ -28,6 +28,8 @@ Status: ⬜ pending · 🔄 in progress · ✅ done (kept) · ❌ done (rejected
 | 15 | **Value on MID-CAPS** (where the premium lives) | new 137-name S&P400 + EDGAR | ⚠️ | **0.21 (2× large-cap 0.11) AND holdout +0.14** — size-tilt confirmed, still sub-rail (Case 38) |
 | 16 | **Value on SMALL-CAPS** (push the size-tilt) | new 110-name S&P600 + EDGAR | ❌ | **inverts to −0.26** — value-trap + small-cap bear; size-tilt non-monotonic, peaks mid (Case 39) |
 | 17 | **Mid-cap value + LIGHT momentum** (AMP where premia real) | midcap bars + EDGAR | ⚠️ | **0.39 / holdout +0.24** (best generalizing fundamental); light tilt *helps*, but fails regime+DSR rail (Case 40) |
+| 18 | **Factor zoo on MID-CAPS** (find more like value) | 289-name midcap + EDGAR | ✅ | **momentum family revives** — residual & vol-managed momentum generalize (holdout +0.25, volmom 4/6 yrs); quality/lottery stay dead (Case 41) |
+| 19 | **Mid-cap value + vol-managed-momentum combiner** | midcap bars + EDGAR | 🟢 | **−0.26 corr → 5/6 positive years, −7% DD, Sh ~0.4–0.5**; first to meet the validated bar; pending pairs-corr + forward track (Case 42) |
 
 ## Post-plan: hunting the second leg (Cases 36–40)
 With the backlog closed, the next-highest-EV move was to *strengthen the one fundamental that

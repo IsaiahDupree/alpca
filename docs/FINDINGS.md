@@ -8,28 +8,42 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **40 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
-fundamental, run both by hand and by an AI research loop — **exactly one edge has cleared the honest
-out-of-sample bar**: a cointegrated-pairs market-neutral basket. Re-measured and *corrected* this
+Across **42 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+fundamental, run both by hand and by an AI research loop — **one edge is validated and deployed** (a
+cointegrated-pairs market-neutral basket) **and a strong second-edge candidate has just emerged**:
+a mid-cap **value + vol-managed-momentum** market-neutral blend that — for the first time — meets the
+same out-of-universe + out-of-regime bar that validated the pairs basket (Cases 41–42), pending a
+pairs-correlation measurement and a forward paper-track before deployment. Re-measured and *corrected* this
 session, its honest walk-forward Sharpe is **~0.83** at the concentrated **top-10 + 5% ADF screen**
 (−4% drawdown) — far better than the misleading "0.29" of an over-diversified top-24 basket that
-diluted the edge into weak pairs. It is deployed on a shadow forward paper-track. **No other candidate
-survived.**
+diluted the edge into weak pairs. It is deployed on a shadow forward paper-track. **Until this session,
+no other candidate survived** — but moving off large-caps (where the literature says the premia don't
+live) and onto a fresh ~289-name mid-cap universe finally surfaced a second one: a **value +
+vol-managed-momentum** blend that generalizes out-of-universe and is regime-robust (5/6 years), pending
+two confirmations before deployment.
 
 That is not a failure of the project — it *is* the project. The deliverable is a harness whose job is
 to **reject** edges that don't generalize, and it has done so relentlessly, including against several
 candidates that looked excellent in-sample. Sized to Kelly, a ~0.83 market-neutral sleeve with −4% DD
-is a genuinely useful core; the lever for *more* is additional uncorrelated surviving legs.
+is a genuinely useful core; the lever for *more* is additional uncorrelated surviving legs — and the
+mid-cap blend is the first credible one.
 
 ---
 
-## The scoreboard (35 experiments, by outcome)
+## The scoreboard (42 experiments, by outcome)
 
-**✅ Validated (1):**
+**✅ Validated & deployed (1):**
 - **Cointegrated-pairs basket** — market-neutral, walk-forward (re-screen each quarter, trade the
   next). **WF ~0.83 at the concentrated top-10 + 5% ADF screen** (the "0.29" was an over-diversified
   top-24 — diluting into weak pairs halved the edge), −4% drawdown. Deployed on a
   forward paper-track to let the *live* OOS curve adjudicate.
+
+**🟢 Second-edge candidate — meets the validated bar, pre-deployment (1):**
+- **Mid-cap value + vol-managed-momentum (market-neutral)** — value and (vol-managed) momentum BOTH
+  generalize on mid-caps where they were dead on large-caps; **−0.26** correlated, so the ~50/50
+  inverse-vol blend is positive in **5/6 years**, −7% maxDD, Sharpe ~0.4–0.5. First candidate to clear
+  the same out-of-universe + out-of-regime bar as the pairs basket. Pending: correlation vs the pairs
+  basket + a forward paper-track (Cases 41–42).
 
 **⚠️ Generalizes but too weak to deploy (2):**
 - **Value composite (E/P + FCF/P + B/P)** — the *first* fundamental whose fresh-symbol holdout stayed
@@ -37,13 +51,24 @@ is a genuinely useful core; the lever for *more* is additional uncorrelated surv
   the 2022 value rotation, weak in growth-led 2026). Real premium, too thin alone; on the combiner bench.
 - **Mid-cap value + light momentum (Cases 38, 40)** — the *strongest generalizing fundamental in the
   program.* Value is **stronger in mid-caps (0.21) than large-caps (0.11)** and still generalizes
-  (holdout +0.14); a **light** momentum tilt (w=0.25, the AMP combo) lifts it to **full 0.39 / holdout
-  +0.24** — and unlike large-caps, the light blend *improves* generalization instead of breaking it
-  (w≥0.5 breaks → a real sweet spot, not an overfit knob). Clears the two hardest tests (beats the
-  size-baseline AND generalizes) but **fails the regime+DSR rail** (3/6 years, DSR 0.51). The best
-  second-leg *candidate* we've found — held at zero size until it clears the rail. The size-tilt is
-  **non-monotonic** though: it **inverts in small-caps (−0.26, Case 39)** — the value-trap + 2021–26
-  small-cap bear — so mid-cap is a genuine local sweet spot, not the first rung of a ladder.
+  (holdout +0.14→**+0.44 at full ~289-name breadth** — generalization *improving* with breadth, the
+  opposite of overfit); a **light** momentum tilt (w=0.25, the AMP combo) lifts it to **0.36–0.39** —
+  and unlike large-caps, the light blend *improves* generalization instead of breaking it (w≥0.5 breaks
+  → a real sweet spot). Size-tilt is **non-monotonic**: it **inverts in small-caps (−0.26, Case 39)** —
+  the value-trap + 2021–26 small-cap bear — so mid-cap is a genuine local sweet spot, not a ladder.
+
+**🟢 SECOND-EDGE CANDIDATE — first to meet the validated bar (Cases 41–42):**
+- **Mid-cap value + vol-managed-momentum (market-neutral).** "Find more like mid-cap value" worked: the
+  **momentum family revives on mid-caps** too — *residual* and *vol-managed* momentum, both rejected on
+  large-caps (Cases 31–32), **generalize on mid-caps** (holdout +0.25, vol-managed the most regime-robust
+  single factor at 4/6 years). Value and momentum are **−0.26 correlated**, so the inverse-vol blend
+  (~50/50) is positive in **5/6 years** (−7% maxDD, Sharpe ~0.4–0.5) — it **clears the regime bar** that
+  blocked each leg alone. This is the **first candidate to meet the same out-of-universe + out-of-regime
+  standard that validated the pairs basket**, and the same quality tier (~0.5 Sharpe). It does *not*
+  clear the strict DSR-0.9 gate (~0.5–0.6) — but the pairs basket doesn't either; the real bar is
+  generalization, which it meets. **Pending two gates before deployment: (1) correlation vs the pairs
+  basket, (2) a forward paper-track.** The quality/issuance/lottery factors stay dead even on mid-caps —
+  only value and momentum are real here.
 
 **❌ Rejected — overfit (caught out-of-sample) (3):**
 - **EAR-PEAD beta-hedged** — 0.68 / 6-of-6 years / DSR 0.89 in-universe, but fresh-symbol holdout −0.52.

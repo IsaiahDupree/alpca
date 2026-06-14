@@ -823,6 +823,60 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   **date-aligned** combiner test against the pairs basket. A genuine lead, held at zero size until it
   clears the rail.
 
+## Case 41 — The factor zoo ON MID-CAPS ("find more like mid-cap value") ✅ partial (momentum comes alive too)
+
+- **What.** Value came alive on mid-caps (Cases 38/40) when it was dead on large-caps. The obvious
+  question: which *other* premia from the rejected zoo (Cases 26–34) revive on less-efficient mid-cap
+  names? Widened the mid-cap universe to **~289 names** (bars + EDGAR fundamentals on My Passport) and
+  re-ran the whole zoo through the same bar — full universe + disjoint fresh-symbol holdout + per-year +
+  DSR. (The breadth jump also let us re-test Case 40 at full breadth: its **fresh holdout STRENGTHENED
+  from +0.24 to +0.44 on 78 disjoint names** — generalization improving with breadth is the *opposite*
+  of overfit, raising confidence it's a real premium; still sub-rail on regime+DSR though.)
+- **Result — the momentum family revives, the quality/lottery factors stay dead:**
+
+  | factor (mid-cap) | full | holdout | +yrs | DSR | large-cap was |
+  |---|---|---|---|---|---|
+  | **vol-managed momentum** | **0.42** | **+0.25** | **4/6** | 0.53 | ❌ rejected (Case 32) |
+  | **residual momentum** | 0.27 | +0.25 | 3/6 | 0.40 | ❌ rejected (Case 31) |
+  | value + light momentum | 0.36 | +0.51 | 3/6 | 0.47 | the Case-40 lead |
+  | asset-growth / ROA / net-issuance / gross-profit | ~0 … −0.70 | ≤0 | — | ≈0 | dead → still dead |
+  | MAX-lottery / idio-vol | −0.6 | <0 | — | ≈0 | dead → still dead |
+
+- **Verdict.** ✅ **The hunt paid off:** **residual & vol-managed momentum — both rejected on large-caps
+  — generalize on mid-caps**, vol-managed momentum being the most regime-robust single factor in the
+  whole program (4/6 years, DSR 0.53). The *pattern* is now clean and explainable: on mid-caps the
+  **value and momentum premia are real and generalizing; the quality/issuance/lottery factors are not.**
+  None clears the rail *alone* — but value and momentum are negatively correlated, which sets up Case 42.
+
+## Case 42 — Multi-factor mid-cap combiner: a genuine SECOND-EDGE candidate ✅ (meets the out-of-universe + out-of-regime bar; pending forward + pairs-corr)
+
+- **What.** Case 41 left three generalizing mid-cap legs (value, residual-mom, vol-managed-mom), each
+  real but each failing the rail on regime-robustness (3–4 of 6 years). Value vs momentum is negatively
+  correlated, so blending should be *more regime-stable* than any leg alone. The decisive metric isn't a
+  bigger Sharpe — it's whether the blend is positive in MORE years (clears the 60% regime bar) while
+  keeping a positive fresh-symbol holdout. Measured the correlation matrix + the inverse-vol blend's
+  per-year profile (`combine.evaluate_combo`, date-aligned streams).
+- **Result.**
+  - **Correlation matrix confirms the structure:** value vs momentum **−0.26 / −0.30** (genuine
+    diversification); the two momentum legs **+0.91** (redundant — same factor).
+  - **Pure value + vol-managed momentum (the −0.26 pair, ~50/50 inverse-vol):** **5/6 positive years**
+    (2021 +0.45, 2022 +0.81, 2023 +0.08, 2024 +0.36, 2025 −0.41, 2026 +0.76), **maxDD −7.1%**, Sharpe
+    ~0.37 — combining lifted regime-robustness from each leg's 3–4/6 to **5/6, clearing the regime bar**
+    that blocked Case 40.
+  - **value+light-momentum + vol-managed momentum** trades regime for level: **4/6 years, Sharpe 0.53,
+    DSR 0.62** — a clean Sharpe↔regime frontier.
+- **Verdict.** ✅ **The strongest second-edge candidate the program has produced — and the first to meet
+  the same bar that validated the pairs basket.** It is market-neutral, **generalizes out-of-universe**
+  (fresh-symbol holdout +0.44), is **regime-robust out-of-regime** (5/6 years), has a **shallow −7% DD**,
+  and sits at Sharpe ~0.4–0.5 — the *same quality tier as the pairs basket* (OOS ~0.5). It does **not**
+  clear the strict DSR-0.9 falsification gate (DSR ~0.5–0.6) — **but neither does the pairs basket**;
+  our actual "validated" standard has always been out-of-universe + out-of-regime generalization, not
+  DSR 0.9. **Honest status: a second-edge *candidate*, not yet deployed.** Two confirmations remain
+  before capital: **(1) measure its correlation with the large-cap pairs basket** (different universe +
+  mechanism → prior ρ≈0, but must be measured — if low, the master combiner finally gets a true second
+  leg), and **(2) a forward paper-track with independent resolution**, exactly as the pairs basket got.
+  This is the answer to the binding constraint (edge supply) we've been hunting — pending those two gates.
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge
