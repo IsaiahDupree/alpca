@@ -16,8 +16,7 @@ methodology in miniature: value and momentum both *appeared* to generalize on mi
 pairs basket, gate #1 passed); a survivorship re-test with ~50 *cherry-picked bankrupt* value-traps
 *looked* like it flipped value→momentum and lifted momentum to 1.35 — but rebuilding on the **full,
 outcome-blind point-in-time universe** (all 1,707 Alpaca delistings, SIP feed; representative mid-cap
-delistings are mostly **acquisitions, not bankruptcies**) **collapsed that 1.1+ to ~0.4** (≈0.49
-gross, ≈0.36 after adverse-selection borrow, ≈0.31 as a borrow-free long/index-hedged sleeve). A real
+delistings are mostly **acquisitions, not bankruptcies**) **collapsed that 1.1+ to ~0.4** (≈0.43 gross, ≈0.30 after adverse-selection borrow, ≈0.23 as a borrow-free long/index-hedged sleeve). A real
 but modest momentum edge — the cherry-picked "fix" had itself been a bias in the opposite direction.
 Pending a forward paper-track. Separately, the pairs basket was re-measured and *corrected* this
 session, its honest walk-forward Sharpe is **~0.83** at the concentrated **top-10 + 5% ADF screen**
@@ -51,9 +50,10 @@ mid-cap blend is the first credible one.
   point-in-time universe** (all 1,707 Alpaca delistings, SIP feed, filtered to mid-cap-in-2021), where
   representative delistings turn out to be **mostly ACQUISITIONS, not bankruptcies** (genuine mid-caps get
   bought, not wiped out). On that honest universe the magnitude **collapses from 1.1 to ~0.4**: borrow-free
-  ≈0.49, after adverse-selection borrow ≈0.36, and — newly positive — a **borrow-free long/SPY-hedged form
-  ≈0.31** (the long leg holds acquired winners into their buyout premium). **Net: a real but MODEST (~0.4)
-  momentum edge, uncorrelated with the pairs basket, with a plausible borrow-free deployable form (~0.3) —
+  ≈0.43, after adverse-selection borrow ≈0.30, and a mildly positive **borrow-free long/SPY-hedged form
+  ≈0.23** (the long leg holds acquired winners into their buyout premium; adding representative delistings
+  slightly *hurts* the L/S, confirming no survivorship boost). **Net: a real but MODEST (~0.4)
+  momentum edge, uncorrelated with the pairs basket, with a plausible borrow-free deployable form (~0.2) —
   a credible weak second leg for the combiner, pending a forward track.** The arc is itself the lesson: a
   cherry-picked survivorship "fix" was a bias in the opposite direction; only the full outcome-blind PIT
   universe gave the honest number. Still one validated+deployed edge (pairs).

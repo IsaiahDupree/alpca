@@ -967,26 +967,27 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   mid-cap by 2021, so an honest 2021-mid-cap filter excludes them — correctly.
 - **Result — the survivorship "boost" was the artifact:**
 
-  | mode (point-in-time) | cherry-picked failures (Case 44) | **representative (Case 45)** |
+  | mode (point-in-time) | cherry-picked failures (Case 44) | **representative (Case 45, full 1,707 set)** |
   |---|---|---|
-  | borrow-free L/S | 1.35 | **0.49** |
-  | adverse-borrow, dollar-neutral | 0.93 | **0.36** |
-  | long + SPY-index-hedge (borrow-FREE) | −0.12 | **+0.31** |
+  | borrow-free L/S | 1.35 | **0.43** |
+  | adverse-borrow, dollar-neutral | 0.93 | **0.30** |
+  | long + SPY-index-hedge (borrow-FREE) | −0.12 | **+0.23** |
 
-  Adding *representative* delistings barely moves momentum (survivor 0.46 → 0.49) — the 0.39 → 1.35 jump
-  in Case 43 was entirely the cherry-picked bankruptcies over-feeding the short leg. **The 0.3–1.1 bracket
-  collapses to ~0.35–0.49.**
-- **Verdict.** ✅ **Magnitude resolved: mid-cap vol-managed momentum is a MODEST ~0.4 Sharpe edge** (≈0.49
-  gross, ≈0.36 after adverse-selection borrow), not the 1.1+ the cherry-picked test implied — and the
-  survivorship effect on momentum is **small, not dramatic**, once delistings are representative. Bonus:
-  the **borrow-free long/index-hedged form is now positive (+0.31)** — because representative delistings
-  include acquired *winners* the long leg holds into a buyout premium — so a deployable, borrow-free sleeve
-  may exist at modest Sharpe (the earlier −0.12 was the cherry-picked failures starving the long leg).
-  **Net: momentum is a real but modest (~0.4) edge, uncorrelated with the pairs basket (gate #1), with a
-  plausible borrow-free long/hedged form (~0.3) — a credible weak second leg for the combiner, pending a
-  forward track.** *(Caveat: run on the A–R portion of the 1,707-name pull, 48 representative mid-cap
-  delistings; the full set will firm the number but the direction — bracket collapses to the low end — is
-  unambiguous since ticker letter is uncorrelated with returns.)* The lesson compounds Case 43: a
+  Adding *representative* delistings doesn't help momentum — it slightly **hurts** it (survivor 0.46 →
+  +delisted 0.43), because acquisitions jump to a fixed deal price and flatten, giving the short leg fewer
+  good trades. The 0.39 → 1.35 jump in Case 43 was entirely the cherry-picked bankruptcies over-feeding
+  the short leg. **The 0.3–1.1 bracket collapses to ~0.3–0.45** (75 representative mid-cap delistings,
+  74 acquisitions / 1 failure — definitive on the complete 1,707-name pull).
+- **Verdict.** ✅ **Magnitude resolved: mid-cap vol-managed momentum is a MODEST ~0.4 Sharpe edge** (≈0.43
+  gross, ≈0.30 after adverse-selection borrow), not the 1.1+ the cherry-picked test implied — and the
+  survivorship effect on momentum is **negligible (slightly negative), not a boost**, once delistings are
+  representative. The **borrow-free long/index-hedged form is mildly positive (+0.23)** — representative
+  delistings include acquired *winners* the long leg holds into a buyout premium — so a deployable,
+  borrow-free sleeve may exist at modest Sharpe (the cherry-picked −0.12 was the famous failures starving
+  the long leg). **Net: momentum is a real but modest (~0.4) edge, uncorrelated with the pairs basket
+  (gate #1), with a plausible borrow-free long/hedged form (~0.2) — a credible weak second leg for the
+  combiner, pending a forward track.** *(Numbers definitive on the complete 1,707-name pull: 75
+  representative mid-cap delistings; stable from the 48→50→75-name re-runs.)* The lesson compounds Case 43: a
   cherry-picked "fix" for survivorship can itself be a survivorship bias in the opposite direction — only
   the **full, outcome-blind** point-in-time universe gives the honest number.
 
