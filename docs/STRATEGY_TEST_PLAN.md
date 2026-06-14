@@ -30,6 +30,8 @@ Status: ⬜ pending · 🔄 in progress · ✅ done (kept) · ❌ done (rejected
 | 17 | **Mid-cap value + LIGHT momentum** (AMP where premia real) | midcap bars + EDGAR | ⚠️ | **0.39 / holdout +0.24** (best generalizing fundamental); light tilt *helps*, but fails regime+DSR rail (Case 40) |
 | 18 | **Factor zoo on MID-CAPS** (find more like value) | 289-name midcap + EDGAR | ✅ | **momentum family revives** — residual & vol-managed momentum generalize (holdout +0.25, volmom 4/6 yrs); quality/lottery stay dead (Case 41) |
 | 19 | **Mid-cap value + vol-managed-momentum combiner** | midcap bars + EDGAR | 🟢 | **−0.26 corr → 5/6 positive years, −7% DD, Sh ~0.4–0.5**; first to meet the validated bar; pending pairs-corr + forward track (Case 42) |
+| 20 | **Gate #1: correlation vs deployed pairs basket** | both caches | ✅ | **ρ = −0.03** (uncorrelated), 2-sleeve book 6/6 positive years — diversifies (Case 42 gate) |
+| 21 | **Survivorship point-in-time re-test** (delisted names) | +50 delisted via Alpaca | ❌→🟡 | **FLIPS value→momentum**: value 0.35→−0.45 (inflated, buys traps), vol-mgd momentum 0.39→**1.35** (robust, shorts traps) — real edge is momentum, borrow-gated (Case 43) |
 
 ## Post-plan: hunting the second leg (Cases 36–40)
 With the backlog closed, the next-highest-EV move was to *strengthen the one fundamental that

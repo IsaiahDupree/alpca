@@ -877,6 +877,50 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   leg), and **(2) a forward paper-track with independent resolution**, exactly as the pairs basket got.
   This is the answer to the binding constraint (edge supply) we've been hunting — pending those two gates.
 
+## Gate #1 (for Case 42) — correlation vs the deployed pairs basket ✅ (uncorrelated, ρ = −0.03)
+
+Before the mid-cap blend can earn a combiner slot it must *diversify* the edge we already trade. Built
+both daily-return streams on the same calendar (large-cap pairs basket at the validated top-10/ADF
+config; mid-cap value+vol-mom blend) and date-joined 1,255 days. **Correlation ρ = −0.033** — essentially
+zero, confirming the mechanistic prior (cointegration mean-reversion on large-caps vs cross-sectional
+fundamentals+trend on a disjoint mid-cap set share nothing). The two-sleeve inverse-vol book is positive
+in **6/6 years** — the uncorrelated legs cover each other's weak years. *(Caveat: the pairs leg here is an
+in-sample full-calendar screen, so the combined Sharpe/DSR is inflated vs the walk-forward ~0.83; the
+robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not the level.)* Gate #1 passes.
+
+## Case 43 — SURVIVORSHIP-BIAS point-in-time re-test ❌→ flips value to momentum (the session's most important result)
+
+- **What.** Every mid-cap result (Cases 38/40/42) was measured on names that **exist today** — omitting
+  the value-traps that went bankrupt or delisted (BBBY, RAD, ENDP, AVYA, BIG, CANO, …). Value's LONG leg
+  buys cheap names, so excluding the cheapest-that-died inflates it. Verified Alpaca serves **delisted
+  history up to the delisting date** (BBBY 1256 bars, SIVB stops at its 2023 collapse, …) — so the fix is
+  feasible: pulled ~50 delisted mid/small-caps into My Passport and re-ran on survivor-only vs
+  survivor+delisted. (Conservative: after delisting the bars stop, so the backtest books ~0, not the
+  final gap-to-zero — the TRUE hit is worse than measured.)
+- **Result — the dead names FLIP which leg is real:**
+
+  | factor | survivor-only | + value-traps | mechanism |
+  |---|---|---|---|
+  | value | +0.04 | **−0.45** | value *buys* the dying cheap names → survivorship hid its worst trades |
+  | value + light-mom | +0.35 | **−0.45** | the value drag dominates |
+  | **vol-managed momentum** | +0.39 | **+1.35** (5/6 yr) | momentum *shorts* the falling names → survivorship hid its BEST trades |
+  | residual momentum | +0.24 | **+0.69** | same — shorting losers that collapse |
+
+- **Verdict.** ❌ **Mid-cap VALUE is survivorship-inflated** — the "edge" (and the value+momentum combo
+  built on it, Case 42) is largely an artifact of excluding the bankrupt cheap names. **But mid-cap
+  MOMENTUM is survivorship-ROBUST and far stronger than the survivor-only backtest showed** (0.39 →
+  1.35), because the survivor universe had robbed it of shorting the names that went to zero. The real
+  edge here is **momentum, not value.** *Two non-negotiable caveats before believing the 1.35:* (1) that
+  gain comes from **shorting stocks going to zero — exactly the hardest-to-borrow / no-locate names** (the
+  same **adverse-selection borrow wall** that killed PEAD, Case 14, and the SI-tilt, Case 21); the
+  realizable edge sits between 0.39 and 1.35 and **must be re-run with adverse-selection borrow on the
+  dying shorts.** (2) The survivorship-clean, borrow-free slice is the **LONG** leg (winners don't
+  delist), which points to a **long-momentum / index-hedged-short** construction (the EAR-PEAD pattern,
+  Case 18) as the honest deployable form. **The second-edge candidate is reframed: not value+momentum,
+  but mid-cap vol-managed MOMENTUM — pending the borrow model and a long/index-hedged build.** This is the
+  survivorship control doing exactly its job: it didn't just dock a Sharpe, it **changed which signal we
+  believe.**
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge
