@@ -761,6 +761,68 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   disjoint-symbol split (−0.23) killed it. The fresh-symbol holdout is the binding test; a passing
   time-split is necessary, not sufficient. Momentum is not the missing second leg on this universe.
 
+## Case 38 — Value on a MID-CAP universe ⚠️ (the size-tilt thesis, confirmed but still thin)
+
+- **What.** Every factor-zoo rejection (Cases 26–37) carried the same caveat: *these premia live in
+  smaller, less-efficient names, not our 195 liquid large-caps.* So I built a **fresh ~137-name S&P
+  MidCap-400 universe** (zero overlap with the large-caps or the large-cap fresh holdout — a true
+  out-of-universe test), pulled 5yr daily bars (Alpaca) + EDGAR fundamentals, and ran the **same raw
+  value composite** three ways: the full mid-cap universe, an internal train half, and a disjoint
+  **holdout half** (fresh-symbol generalization *within* mid-caps).
+- **Result — the first fundamental to clear BOTH halves of the bar, just not by enough:**
+  - **Full mid-cap Sharpe 0.21** — nearly **double the large-cap 0.11**. The value premium *is*
+    genuinely stronger in smaller names, exactly as the literature predicts.
+  - **Holdout-half +0.14, 4/6 positive years** — it **generalizes** to fresh mid-cap symbols (it does
+    not collapse the way sector-neutral value and value+momentum did on their fresh holdouts).
+  - But **0.21 is still sub-deployable**: DSR 0.37, only 3/6 positive years on the full universe → it
+    **fails the falsification rail** on DSR + regime-robustness.
+- **Verdict.** ⚠️ **Promising lead, not a deploy.** This is the *first* time a candidate both **beat its
+  large-cap version** (premium strengthens as size falls) **and kept a positive fresh-symbol holdout** —
+  the size-tilt direction is validated by measurement, not assumed. The honest read: value is real and
+  size-dependent, but a 0.21 sleeve is still too thin to deploy alone and too thin to lift the combiner
+  (value at 0.11 already diluted it). The lead it opens: push *further* down the cap spectrum to true
+  **small-caps (S&P 600)**, where the premium should be strongest — Case 39.
+
+## Case 39 — Value on a SMALL-CAP universe ❌ (the size-tilt is NOT monotonic — it inverts)
+
+- **What.** If value strengthens from large (0.11) to mid (0.21), does it keep climbing into true
+  small-caps? Built a fresh **~110-name S&P SmallCap-600 universe** (zero overlap with large/mid),
+  same 5yr bars + EDGAR fundamentals, same raw value composite + internal disjoint holdout.
+- **Result.** **It inverts: full small-cap value −0.26, holdout −0.19** (DSR 0.08, dies to the cost
+  wall too). The size-tilt is **non-monotonic — large 0.11 → mid 0.21 → small −0.26**, peaking at
+  mid-cap and reversing in small-caps.
+- **Why (honest).** The cheap-yield screen in small-caps loads onto the **value trap**: distressed,
+  unprofitable, levered small names that look cheap and stay cheap (or die). In the 2022–24 rate-shock
+  regime those got crushed, and small-caps broadly were in a multi-year bear — so the small-cap value
+  *premium* was negative in this specific window. Whatever the mix of structural value-trap and
+  regime, the measurement is clear: pushing further down the cap spectrum does **not** extend the lead.
+- **Verdict.** ❌ **REJECT** for deployment, and it **bounds Case 38**: mid-cap is a genuine local
+  sweet spot, not the first rung of a ladder. Stop descending; the action is *at* mid-cap.
+
+## Case 40 — Mid-cap value + LIGHT momentum (the AMP combo, where the premia are real) ⚠️ (best generalizing fundamental yet, still sub-rail)
+
+- **What.** On large-caps, any momentum blend destroyed value's fresh-symbol generalization (Case 37).
+  But that was a universe where *neither* premium is strong. On **mid-caps**, where value is genuinely
+  real (Case 38), the AMP thesis — value and momentum are negatively correlated, so a light combination
+  is additive and more regime-stable — gets a fair test. Swept the momentum weight on mid-cap value,
+  watching the disjoint holdout at every step.
+- **Result — opposite of large-caps, and the strongest generalizing fundamental in the program:**
+  - **value + mom w=0.25:** full Sharpe **0.39** (vs 0.21 pure value, 0.11 large-cap value), and the
+    **holdout RISES to +0.24** (from +0.14) — a light tilt improves generalization, it doesn't break it.
+  - **w=0.5+:** the holdout flips negative (−0.19, −0.37) — so there is a real *sweet spot* at a light
+    tilt, not a monotonic knob (a tuned-to-death overfit would look monotonic).
+  - Through the full gate at honest 70-trial DSR: it **clears the two hardest tests** (beats the
+    size-baseline AND generalizes to fresh symbols) but **fails the rail** on regime-robustness (3/6
+    positive years) and **DSR 0.51 < 0.9**.
+- **Verdict.** ⚠️ **Real but sub-threshold — the best second-leg *candidate* we've found, not yet a
+  deployable edge.** Unlike every Case-36/37/39 reject (which failed generalization), this one
+  generalizes; it just isn't *robust* enough yet (concentrated in 3 of 6 years) or significant enough
+  (DSR 0.51) to deploy or to add to the combiner under our own discipline. The honest next moves: widen
+  the mid-cap breadth (more names → tighter deciles, push DSR + regime-coverage), confirm the w=0.25
+  sweet spot isn't selection (a priori "light tilt" choice, re-tested on more data), and only *then* a
+  **date-aligned** combiner test against the pairs basket. A genuine lead, held at zero size until it
+  clears the rail.
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge

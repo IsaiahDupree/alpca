@@ -8,7 +8,7 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **37 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+Across **40 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
 fundamental, run both by hand and by an AI research loop — **exactly one edge has cleared the honest
 out-of-sample bar**: a cointegrated-pairs market-neutral basket. Re-measured and *corrected* this
 session, its honest walk-forward Sharpe is **~0.83** at the concentrated **top-10 + 5% ADF screen**
@@ -31,10 +31,19 @@ is a genuinely useful core; the lever for *more* is additional uncorrelated surv
   top-24 — diluting into weak pairs halved the edge), −4% drawdown. Deployed on a
   forward paper-track to let the *live* OOS curve adjudicate.
 
-**⚠️ Generalizes but too weak to deploy (1):**
+**⚠️ Generalizes but too weak to deploy (2):**
 - **Value composite (E/P + FCF/P + B/P)** — the *first* fundamental whose fresh-symbol holdout stayed
   *positive* (it generalizes to unseen symbols), but Sharpe ~0.14 and heavily regime-timed (strong in
   the 2022 value rotation, weak in growth-led 2026). Real premium, too thin alone; on the combiner bench.
+- **Mid-cap value + light momentum (Cases 38, 40)** — the *strongest generalizing fundamental in the
+  program.* Value is **stronger in mid-caps (0.21) than large-caps (0.11)** and still generalizes
+  (holdout +0.14); a **light** momentum tilt (w=0.25, the AMP combo) lifts it to **full 0.39 / holdout
+  +0.24** — and unlike large-caps, the light blend *improves* generalization instead of breaking it
+  (w≥0.5 breaks → a real sweet spot, not an overfit knob). Clears the two hardest tests (beats the
+  size-baseline AND generalizes) but **fails the regime+DSR rail** (3/6 years, DSR 0.51). The best
+  second-leg *candidate* we've found — held at zero size until it clears the rail. The size-tilt is
+  **non-monotonic** though: it **inverts in small-caps (−0.26, Case 39)** — the value-trap + 2021–26
+  small-cap bear — so mid-cap is a genuine local sweet spot, not the first rung of a ladder.
 
 **❌ Rejected — overfit (caught out-of-sample) (3):**
 - **EAR-PEAD beta-hedged** — 0.68 / 6-of-6 years / DSR 0.89 in-universe, but fresh-symbol holdout −0.52.

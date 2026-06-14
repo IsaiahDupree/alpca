@@ -92,11 +92,22 @@ def convert(md_path: Path, out_path: Path):
 
 def main() -> int:
     if len(sys.argv) < 2:
-        print("usage: md_to_docx.py <input.md> [output.docx]", file=sys.stderr)
+        print("usage: md_to_docx.py <input.md> [output.docx]   OR   md_to_docx.py a.md b.md c.md",
+              file=sys.stderr)
         return 1
-    src = Path(sys.argv[1])
-    dst = Path(sys.argv[2]) if len(sys.argv) > 2 else src.with_suffix(".docx")
-    convert(src, dst)
+    args = sys.argv[1:]
+    # Two-arg explicit form ONLY when the 2nd path is a .docx target; otherwise treat every
+    # argument as an input .md and write each to its own .docx (prevents clobbering an .md by
+    # passing it as argv[2] — the bug that overwrote STRATEGY_TEST_PLAN.md with binary).
+    if len(args) == 2 and args[1].lower().endswith(".docx"):
+        convert(Path(args[0]), Path(args[1]))
+        return 0
+    for a in args:
+        src = Path(a)
+        if src.suffix.lower() != ".md":
+            print(f"[skip] {a} (not a .md input)", file=sys.stderr)
+            continue
+        convert(src, src.with_suffix(".docx"))
     return 0
 
 
