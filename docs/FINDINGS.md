@@ -8,7 +8,7 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **35 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+Across **37 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
 fundamental, run both by hand and by an AI research loop — **exactly one edge has cleared the honest
 out-of-sample bar**: a cointegrated-pairs market-neutral basket. Re-measured and *corrected* this
 session, its honest walk-forward Sharpe is **~0.83** at the concentrated **top-10 + 5% ADF screen**
@@ -58,6 +58,15 @@ is a genuinely useful core; the lever for *more* is additional uncorrelated surv
   histories). Financials-excluded accruals improved in-sample (+0.70/6-of-6) but its fresh-symbol
   holdout stayed −0.51 — the sector-rescue refuted by measurement.
 
+**❌ Rejected — value refinements that improve in-sample but break generalization (Cases 36–37):**
+- **Sector-neutral value** — demeaning the value composite within sector *raised* the in-universe
+  Sharpe (0.11 → 0.34) but **collapsed the fresh-symbol holdout from +0.70 to −0.64**. The sector bet
+  was carrying the part that generalized; neutralizing fit main-universe idiosyncrasies. Reject.
+- **Value + momentum combo (AMP)** — blending 12-2 momentum into value improved *every* in-universe
+  metric (main 0.11 → 0.51, OOS time-split −0.52 → +0.76, DSR → 0.62) but the fresh-symbol holdout went
+  **negative for any momentum weight** (−0.16 to −0.29). Momentum overfits the specific names and doesn't
+  transfer — a clean proof that **out-of-sample-in-time ≠ out-of-sample-in-symbols.** Reject.
+
 **❌ Rejected — infeasible on the venue / data (several):**
 - Market-making / HFT / microstructure (Alpaca ~1.2 s fills, no L2, no rebates), crypto (daily +
   hourly), news/alt-data (free APIs too thin), 52-week-high momentum (inverts on our universe).
@@ -73,9 +82,12 @@ supply* — a second genuinely-good uncorrelated leg.
 
 1. **Only out-of-universe + out-of-regime holdouts adjudicate.** In-sample fit, a positive 70/30
    split, per-year regime stability, a high Deflated Sharpe, *and* subset resampling can **all pass on
-   an edge that is still overfit.** Three different candidates (EAR-PEAD, the SI tilt, accruals) proved
-   this — each died only on a *fresh-symbol* (new names) or *multi-regime* (new years) holdout. That
-   holdout is now the standing bar for "validated."
+   an edge that is still overfit.** Five different candidates (EAR-PEAD, the SI tilt, accruals,
+   sector-neutral value, value+momentum) proved this — each died only on a *fresh-symbol* (new names)
+   or *multi-regime* (new years) holdout. **Out-of-sample-in-TIME ≠ out-of-sample-in-SYMBOLS:** the
+   value+momentum combo (Case 37) posted a +0.76 chronological OOS split while its disjoint-symbol
+   holdout was −0.23. The fresh-symbol holdout is the binding bar for "validated"; a passing time-split
+   is necessary, not sufficient.
 
 2. **Costs are destiny.** Every high-turnover variant died to spread + impact + borrow. A *real* gross
    signal (overnight reversal, Sharpe 0.93) is worthless if it turns the book over ~2×/day. Low

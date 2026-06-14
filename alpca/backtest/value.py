@@ -61,6 +61,19 @@ def _rank01(x: np.ndarray, ok: np.ndarray) -> np.ndarray:
     return out
 
 
+def _sector_demean(comp: np.ndarray, sec: np.ndarray) -> np.ndarray:
+    """Subtract the within-sector mean from each valid composite so the surviving signal is 'cheap
+    RELATIVE to sector peers' — strips the sector bet (raw value just buys cheap sectors). Names whose
+    sector has <2 valid peers are dropped (can't neutralize a singleton)."""
+    out = np.full(comp.shape, np.nan)
+    ok = np.isfinite(comp)
+    for s in np.unique(sec[ok]):
+        m = ok & (sec == s)
+        if m.sum() >= 2:
+            out[m] = comp[m] - comp[m].mean()
+    return out
+
+
 def backtest_value_composite(
     bars_by_sym: Dict[str, List[dict]],
     fund_by_sym: Dict[str, List[dict]], *,
@@ -68,6 +81,10 @@ def backtest_value_composite(
     rebalance_days: int = 21,
     cost_bps: float = 2.0,
     reverse: bool = False,            # False = value (long cheap); True = the anti-value control
+    sector_by_sym: Optional[Dict[str, str]] = None,   # SIC->sector map; when set, neutralize within sector
+    momentum_weight: float = 0.0,     # >0 blends a 12-2 momentum rank into the composite (AMP combo)
+    momentum_lookback: int = 252,     # trailing window for momentum (days)
+    momentum_skip: int = 21,          # skip the most recent N days (avoid short-term reversal)
     periods_per_year: float = 252.0,
     starting_equity: float = 100_000.0,
 ) -> ValueResult:
@@ -101,6 +118,9 @@ def backtest_value_composite(
                 book[k0:, j] = snap["book"] if snap["book"] is not None else np.nan
                 shares[k0:, j] = snap["shares"]
 
+    # sector code per symbol (aligned to syms order); used only when sector_by_sym is provided
+    sec = np.array([str((sector_by_sym or {}).get(s, "?")) for s in syms]) if sector_by_sym else None
+
     k = max(1, int(round(N * top_frac)))
     eq = [starting_equity]
     daily: List[float] = []
@@ -120,6 +140,17 @@ def backtest_value_composite(
             stack = np.vstack([_rank01(m, np.isfinite(m)) for m in (ep, fp, bp)])
             cnt = np.sum(np.isfinite(stack), axis=0)
             comp = np.where(cnt > 0, np.nansum(stack, axis=0) / np.maximum(cnt, 1), np.nan)
+            if momentum_weight > 0:
+                # 12-2 cross-sectional momentum, known entering day t (uses price up to t-1-skip)
+                a, b = t - 1 - momentum_skip, t - 1 - momentum_skip - momentum_lookback
+                if b >= 0:
+                    pa, pb = price[a], price[b]
+                    mom = np.where((pa > 0) & (pb > 0), pa / pb - 1.0, np.nan)
+                    mrank = _rank01(mom, np.isfinite(mom))     # high trailing return -> high rank
+                    both = np.isfinite(comp) & np.isfinite(mrank)
+                    comp = np.where(both, (1 - momentum_weight) * comp + momentum_weight * mrank, np.nan)
+            if sec is not None:
+                comp = _sector_demean(comp, sec)      # rank cheap-vs-sector-peers, not cheap-vs-market
             ok = np.isfinite(comp)
             if ok.sum() >= 2 * k:
                 order = np.argsort(np.where(ok, comp, -np.inf))

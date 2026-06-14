@@ -69,3 +69,23 @@ def test_requires_shares_and_enough_symbols():
         rows[0]["shares"] = None                      # no shares -> no market cap -> dropped
     r = backtest_value_composite(bars, fund, top_frac=0.25)
     assert r.n_days == 0 and r.equity_curve == [100_000.0]
+
+
+def test_sector_neutral_demean_drops_singletons_but_runs():
+    """sector_by_sym neutralizes within sector; a sector with 1 name is dropped (can't demean a
+    singleton). With two 8-name sectors the book still trades and stays finite."""
+    bars, fund = _value_universe(n_sym=16)
+    secmap = {f"S{j:02d}": ("A" if j < 8 else "B") for j in range(16)}
+    r = backtest_value_composite(bars, fund, top_frac=0.25, rebalance_days=21, sector_by_sym=secmap)
+    assert r.n_days > 0 and all(math.isfinite(e) and e > 0 for e in r.equity_curve)
+
+
+def test_momentum_blend_changes_book_and_stays_finite():
+    """momentum_weight blends a trailing-return rank into the composite; with enough history the
+    blended book differs from pure value yet stays well-defined."""
+    bars, fund = _value_universe(n_days=500)
+    pure = backtest_value_composite(bars, fund, top_frac=0.25, rebalance_days=21, cost_bps=0.0)
+    blend = backtest_value_composite(bars, fund, top_frac=0.25, rebalance_days=21, cost_bps=0.0,
+                                     momentum_weight=0.5, momentum_lookback=252, momentum_skip=21)
+    assert blend.n_days > 0 and all(math.isfinite(e) for e in blend.equity_curve)
+    assert blend.total_return != pure.total_return    # momentum tilt actually moved the book

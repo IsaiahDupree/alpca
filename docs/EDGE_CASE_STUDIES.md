@@ -724,6 +724,43 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
   out-of-universe; value is unchanged (generalizes but too thin). A clean closure of the last
   open fundamental hypothesis — by measurement, not assumption.
 
+## Case 36 — Sector-neutral value (the within-sector value premium) ❌ (improves in-sample, kills generalization)
+
+- **What.** Value (Case 24) generalizes — its fresh-symbol holdout stayed *positive* (+0.70), the only
+  fundamental that did — but it's too thin (~0.11) to deploy. A raw value composite secretly loads on
+  cheap **sectors** (energy/financials cheap, tech expensive), which is a regime-timed sector bet, not
+  pure value. The literature says the **within-sector** value premium is the more persistent, robust
+  slice. So I **demeaned the composite within sector** (coarse 11-bucket SIC map, drop singletons) and
+  re-ranked on the residual — long cheap-vs-sector-peers, short expensive-vs-peers — and ran it through
+  the full bar (main 195 + 30-name fresh holdout + per-year + cost + DSR + gate).
+- **Result.** Sector-neutralizing **lifted the in-universe Sharpe 0.11 → 0.34** — looks like a win — but
+  **the fresh-symbol holdout collapsed from +0.70 to −0.64** (1/6 positive years, DSR 0.49). The sector
+  bet was carrying the part that *transferred* to unseen names; stripping it just fit main-universe
+  sector idiosyncrasies that don't generalize.
+- **Verdict.** ❌ **REJECT** — a textbook in-sample-up / out-of-universe-down overfit, caught only by the
+  fresh-symbol holdout. Raw (sector-loaded) value remains the better — but still too-thin — version.
+  Neutralization is *not* a free improvement here; it destroyed the one property that made value worth
+  keeping.
+
+## Case 37 — Value + Momentum combined ("Value and Momentum Everywhere", AMP 2013) ❌ (out-of-time ≠ out-of-symbol)
+
+- **What.** The single strongest zero-new-data candidate for a second uncorrelated leg. Value and
+  cross-sectional momentum are the two most-documented market-neutral premia and are **negatively
+  correlated** (cheap stocks have been falling; winners have gotten expensive), so a combined rank
+  (long cheap-AND-rising) is historically more regime-stable and higher-Sharpe than either leg. I blended
+  a 12-2 momentum rank into the value composite and swept the momentum weight 0.0 → 1.0, each blend
+  through main + 30-name fresh holdout + per-year + cost + DSR.
+- **Result.** Adding momentum **improved every in-universe metric**: main Sharpe 0.11 → **0.51** (w=0.75),
+  OOS *time-split* −0.52 → **+0.76**, DSR 0.28 → 0.62. **But the fresh-symbol holdout went negative for
+  every momentum weight > 0** (−0.16 to −0.29); only pure value (w=0) kept a positive fresh holdout, and
+  that's too thin and below the DSR bar. The momentum component overfits the specific main-universe
+  names — its winner/loser ranking does not transfer to the 26 fresh symbols (consistent with momentum
+  being weak/absent on liquid large-caps, Cases 26–34).
+- **Verdict.** ❌ **REJECT**, and a clean methodological lesson: **out-of-sample-in-time is not
+  out-of-sample-in-symbols.** The chronological time-split (0.76) waved the combo through while the
+  disjoint-symbol split (−0.23) killed it. The fresh-symbol holdout is the binding test; a passing
+  time-split is necessary, not sufficient. Momentum is not the missing second leg on this universe.
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge
