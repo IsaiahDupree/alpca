@@ -921,6 +921,36 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   survivorship control doing exactly its job: it didn't just dock a Sharpe, it **changed which signal we
   believe.**
 
+## Case 44 — Mid-cap momentum under realistic borrow + the long/index-hedged form ⚠️ (real but short-side-only, borrow-gated, magnitude-bracketed)
+
+- **What.** Case 43 said mid-cap momentum is the real edge (0.39 → 1.35 with delisted names) but its
+  strength comes from shorting names going to zero — the borrow wall. This stress-tests it: vol-managed
+  momentum on survivor-only vs +delisted (point-in-time) universes, under three short-side regimes —
+  borrow-free L/S, **adverse-selection borrow** (per-name fee ramping with the short's trailing decline +
+  low price; below a floor = **no-locate**, dropped), and a **long-only + SPY-index-hedge** (borrow-free,
+  the candidate deployable form). Daily returns winsorized at ±50%/±30% because near-delisting microcaps
+  carry mis-adjusted reverse-split artifacts (WW showed a +152× day, PROK +5×) that corrupt both P&L and
+  the momentum ranking.
+- **Results (winsorized, point-in-time universe):**
+  - **borrow-free L/S 1.7** → **adverse-borrow, dollar-neutral-enforced 1.1** (5/6 yr, DSR ~0.95, ~300
+    no-locate drops). The edge **survives** realistic borrow + dropping the un-borrowable names + holding
+    the book dollar-neutral (so it's alpha, not net-long beta — enforcing neutrality cost only ~0.05).
+    Winsorizing *raised* the Sharpe (artifacts were noise that hurt), killing the "it's a data-artifact"
+    hypothesis.
+  - **long-only + SPY hedge (borrow-FREE): 0.08 survivor, −0.12 point-in-time.** The **long leg has no
+    alpha** — the momentum edge is *entirely* in the short leg. The clean, deployable, borrow-free form
+    I'd hoped for **does not exist** here.
+- **Verdict.** ⚠️ **Real, but not the clean second leg it looked like.** Three honest constraints:
+  (1) the alpha is **short-side only** (long/index-hedge is dead), so it **can't escape the borrow wall**;
+  (2) even surviving adverse borrow, the deployable magnitude is **bracketed** — survivor-only 0.3 (too
+  low, excludes real failures) to cherry-picked-+delisted 1.1 (too high: my +50 delistings are *famous*
+  failures, which **over-feeds the short leg** vs a true ~5–10%/5yr delisting rate); (3) the true number
+  needs a **representative** point-in-time universe (all delistings, not the dramatic ones) or, decisively,
+  a **forward paper-track** — which has zero survivorship/borrow-estimation bias. **Status: a genuine but
+  messy short-side momentum anomaly, magnitude 0.3–1.1, borrow-gated — promising enough to forward-track,
+  not clean enough to deploy.** The honest second-leg search continues; the pairs basket remains the only
+  deployed edge.
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge

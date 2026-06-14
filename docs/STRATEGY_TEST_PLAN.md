@@ -32,6 +32,7 @@ Status: ⬜ pending · 🔄 in progress · ✅ done (kept) · ❌ done (rejected
 | 19 | **Mid-cap value + vol-managed-momentum combiner** | midcap bars + EDGAR | 🟢 | **−0.26 corr → 5/6 positive years, −7% DD, Sh ~0.4–0.5**; first to meet the validated bar; pending pairs-corr + forward track (Case 42) |
 | 20 | **Gate #1: correlation vs deployed pairs basket** | both caches | ✅ | **ρ = −0.03** (uncorrelated), 2-sleeve book 6/6 positive years — diversifies (Case 42 gate) |
 | 21 | **Survivorship point-in-time re-test** (delisted names) | +50 delisted via Alpaca | ❌→🟡 | **FLIPS value→momentum**: value 0.35→−0.45 (inflated, buys traps), vol-mgd momentum 0.39→**1.35** (robust, shorts traps) — real edge is momentum, borrow-gated (Case 43) |
+| 22 | **Momentum under adverse borrow + long/index-hedge** | midcap+delisted bars | ⚠️ | L/S survives borrow at ~1.1 (PIT, dollar-neutral, winsorized) BUT **long/hedged borrow-free form DEAD** (0.08); alpha is short-side-only, magnitude bracketed 0.3–1.1 (Case 44) |
 
 ## Post-plan: hunting the second leg (Cases 36–40)
 With the backlog closed, the next-highest-EV move was to *strengthen the one fundamental that

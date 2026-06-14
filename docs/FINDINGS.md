@@ -8,7 +8,7 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **43 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+Across **44 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
 fundamental, run both by hand and by an AI research loop — **one edge is validated and deployed** (a
 cointegrated-pairs market-neutral basket) **and a second-edge candidate has emerged on mid-caps —
 reframed by the survivorship test from value to MOMENTUM.** The hunt off large-caps found value and
@@ -34,7 +34,7 @@ mid-cap blend is the first credible one.
 
 ---
 
-## The scoreboard (43 experiments, by outcome)
+## The scoreboard (44 experiments, by outcome)
 
 **✅ Validated & deployed (1):**
 - **Cointegrated-pairs basket** — market-neutral, walk-forward (re-screen each quarter, trade the
@@ -42,19 +42,19 @@ mid-cap blend is the first credible one.
   top-24 — diluting into weak pairs halved the edge), −4% drawdown. Deployed on a
   forward paper-track to let the *live* OOS curve adjudicate.
 
-**🟡 Second-edge candidate — REFRAMED by the survivorship test to MOMENTUM, not value (Cases 41–43):**
-- **Mid-cap vol-managed momentum (market-neutral).** The hunt found value AND momentum both *appear* to
-  generalize on mid-caps (Cases 41–42), uncorrelated with the pairs basket (**ρ = −0.03**, gate #1
-  passed). **But the survivorship point-in-time re-test (Case 43) flipped the story:** adding back ~50
-  delisted value-traps (BBBY/ENDP/BIG/CANO — Alpaca serves delisted history) **collapsed value 0.35 →
-  −0.45** (value *buys* the dying cheap names) while **lifting vol-managed momentum 0.39 → 1.35**
-  (momentum *shorts* them — survivorship had hidden its best trades). So **value is a survivorship
-  artifact; momentum is the real, survivorship-robust edge.** Two gates remain before it's deployable,
-  both stiff: (1) momentum's revealed strength is from **shorting names going to zero** — the
-  adverse-selection borrow wall (PEAD/SI-tilt killers) — so it must be re-run with realistic borrow; the
-  honest form is likely **long-momentum / index-hedged-short** (the EAR-PEAD pattern); (2) a forward
-  paper-track. **Net: still one validated+deployed edge (pairs); the mid-cap second leg is now momentum
-  (not value), promising but borrow-gated.**
+**🟡 Second-edge candidate — momentum, but short-side-only + borrow-gated (Cases 41–44):**
+- **Mid-cap vol-managed momentum.** The hunt found value AND momentum *appearing* to generalize on
+  mid-caps (Cases 41–42), uncorrelated with the pairs basket (**ρ = −0.03**, gate #1). The **survivorship
+  point-in-time re-test (Case 43) flipped it**: adding back ~50 delisted value-traps **collapsed value
+  0.35 → −0.45** (value *buys* the dying names) and **lifted momentum 0.39 → 1.35** (momentum *shorts*
+  them). **Case 44 then stress-tested momentum and found the honest limits:** (a) under **adverse-selection
+  borrow + no-locate drops + dollar-neutral + artifact-winsorization** it still holds **~1.1** on the
+  point-in-time universe (real alpha, not beta) — but (b) the **long/SPY-index-hedged, borrow-FREE form
+  has NO edge** (0.08 survivor, −0.12 PIT): the alpha is **entirely short-side**, so it **can't escape the
+  borrow wall**; and (c) the magnitude is **bracketed 0.3–1.1** — my +50 delistings are *famous* failures
+  that over-feed the short leg, so the true number needs a representative point-in-time universe or a
+  forward track. **Net: a genuine but messy short-side momentum anomaly — promising enough to
+  forward-track, not clean enough to deploy. Still one validated+deployed edge (pairs).**
 
 **⚠️ Generalizes but too weak to deploy (2):**
 - **Value composite (E/P + FCF/P + B/P)** — the *first* fundamental whose fresh-symbol holdout stayed
@@ -68,18 +68,11 @@ mid-cap blend is the first credible one.
   → a real sweet spot). Size-tilt is **non-monotonic**: it **inverts in small-caps (−0.26, Case 39)** —
   the value-trap + 2021–26 small-cap bear — so mid-cap is a genuine local sweet spot, not a ladder.
 
-**🟢 SECOND-EDGE CANDIDATE — first to meet the validated bar (Cases 41–42):**
-- **Mid-cap value + vol-managed-momentum (market-neutral).** "Find more like mid-cap value" worked: the
-  **momentum family revives on mid-caps** too — *residual* and *vol-managed* momentum, both rejected on
-  large-caps (Cases 31–32), **generalize on mid-caps** (holdout +0.25, vol-managed the most regime-robust
-  single factor at 4/6 years). Value and momentum are **−0.26 correlated**, so the inverse-vol blend
-  (~50/50) is positive in **5/6 years** (−7% maxDD, Sharpe ~0.4–0.5) — it **clears the regime bar** that
-  blocked each leg alone. This is the **first candidate to meet the same out-of-universe + out-of-regime
-  standard that validated the pairs basket**, and the same quality tier (~0.5 Sharpe). It does *not*
-  clear the strict DSR-0.9 gate (~0.5–0.6) — but the pairs basket doesn't either; the real bar is
-  generalization, which it meets. **Pending two gates before deployment: (1) correlation vs the pairs
-  basket, (2) a forward paper-track.** The quality/issuance/lottery factors stay dead even on mid-caps —
-  only value and momentum are real here.
+- **Momentum family on mid-caps (the survivor-only view, Case 41)** — *residual* and *vol-managed*
+  momentum, both rejected on large-caps (Cases 31–32), *appear* to generalize on mid-caps (holdout
+  +0.25, vol-managed the most regime-robust factor at 4/6 years). But the survivorship + borrow stress
+  (Cases 43–44) showed the apparent strength is a short-side-only, borrow-gated anomaly — see the 🟡
+  candidate above, which is the honest, post-stress version of this line.
 
 **❌ Rejected — overfit (caught out-of-sample) (3):**
 - **EAR-PEAD beta-hedged** — 0.68 / 6-of-6 years / DSR 0.89 in-universe, but fresh-symbol holdout −0.52.
