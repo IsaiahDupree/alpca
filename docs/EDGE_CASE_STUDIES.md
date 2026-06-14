@@ -1046,6 +1046,33 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   honestly **low**. New capability banked: dated WF OOS returns → any future leg gets a clean,
   date-aligned, in-sample-free combiner test.
 
+## Case 48 — Cross-sectional calendar seasonality (Heston-Sadka same-month) ❌ (real + uncorrelated, but unstable; lift was a partial-year artifact)
+
+- **What.** The binding constraint (Case 47): a market-neutral leg that is positive over 2022→ AND
+  uncorrelated with pairs. Cross-sectional seasonality fits structurally — rank each name by its OWN
+  return in the SAME calendar month in PRIOR years (strict no-lookahead), long the historically-strong-
+  this-month names, short the weak; P&L on a calendar clock, orthogonal to trend and pairwise
+  mean-reversion. Zero new data, and (needing prior-year history) it only trades from 2022 on — exactly
+  the forward-relevant window. Built it as a no-lookahead factor signal (`cross_sectional_seasonality_
+  signal`, +2 unit tests) and ran the full bar on large- and mid-caps.
+- **First look — promising:** dead on large-caps (−0.33), but on **mid-caps**: full +0.11, holdout
+  **+0.40** (generalizes — *better* on fresh symbols), **low turnover 0.056**, and over the pairs-OOS
+  window a standalone **+0.35**, **uncorrelated with pairs (ρ=+0.06)**. The first candidate with the
+  properties momentum lacked (positive over the window, uncorrelated, generalizing, cost-robust). The
+  inverse-vol combined book was 0.81 and a pairs-dominant 75/25 weighting showed a *lift* to **0.88**.
+- **Then the robustness test killed it:**
+  - **Per-year: 2023 +0.57, 2024 +0.89, but 2025 −0.69, 2026 −0.19** — it worked for two years then
+    *reversed*; it has been negative the last ~1.5 years. Not regime-robust.
+  - The 0.88 "lift" is **entirely a partial-2026 (Jan–Jun) artifact**. Excluding 2026: combined-no-2026
+    **0.767 < pairs-alone-no-2026 0.778** — it **dilutes**, exactly like momentum.
+- **Verdict.** ❌ **REJECT as a second leg.** Genuinely uncorrelated (ρ=0.06) and the *cleanest-looking*
+  candidate yet, but **5 years is too little history for a calendar premium** — the signal is unstable
+  (negative 2025–26) and the only combiner lift came from an unreliable partial year. A naive read
+  (combined 0.81–0.88, positive, uncorrelated, generalizing holdout) would have shipped it; the
+  **with/without-2026 split caught it.** The signal is kept in the toolkit (correct, no-lookahead,
+  reusable) but the edge is not there. Still **one deployable edge (pairs); no positive-and-robust
+  second leg.** The combiner remains edge-supply-limited.
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge

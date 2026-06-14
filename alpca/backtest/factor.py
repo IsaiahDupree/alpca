@@ -202,6 +202,45 @@ def max_return_signal(window: int = 21):
     return fn
 
 
+def cross_sectional_seasonality_signal(min_prior: int = 15):
+    """Heston-Sadka calendar seasonality: a stock's expected return THIS calendar month, estimated
+    from its OWN returns in the SAME calendar month in PRIOR years only (strict no-lookahead — the
+    current month's returns never enter its own signal). Long the historically-strong-this-month names,
+    short the weak. Orthogonal by construction to trend (momentum) and to pairwise mean-reversion (the
+    pairs basket): the P&L is on a calendar clock. `min_prior` = min same-month return observations from
+    prior years before a name is rankable. Monthly rebalance is the natural cadence."""
+    import time as _time
+
+    def fn(master, syms, price):
+        T, N = price.shape
+        r = np.full((T, N), np.nan)
+        r[1:] = np.where(price[:-1] > 0, price[1:] / np.where(price[:-1] > 0, price[:-1], 1.0) - 1.0, np.nan)
+        cal_mon = np.array([_time.gmtime(int(t)).tm_mon for t in master])      # 1..12 per day
+        # run id increments whenever (year,month) changes -> a "month-run"
+        ym = [(_time.gmtime(int(t)).tm_year, _time.gmtime(int(t)).tm_mon) for t in master]
+        run = np.zeros(T, dtype=int)
+        for t in range(1, T):
+            run[t] = run[t - 1] + (1 if ym[t] != ym[t - 1] else 0)
+        # cumulative per-(column, calendar-month) sum/count of returns from COMPLETED prior runs
+        csum = np.zeros((13, N)); ccnt = np.zeros((13, N))
+        sig = np.full((T, N), np.nan)
+        t = 0
+        while t < T:
+            t2 = t
+            while t2 < T and run[t2] == run[t]:
+                t2 += 1
+            m = cal_mon[t]                                  # this run's calendar month
+            with np.errstate(invalid="ignore"):
+                mean = np.where(ccnt[m] >= min_prior, csum[m] / np.maximum(ccnt[m], 1), np.nan)
+            sig[t:t2] = mean                                # signal for this run = prior-years' same-month mean
+            seg = r[t:t2]                                   # now fold THIS run into the accumulator
+            csum[m] += np.nansum(seg, axis=0)
+            ccnt[m] += np.sum(np.isfinite(seg), axis=0)
+            t = t2
+        return sig
+    return fn
+
+
 def _bench_ret(bench_bars, master):
     bmap = {int(b["timestamp"]): float(b["close"]) for b in bench_bars}
     bc = [bmap.get(t) for t in master]

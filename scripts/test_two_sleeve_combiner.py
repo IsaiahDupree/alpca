@@ -26,7 +26,8 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from alpca.backtest.pairs import delisting_aware_walkforward  # noqa: E402
-from alpca.backtest.factor import _price_ret, vol_managed_momentum_signal  # noqa: E402
+from alpca.backtest.factor import (  # noqa: E402
+    _price_ret, vol_managed_momentum_signal, cross_sectional_seasonality_signal, backtest_factor)
 from alpca.backtest.combine import evaluate_combo  # noqa: E402
 from alpca.backtest.evaluation import deflated_sharpe_ratio, max_drawdown_of, sharpe_of  # noqa: E402
 
@@ -84,11 +85,20 @@ def momentum_long_hedge_returns(bars, spy_ret, *, top_frac=0.2, rebalance_days=2
     return out
 
 
+def seasonality_returns(bars, *, top_frac=0.2, rebalance_days=21, cost_bps=2.0):
+    """Cross-sectional same-calendar-month seasonality, market-neutral L/S, DATED daily returns."""
+    r = backtest_factor(bars, cross_sectional_seasonality_signal(min_prior=15), name="seasonality",
+                        top_frac=top_frac, rebalance_days=rebalance_days, cost_bps=cost_bps,
+                        long_high=True, periods_per_year=PPY)
+    return {int(t): x for t, x in zip(r.dates, r.daily_returns)}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--largecap", default="/Volumes/My Passport/AlpcaData/cache_largecap_sip")
     ap.add_argument("--midcap", default="/Volumes/My Passport/AlpcaData/cache_midcap_sip")
     ap.add_argument("--spy-cache", default="/Volumes/My Passport/AlpcaData/cache")
+    ap.add_argument("--leg2", choices=["momentum", "seasonality"], default="momentum")
     ap.add_argument("--out", default="data/two_sleeve_combiner.json")
     args = ap.parse_args()
 
@@ -108,24 +118,29 @@ def main() -> int:
     pairs = {int(t): r for t, r in zip(pr.dates, pr.daily_returns)}
     print(f"        WF Sharpe {pr.sharpe:.2f} · {pr.n_windows} windows · {len(pairs)} OOS days")
 
-    # leg 2: mid-cap momentum long/index-hedge, dated
-    mom = momentum_long_hedge_returns(mc, spy_ret)
-    print(f"[momentum] long/index-hedge · Sharpe {sharpe_of(_eq(list(mom.values())), PPY):.2f} · {len(mom)} days")
+    # leg 2: mid-cap momentum long/index-hedge OR cross-sectional seasonality, dated
+    if args.leg2 == "seasonality":
+        mom = seasonality_returns(mc)
+        leg2name = "seasonality"
+    else:
+        mom = momentum_long_hedge_returns(mc, spy_ret)
+        leg2name = "momentum"
+    print(f"[{leg2name}] Sharpe {sharpe_of(_eq(list(mom.values())), PPY):.2f} · {len(mom)} days")
 
     # date-align
     common = sorted(set(pairs) & set(mom))
     print(f"[joined] {len(common)} common OOS days\n")
     if len(common) < 100:
         print("[abort] too few overlapping days"); return 1
-    streams = {"pairs": [pairs[t] for t in common], "momentum": [mom[t] for t in common]}
+    streams = {"pairs": [pairs[t] for t in common], leg2name: [mom[t] for t in common]}
     rep = evaluate_combo(streams, ppy=PPY)
     rho = rep.corr_matrix[0][1]
-    print(f"[CORRELATION] pairs vs momentum  ρ = {rho:+.3f}")
+    print(f"[CORRELATION] pairs vs {leg2name}  ρ = {rho:+.3f}")
     print(f"[legs] ann-Sharpe { {k: round(v['ann_sharpe'],2) for k,v in rep.legs.items()} }")
     print(f"[combined] equal-weight {rep.equalweight_sharpe:.2f} · inverse-vol {rep.invvol_sharpe:.2f}"
           f" · weights { {k: round(v,2) for k,v in rep.invvol_weights.items()} }")
     w = rep.invvol_weights
-    blended = {t: w["pairs"] * pairs[t] + w["momentum"] * mom[t] for t in common}
+    blended = {t: w["pairs"] * pairs[t] + w[leg2name] * mom[t] for t in common}
     yr = _per_year(blended)
     pos = sum(1 for s in yr.values() if s > 0)
     dd = max_drawdown_of(_eq([blended[t] for t in common]))

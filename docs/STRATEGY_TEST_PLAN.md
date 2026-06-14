@@ -37,6 +37,7 @@ Status: ⬜ pending · 🔄 in progress · ✅ done (kept) · ❌ done (rejected
 | 24 | **Forward paper-track the momentum sleeve** | live launchd | ✅ | deployed: long/index-hedge sleeve on `com.alpca.forwardtrack` daily, sized tiny on honest 0.23, uncorrelated w/ pairs |
 | 25 | **Survivorship test of the DEPLOYED pairs edge** | SIP PIT large-cap (195+32) | ✅ | **ROBUST**: delisting-aware WF +0.83→+0.93; delisted legs rarely traded (3 names); new `delisting_aware_walkforward` banked (Case 46) |
 | 26 | **Honest two-sleeve combiner** (WF pairs + momentum, dated) | both SIP caches | ❌ | **DILUTES**: momentum −0.15 over the OOS overlap (carried by 2021); inverse-vol combined 0.47 < pairs-alone 0.83 → deploy pairs alone (Case 47) |
+| 27 | **Cross-sectional calendar seasonality** (2nd-leg hunt) | midcap bars (zero new data) | ❌ | uncorrelated (ρ=0.06) + looked +0.35 OOS, but per-year unstable (−2025/−2026); 0.83→0.88 lift was a partial-2026 artifact, dilutes without it (Case 48) |
 
 ## Post-plan: hunting the second leg (Cases 36–40)
 With the backlog closed, the next-highest-EV move was to *strengthen the one fundamental that

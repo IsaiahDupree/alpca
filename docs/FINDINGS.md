@@ -8,24 +8,21 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **47 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
-fundamental, run both by hand and by an AI research loop — **one edge is validated and deployed** (a
-cointegrated-pairs market-neutral basket) **and a modest second-edge candidate has emerged on mid-caps:
-vol-managed momentum (~0.4 Sharpe), uncorrelated with the pairs basket.** The arc that got there is the
-methodology in miniature: value and momentum both *appeared* to generalize on mid-caps (ρ = −0.03 vs the
-pairs basket, gate #1 passed); a survivorship re-test with ~50 *cherry-picked bankrupt* value-traps
-*looked* like it flipped value→momentum and lifted momentum to 1.35 — but rebuilding on the **full,
-outcome-blind point-in-time universe** (all 1,707 Alpaca delistings, SIP feed; representative mid-cap
-delistings are mostly **acquisitions, not bankruptcies**) **collapsed that 1.1+ to ~0.4** (≈0.43 gross, ≈0.30 after adverse-selection borrow, ≈0.23 as a borrow-free long/index-hedged sleeve). A real
-but modest momentum edge — the cherry-picked "fix" had itself been a bias in the opposite direction.
-Pending a forward paper-track. Separately, the pairs basket was re-measured and *corrected* this
-session, its honest walk-forward Sharpe is **~0.83** at the concentrated **top-10 + 5% ADF screen**
-(−4% drawdown) — far better than the misleading "0.29" of an over-diversified top-24 basket that
-diluted the edge into weak pairs. It is deployed on a shadow forward paper-track. **Until this session,
-no other candidate survived** — but moving off large-caps (where the literature says the premia don't
-live) and onto a fresh ~289-name mid-cap universe finally surfaced a second one: a **value +
-vol-managed-momentum** blend that generalizes out-of-universe and is regime-robust (5/6 years), pending
-two confirmations before deployment.
+Across **48 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+fundamental, run both by hand and by an AI research loop — **exactly one edge is validated, deployed, and
+now survivorship-stamped**: a cointegrated-pairs market-neutral basket (**WF ~0.83**, −4% DD, top-10 + 5%
+ADF; the earlier "0.29" was an over-diversified basket that diluted the edge). Re-run this session on a
+point-in-time large-cap universe via a new delisting-aware walk-forward, it holds at **+0.83 → +0.93** —
+the same survivorship test that demoted other candidates *clears* it. **No second leg has survived.**
+
+The second-leg hunt is the methodology in miniature, and every candidate failed a *different* honest
+gate: mid-cap **value** is a survivorship artifact (Case 43); mid-cap **momentum** looked like a ~0.4
+edge but its deployable borrow-free form is **negative over the forward window** (carried by 2021) — the
+honest combiner *dilutes* (Case 47); **cross-sectional seasonality** is uncorrelated and looked positive,
+but is regime-unstable (negative 2025–26) and its combiner "lift" was a **partial-2026 artifact** (Case
+48). The binding constraint is unchanged and now crisply defined: **a leg that is positive over 2022→ AND
+uncorrelated with pairs AND robust across years.** None found yet. A pairs+momentum forward track runs
+live (sized tiny) to let reality speak, but expectations are honestly low.
 
 That is not a failure of the project — it *is* the project. The deliverable is a harness whose job is
 to **reject** edges that don't generalize, and it has done so relentlessly, including against several
@@ -35,7 +32,7 @@ mid-cap blend is the first credible one.
 
 ---
 
-## The scoreboard (47 experiments, by outcome)
+## The scoreboard (48 experiments, by outcome)
 
 **✅ Validated & deployed (1):**
 - **Cointegrated-pairs basket** — market-neutral, walk-forward (re-screen each quarter, trade the
@@ -95,6 +92,9 @@ only to let live reality confirm or refute, sized tiny. The combiner stays edge-
 - **EAR-PEAD beta-hedged** — 0.68 / 6-of-6 years / DSR 0.89 in-universe, but fresh-symbol holdout −0.52.
 - **Short-interest / borrow tilt** — DSR 0.98 on 1 year of data, but −0.42 across 9 years of FINRA.
 - **Accruals (Sloan)** — +5/6 years, cost-free in-universe, but fresh-symbol holdout −0.47.
+
+**❌ Rejected — real + uncorrelated but not robust (1):**
+- **Cross-sectional calendar seasonality (Heston-Sadka, Case 48)** — mid-cap same-month signal is uncorrelated with pairs (ρ=0.06) and looked positive over the OOS window (+0.35), but per-year it's +2023/+2024 then −2025/−2026; the combiner lift (0.83→0.88) was a partial-2026 artifact that *reverses* to a dilution once 2026 is excluded. 5yr is too little history for a calendar premium.
 
 **❌ Rejected — cost wall (real signal, untradeable) (3):**
 - **Overnight→intraday reversal** (gross Sharpe 0.93 → −0.41 at 2 bps), **gap reversion**,
