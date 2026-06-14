@@ -1073,6 +1073,35 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   reusable) but the edge is not there. Still **one deployable edge (pairs); no positive-and-robust
   second leg.** The combiner remains edge-supply-limited.
 
+## Case 49 — Short-volatility / variance-risk-premium 🟢 (the FIRST leg that LIFTS the book — with an un-sampled-tail asterisk)
+
+- **What.** The binding constraint after Cases 47–48: a leg positive over 2022→ AND uncorrelated with
+  pairs AND robust across years. The variance-risk-premium (implied vol > realized on average → selling
+  vol pays) is a genuinely different signal source from equity stat-arb and trend, so a priori
+  uncorrelated. Tested the **borrow-free long-SVXY** sleeve (post-2018 −0.5× short-VIX ETF; just buy it)
+  and a short-VXX sleeve, with the full bar PLUS the two things that decide short-vol — the **2022
+  drawdown** and **tail-correlation with pairs** — and the Case-48 partial-year split.
+- **Result — it clears every gate the others failed, and lifts the combiner:**
+  - **Standalone long-SVXY: Sharpe 0.59, 6/6 positive years** (even 2022 +0.03), **but maxDD −46%**
+    (short-VXX −78%) — the tail is real.
+  - **ρ vs pairs = +0.04; TAIL ρ = +0.12** (on pairs' worst-10% days short-vol loses only −0.6%/day —
+    *mild*, not a severe tail trap vs pairs).
+  - **Combined (inverse-vol): Sharpe 1.08 vs pairs-alone 0.83, DSR 0.90** (first candidate to clear the
+    strict 0.9 DSR bar), and the combiner sizes short-vol to just **12%** → **combined maxDD −5.5%,
+    identical to pairs-alone.** Lift survives the **ex-2026 check (1.18 vs 0.78)** and is positive in 3/4
+    leave-one-year-out (drop-2024 +0.46, drop-2025 +0.42; drop-2023 −0.09 — 2023 carries some).
+- **Verdict.** 🟢 **The first genuine second leg — materially better than momentum (diluted) and
+  seasonality (partial-year artifact).** It is positive 6/6 years, uncorrelated (ρ=0.04), robust across
+  years, and *actually lifts* the book (0.83→1.08, DSR 0.90) while inverse-vol sizing keeps the combined
+  drawdown unchanged (−5.5%). **The non-negotiable asterisk:** short-vol is **negatively skewed with an
+  un-sampled catastrophic tail** — 2021–2026 contained no volmageddon (no Feb-2018/Mar-2020-style spike),
+  so Sharpe/DSR/−5.5%-DD all **understate the true risk**; a vol spike can take SVXY −50% in days (at 12%
+  weight ≈ −6% to the book *plus* whatever pairs does, with the left tail fatter than measured). **Honest
+  position: a real diversifying leg, deployable only at small (≤~12%) size with explicit tail management
+  (hard cap, and a vol spike is the known failure mode) — not a free lunch.** Put on a forward
+  paper-track alongside pairs+momentum, sized tiny, tail caveat documented; let live reality (including
+  the eventual spike) adjudicate. The combiner finally has a leg that lifts it — with eyes open.
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge

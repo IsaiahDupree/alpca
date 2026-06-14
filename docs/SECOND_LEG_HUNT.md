@@ -34,6 +34,7 @@ real uncorrelated legs. This report is the hunt for one.
 | 46 | Survivorship test of the **deployed** pairs edge | (a check, not a candidate) | **PASSED** — pairs robust, 0.83→0.93 |
 | 47 | Honest two-sleeve combiner (pairs + momentum) | gate #1 hinted a lift | momentum **negative over 2022→** (carried by 2021) → **dilutes** (0.47<0.83) |
 | 48 | Cross-sectional **seasonality** | +0.35 OOS, ρ=+0.06, generalizes | **regime-unstable** (−2025/−2026); "lift" was a **partial-2026 artifact** |
+| 49 | **Short-vol / VRP** | uncorrelated, 6/6 yrs, lifts | ✅ **CLEARS** — combined 0.83→1.08, DSR 0.90, DD unchanged at 12% size; asterisk = un-sampled −46% tail |
 
 ---
 
@@ -83,16 +84,23 @@ real uncorrelated legs. This report is the hunt for one.
 
 ## Where it stands, and what's next
 
-**One deployable edge (pairs, ~0.83, survivorship-stamped). No positive-and-robust second leg.** Three
-serious candidates, three different honest rejections. The binding constraint is now crisply defined:
+**One deployable core edge (pairs, ~0.83, survivorship-stamped) — and, after three rejections, a first
+real second leg: short-vol / VRP (Case 49).** The binding constraint that finally cracked:
 
 > **A leg that is positive over 2022→ AND uncorrelated with the pairs basket AND robust across years.**
 
-A pairs+momentum forward paper-track runs live (sized tiny, low expectations) to let reality adjudicate.
-The hunt continues in veins not yet tried with this rigor: **short-volatility / variance-risk-premium**
-(real premium, genuinely different signal source, but a known tail trap — must be measured with explicit
-drawdown and tail-correlation-to-pairs), a **market-neutral event signal**, and **index reconstitution**
-(data-gated on add/delete dates). The job, as always, is to reject cheaply and find the rare survivor.
+Value, momentum, and seasonality each failed it on a different axis. **Short-volatility clears it** — on
+a genuinely different risk axis (selling volatility): ρ=0.04 with pairs, positive 6/6 years, robust
+across leave-one-out, and it **lifts the combined book 0.83 → 1.08 (DSR 0.90)** while inverse-vol sizing
+holds the combined drawdown at −5.5%. **Its asterisk is non-negotiable and front-and-center:** short-vol
+is negatively skewed with an *un-sampled catastrophic tail* (−46% standalone; 2021–2026 had no
+volmageddon), so the Sharpe/DSR/DD all understate the true risk — it deploys only at small (~12%) size
+with explicit tail management, and a vol spike is the known failure mode. It now joins the forward
+paper-track (pairs + momentum + short-vol), each sized to honest conviction.
 
-*Bottom line: the platform tells the truth. It has rejected three plausible second legs this session —
-each of which a naive backtest would have shipped — and the rejections are the product.*
+Veins still untried with this rigor: a **market-neutral event signal** and **index reconstitution**
+(data-gated). The job, as always: reject cheaply, suspect any lift, and respect the tail you didn't
+sample.
+
+*Bottom line: the platform tells the truth. It rejected three plausible second legs — each of which a
+naive backtest would have shipped — and then found a real one whose biggest risk it refuses to hide.*
