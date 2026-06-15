@@ -8,7 +8,7 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **49 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+Across **50 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
 fundamental, run both by hand and by an AI research loop — **exactly one edge is validated, deployed, and
 now survivorship-stamped**: a cointegrated-pairs market-neutral basket (**WF ~0.83**, −4% DD, top-10 + 5%
 ADF; the earlier "0.29" was an over-diversified basket that diluted the edge). Re-run this session on a
@@ -37,7 +37,7 @@ the book** (with its tail risk respected, not hidden).
 
 ---
 
-## The scoreboard (49 experiments, by outcome)
+## The scoreboard (50 experiments, by outcome)
 
 **✅ Validated & deployed (1):**
 - **Cointegrated-pairs basket** — market-neutral, walk-forward (re-screen each quarter, trade the
@@ -57,7 +57,10 @@ DSR 0.90** (the only candidate to clear the strict 0.9 DSR), with the combined d
 *negatively skewed with an un-sampled catastrophic tail* (maxDD −46% standalone; 2021–2026 had no
 volmageddon), so the metrics *understate* the risk — a vol spike is the known failure mode. **Honest
 position: a real diversifying leg, deployable only at small (~12%) size with explicit tail management.**
-Going on the forward paper-track alongside pairs + momentum, sized tiny, eyes open.
+Going on the forward paper-track alongside pairs + momentum, sized tiny, eyes open. **Tail validated
+(Case 50):** a *simulated* volmageddon (−50% SVXY day injected at the book's worst moment) costs only
+−7.9% combined drawdown at the deployed **8% cap** (−9.4% even at a beyond-historical −70%) — the sizing
+is the tail management; the known failure mode is survivable.
 
 **🚀 On a forward paper-track (sized tiny, low expectations):** the borrow-free **long/index-hedged
 momentum sleeve** is wired into the daily `com.alpca.forwardtrack` job alongside the pairs basket. **But

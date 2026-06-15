@@ -1102,6 +1102,24 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   paper-track alongside pairs+momentum, sized tiny, tail caveat documented; let live reality (including
   the eventual spike) adjudicate. The combiner finally has a leg that lifts it — with eyes open.
 
+## Case 50 — Short-vol TAIL STRESS test ✅ (the 8% cap survives a simulated volmageddon)
+
+- **What.** Case 49's metrics understate short-vol's risk because 2021–2026 had no volmageddon (worst
+  SVXY day in-sample: only −21%). The responsible close is not to wait for the spike but to *simulate* it
+  and confirm the deployed hard cap protects the book. Injected a catastrophic single-day SVXY shock
+  (−40% ≈ Feb-2018-scale on the post-2018 −0.5× fund; −50% ≈ realistic worst; −70% ≈ beyond-historical /
+  model risk) at the combined book's **worst** day (joint stress — vol spikes often coincide with pairs
+  spreads widening), across 5% / 8% / 12% sizing.
+- **Result — at the deployed 8% cap:** a −40% spike costs −4.3% on the day → −7.1% combined drawdown; a
+  realistic **−50% spike → −5.1% day / −7.9% drawdown**; a beyond-historical −70% gap → −6.7% / −9.4%.
+  At 12% the −70% case reaches −11.0%; at 5% it's −8.0%. The base (un-stressed) drawdown is −5.3%.
+- **Verdict.** ✅ **The 8% hard cap is validated — the sizing IS the tail management.** Because short-vol
+  is a small slice of a pairs-dominant (92%) book, even a catastrophic −50% volmageddon only deepens the
+  combined drawdown from −5.3% to −7.9%, and a beyond-historical −70% gap stays under −10%. The known
+  failure mode is survivable at the deployed size; no re-cap needed. This is the honest discipline a
+  negatively-skewed leg demands — the disaster is quantified *before* it happens, and the position is
+  sized so it can't break the book. Short-vol stays on the forward track at 8%, eyes open.
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge
