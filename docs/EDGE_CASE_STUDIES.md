@@ -1147,6 +1147,29 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   honest hit rate this session: 1 win (short-vol) in 5 candidates — edges remain scarce, exactly as the
   program has found all along.
 
+## Methodology capstone — the SECOND-LEG GATE (`alpca/backtest/leg_gate.py`)
+
+The Cases 47–51 hunt judged every candidate against the same gauntlet by hand. That gauntlet is now one
+tested call, `evaluate_leg_candidate(candidate_returns, book_returns)`, running the five checks a real
+diversifying leg must pass — **each learned the hard way from a failed candidate:**
+
+1. **forward_positive** — candidate Sharpe > 0 over the overlap window (*momentum was negative over
+   2022→, Case 47*).
+2. **uncorrelated** — |ρ| < 0.30 vs the deployed book (the point of a diversifier).
+3. **lifts** — inverse-vol combined Sharpe > book + 0.03 (*momentum & cross-asset trend DILUTE, Cases
+   47, 51*).
+4. **robust_loo** — the lift is positive in ≥ 60% of leave-one-year-out folds (a lift carried by one
+   year isn't robust).
+5. **partial_year_safe** — the lift survives excluding the most-recent (often partial) year
+   (*seasonality's "lift" was a partial-2026 artifact, Case 48*).
+
+GO iff all five pass; fail-closed and fully explainable (every sub-result returned with its number).
+**Validated on real data — it reproduces the hand verdicts exactly:** short-vol → GO (5/5, combined
+1.08, lift +0.25); momentum → NO-GO (Sharpe −0.17, lift −0.38, LOO 0%, ex-recent −0.51). With
+`scripts/run_leg_gate.py` any future candidate — or the AI loop — gets the full second-leg rigor in one
+call instead of a multi-day manual investigation. This is the session's controls distilled into
+permanent, automated, tested infrastructure.
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge
