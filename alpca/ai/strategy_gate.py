@@ -109,17 +109,34 @@ def haiku_verdict(result: Dict, regime: str, router, gate: Optional[GateResult] 
 
 
 # ---- 4. combined gate: deterministic rail AND Haiku must both say GO ----
-def gate(result: Dict, spy_bars: List[dict], router) -> Dict:
+def gate(result: Dict, spy_bars: List[dict], router, *,
+         candidate_returns: Optional[Dict[int, float]] = None,
+         book_returns: Optional[Dict[int, float]] = None) -> Dict:
+    """Two-gate decision: (1) falsification_gate — is it a REAL edge? (2) Haiku concurs. When
+    `candidate_returns` + `book_returns` are supplied, a THIRD gate runs — the second-leg gate
+    (`leg_gate.evaluate_leg_candidate`): does it DIVERSIFY the deployed book (positive, uncorrelated,
+    lifts robustly)? An edge that is real but dilutes the book is NO-GO as a leg (momentum, Case 47)."""
     regime = classify_regime(spy_bars)
     fg = falsification_gate(result)
     hv = haiku_verdict(result, regime, router, gate=fg)
     haiku_go = str(hv.get("verdict", "")).upper() == "GO"
+
+    leg = None
+    leg_ok = True
+    if candidate_returns is not None and book_returns is not None:
+        from alpca.backtest.leg_gate import evaluate_leg_candidate
+        lv = evaluate_leg_candidate(candidate_returns, book_returns)
+        leg = {"passed": lv.passed, "checks": lv.checks, "reasons": lv.reasons,
+               "rho": lv.rho, "lift": lv.lift, "combined_sharpe": lv.combined_sharpe}
+        leg_ok = lv.passed
+
     return {
         "regime": regime,
         "falsification_pass": fg.passed,
         "falsification_checks": fg.checks,
         "falsification_reasons": fg.reasons,
         "haiku": hv,
-        # the rail has veto power: GO only if the data clears the bar AND Haiku concurs
-        "decision": "GO" if (fg.passed and haiku_go) else "NO-GO",
+        "leg_gate": leg,
+        # GO only if the data clears the bar AND Haiku concurs AND (if requested) it diversifies the book.
+        "decision": "GO" if (fg.passed and haiku_go and leg_ok) else "NO-GO",
     }

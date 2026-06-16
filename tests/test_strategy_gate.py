@@ -75,3 +75,29 @@ def test_gate_failclosed_on_unparseable_haiku():
             return "I think this looks promising but I'm not sure."
     d = gate(_good(), _spy(0.2, 0.008), Bad())
     assert d["haiku"]["verdict"] == "NO-GO" and d["decision"] == "NO-GO"   # fail-closed
+
+
+def test_gate_leg_check_vetoes_a_diluting_edge():
+    """A REAL edge (clears falsification + Haiku GO) that DILUTES the deployed book must be NO-GO as a
+    leg — the momentum case (Case 47). When candidate+book returns are supplied, the leg gate runs."""
+    import random
+    DAY, BASE = 86400, 1_600_000_000
+    rng = random.Random(0)
+    book = {BASE + i * DAY: 0.0006 + rng.gauss(0, 0.004) for i in range(900)}
+    cand = {t: -0.0008 + rng.gauss(0, 0.006) for t in book}    # negative over the window -> dilutes
+    d = gate(_good(), _spy(0.2, 0.008), _MockRouter("GO"),
+             candidate_returns=cand, book_returns=book)
+    assert d["falsification_pass"] is True                      # it IS a real edge by summary metrics
+    assert d["leg_gate"] is not None and d["leg_gate"]["passed"] is False
+    assert d["decision"] == "NO-GO"                             # but dilutes the book -> vetoed as a leg
+
+
+def test_gate_leg_check_passes_a_real_diversifier():
+    import random
+    DAY, BASE = 86400, 1_600_000_000
+    rng = random.Random(1)
+    book = {BASE + i * DAY: 0.0006 + rng.gauss(0, 0.004) for i in range(900)}
+    cand = {t: 0.0006 + rng.gauss(0, 0.006) for t in book}     # positive, uncorrelated -> lifts
+    d = gate(_good(), _spy(0.2, 0.008), _MockRouter("GO"),
+             candidate_returns=cand, book_returns=book)
+    assert d["leg_gate"]["passed"] is True and d["decision"] == "GO"

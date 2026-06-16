@@ -46,21 +46,29 @@ This is the design that makes an AI-driven loop trustworthy rather than a halluc
 2. **The deterministic falsification rail has VETO power.** A candidate is GO only if it clears, in
    code: the **fresh-symbol holdout** (generalizes to unseen symbols), **regime robustness** (positive
    in ≥60% of years), **cost survival** (2 bps), and **DSR ≥ 0.9**. Haiku cannot override a rail FAIL.
-3. **Both must agree.** Final GO = `rail_pass AND haiku_GO`. Disagreement → NO-GO.
-4. **Fail-closed.** An unparseable model reply defaults to NO-GO.
+3. **The SECOND-LEG GATE.** A candidate that is a *real edge* still must EARN a place in the deployed
+   book — so when its daily returns are supplied, `gate()` runs `leg_gate.evaluate_leg_candidate` (the
+   Cases 47–51 gauntlet: positive over the forward window · uncorrelated with the book · *lifts* the
+   inverse-vol combined Sharpe · robust across leave-one-year-out · survives the partial-year split). An
+   edge that is real but *dilutes* the book is NO-GO as a leg (momentum, Case 47).
+4. **All must agree.** Final GO = `rail_pass AND haiku_GO AND leg_gate_pass` (the leg gate only when
+   returns are supplied). Disagreement → NO-GO.
+5. **Fail-closed.** An unparseable model reply defaults to NO-GO.
 
 ```
               proposal ─▶ harness (real OOS + fresh-symbol holdout)
                               │
-        ┌──────── falsification_gate() ────────┐      ┌── haiku_verdict() ──┐
-        │ fresh-symbol · regime · cost · DSR   │  AND │ GO / NO-GO + reason │  ─▶  DECISION
-        │   (deterministic, VETO)              │      │ (live, per-regime)  │
-        └──────────────────────────────────────┘      └─────────────────────┘
+   ┌─ falsification_gate() ─┐   ┌─ haiku_verdict() ─┐   ┌─ leg_gate (vs deployed book) ─┐
+   │ fresh·regime·cost·DSR  │AND│ GO/NO-GO + reason │AND│ +ve·uncorr·LIFTS·robust·       │ ─▶ DECISION
+   │   (deterministic VETO) │   │ (live, per-regime)│   │ partial-year-safe (VETO)      │
+   └────────────────────────┘   └───────────────────┘   └───────────────────────────────┘
 ```
 
-The rail encodes the lessons the project paid for across 23 case studies — three different "edges"
-(EAR-PEAD, the short-interest tilt, accruals) passed every in-sample/in-universe test yet died on the
-fresh-symbol or multi-regime holdout. The loop makes those holdouts mandatory, automatically.
+The first rail encodes the lessons the project paid for on overfit "edges" (EAR-PEAD, the short-interest
+tilt, accruals — each passed every in-sample test yet died on the fresh-symbol/multi-regime holdout); the
+**leg gate encodes the second-leg lessons** (momentum & trend *dilute*; seasonality's lift was a
+partial-year artifact). Both sets of holdouts are now mandatory and automatic — *is it a real edge?* and
+*does it diversify the book?* are two separate, tested, veto-bearing questions.
 
 ---
 
