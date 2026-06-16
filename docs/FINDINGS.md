@@ -8,7 +8,7 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **50 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+Across **51 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
 fundamental, run both by hand and by an AI research loop — **exactly one edge is validated, deployed, and
 now survivorship-stamped**: a cointegrated-pairs market-neutral basket (**WF ~0.83**, −4% DD, top-10 + 5%
 ADF; the earlier "0.29" was an over-diversified basket that diluted the edge). Re-run this session on a
@@ -37,7 +37,7 @@ the book** (with its tail risk respected, not hidden).
 
 ---
 
-## The scoreboard (50 experiments, by outcome)
+## The scoreboard (51 experiments, by outcome)
 
 **✅ Validated & deployed (1):**
 - **Cointegrated-pairs basket** — market-neutral, walk-forward (re-screen each quarter, trade the
@@ -114,6 +114,9 @@ only to let live reality confirm or refute, sized tiny. The combiner stays edge-
 
 **❌ Rejected — real + uncorrelated but not robust (1):**
 - **Cross-sectional calendar seasonality (Heston-Sadka, Case 48)** — mid-cap same-month signal is uncorrelated with pairs (ρ=0.06) and looked positive over the OOS window (+0.35), but per-year it's +2023/+2024 then −2025/−2026; the combiner lift (0.83→0.88) was a partial-2026 artifact that *reverses* to a dilution once 2026 is excluded. 5yr is too little history for a calendar premium.
+
+**❌ Rejected — appealing thesis, falsified (1):**
+- **Cross-asset trend / managed-futures (Case 51)** — the would-be short-vol crash-hedge: trend Sharpe 0.31 LOST to buy-and-hold (0.82) and long-only-no-timing (1.12) → timing is illusory; negative in 2022–2023 (crisis-alpha thesis failed); ρ=+0.17 with short-vol and loses on its worst days (no hedge); 3-leg combiner dilutes (0.93<1.07).
 
 **❌ Rejected — cost wall (real signal, untradeable) (3):**
 - **Overnight→intraday reversal** (gross Sharpe 0.93 → −0.41 at 2 bps), **gap reversion**,

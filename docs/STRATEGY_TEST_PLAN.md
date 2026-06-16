@@ -40,6 +40,7 @@ Status: ⬜ pending · 🔄 in progress · ✅ done (kept) · ❌ done (rejected
 | 27 | **Cross-sectional calendar seasonality** (2nd-leg hunt) | midcap bars (zero new data) | ❌ | uncorrelated (ρ=0.06) + looked +0.35 OOS, but per-year unstable (−2025/−2026); 0.83→0.88 lift was a partial-2026 artifact, dilutes without it (Case 48) |
 | 28 | **Short-volatility / VRP** (2nd-leg hunt, new risk axis) | VXX/SVXY ETPs (SIP) | 🟢 | **FIRST leg that LIFTS**: combined 0.83→1.08, DSR 0.90, ρ=0.04, 6/6 yrs, combined DD unchanged −5.5% at 12% size; asterisk = un-sampled −46% tail (Case 49) |
 | 29 | **Short-vol TAIL STRESS** (simulate the volmageddon) | injected shock | ✅ | 8% cap VALIDATED: −50% SVXY spike → −7.9% combined DD (−9.4% at −70%); sizing is the tail mgmt (Case 50) |
+| 30 | **Cross-asset trend / managed-futures** (leg #3, short-vol hedge) | 15-ETF basket (SIP) | ❌ | timing illusory (0.31 < B&H 0.82 < long-only 1.12); −2022/−2023; no short-vol hedge (ρ+0.17); 3-leg dilutes 0.93<1.07 (Case 51) |
 
 ## Post-plan: hunting the second leg (Cases 36–40)
 With the backlog closed, the next-highest-EV move was to *strengthen the one fundamental that

@@ -1120,6 +1120,33 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   negatively-skewed leg demands — the disaster is quantified *before* it happens, and the position is
   sized so it can't break the book. Short-vol stays on the forward track at 8%, eyes open.
 
+## Case 51 — Cross-asset TREND / managed-futures (the short-vol tail hedge that wasn't) ❌
+
+- **What.** Short-vol's one weakness is its crash tail; the ideal 3rd leg would be *crisis alpha* —
+  cross-asset trend-following (CTAs) is famous for profiting in vol spikes (2022 was a banner year for
+  trend). So I built the canonical diversified managed-futures sleeve on a 15-ETF cross-asset basket
+  (equities/bonds/gold/commods/dollar/credit): per asset, sign of trailing 12-month return, vol-scaled to
+  equal risk, summed (it goes SHORT, so the *timing* must earn its keep) — and tested it against the two
+  controls that catch the TSMOM illusion (buy-and-hold, and long-only/no-timing), plus correlation to both
+  legs, the short-vol tail-hedge, and the 3-leg combiner.
+- **Result — fails on every axis:**
+  - **Timing is illusory:** trend Sharpe **0.31** vs buy-and-hold **0.82** and long-only-no-timing
+    **1.12** — both controls *beat* it. The shorting/timing actively hurts (whipsaws); only the
+    vol-scaling has value. (Reproduces Kim-2016 on cross-asset.)
+  - **Crisis-alpha thesis FAILS in-sample:** per-year **2022 −0.72, 2023 −1.02** — trend *lost* in 2022,
+    the exact year it should have shone (my basket is equity/credit-heavy; the clean bond-short /
+    commodity-long signals got diluted and whipsawed).
+  - **No tail hedge:** ρ vs short-vol **+0.17**; on short-vol's worst-10% days trend averages
+    **−0.15%/day** — it does *not* offset the crash.
+  - **3-leg combiner DILUTES:** 0.93 vs the 2-leg pairs+short-vol book **1.07** (inverse-vol over-weights
+    the weak trend leg at 42%).
+- **Verdict.** ❌ **REJECT.** A genuinely appealing thesis (trend as a crash hedge for short-vol),
+  falsified by measurement on every count. A faster-signal / cleaner-asset-class construction *might* do
+  better, but the controls (long-only beats timing by 0.8 Sharpe) put a high burden of proof on that —
+  the timing is the problem, not the tuning. **Book stays at two legs (pairs + short-vol).** The hunt's
+  honest hit rate this session: 1 win (short-vol) in 5 candidates — edges remain scarce, exactly as the
+  program has found all along.
+
 ## Methodology upgrade — Deflated Sharpe Ratio
 
 Given how many strategies this project has tried (~34 in the registry + the dozen edge
