@@ -194,10 +194,30 @@ off its decayed 0.29.
 
 ---
 
-## 7. The honest bottom line
+## 7. The deployed portfolio (`alpca/live/portfolio.py`)
 
-After 23 experiments: **one marginal, decaying, market-neutral edge (pairs, WF ~0.29), deployed
-small on a forward track.** The realistic profit-per-day ceiling today is ~1–2 bps — invisible
-day-to-day, real over hundreds of days. The lever for more is **more *generalizing* edges sized to
-Kelly**, found through a disciplined (now possibly AI-accelerated) loop — *not* trading the one thin
-edge harder. The platform's value is that it tells us this truth instead of a comfortable fiction.
+The multi-sleeve book is codified in one place — weights are HONEST CONVICTION, not an optimizer output
+(see `deployed_weights()` + `combine_tracks()`, and the live view `scripts/report_forward_track.py`,
+wired into the daily `com.alpca.forwardtrack` job):
+
+| Sleeve | Role | Weight | Evidence |
+|---|---|---|---|
+| **pairs** | CORE | 92% | WF ~0.83, survivorship-stamped 0.83→0.93 (Case 46) — the only standalone edge |
+| **short_vol** | DIVERSIFIER | 8% (hard cap) | first leg that *lifts* the book → combined 1.08, DSR 0.90, ρ=0.04 (Case 49); tail stress-validated (Case 50) |
+| **momentum** | PROBATION | 0% | dilutes over the OOS window (Case 47) — tracked only, zero trading capital |
+
+The combined book (pairs + capped short-vol) backtests to **~1.08 Sharpe, −5.5% DD**; a simulated
+volmageddon at the 8% cap keeps the worst-case drawdown < ~10% (Case 50). All three sleeves log live
+forward tracks; the reporter blends them into the single combined OOS curve that adjudicates the program.
+
+## 8. The honest bottom line
+
+After **50 experiments**: **one validated, deployed, survivorship-stamped core edge (cointegrated-pairs
+basket, WF ~0.83, −4% DD) and — after rejecting value, momentum, and seasonality — one genuine second
+leg (short-volatility / VRP) that LIFTS the combined book to ~1.08 (DSR 0.90), sized tiny with a
+stress-validated tail cap.** The profit-per-day is still a few bps — invisible day-to-day, real over
+hundreds of days — but the book is now genuinely diversified across two uncorrelated risk axes
+(statistical mean-reversion + the variance-risk-premium). The lever for more remains additional
+*generalizing, robust, uncorrelated* legs sized to Kelly — found through the same brutal gauntlet that
+rejected three plausible candidates this session. The platform's value is unchanged: it tells the truth
+(including the tail it hasn't sampled) instead of a comfortable fiction.
