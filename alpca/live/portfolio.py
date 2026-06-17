@@ -70,24 +70,39 @@ class CombinedBook:
     equity_curve: List[float] = field(default_factory=list)
 
 
+def _capped_names() -> set:
+    return {s.name for s in DEPLOYED if s.cap is not None}
+
+
 def combine_tracks(track_returns: Dict[str, Dict[int, float]],
-                   weights: Optional[Dict[str, float]] = None) -> CombinedBook:
+                   weights: Optional[Dict[str, float]] = None,
+                   capped: Optional[set] = None) -> CombinedBook:
     """Blend per-sleeve DATED realized returns ({sleeve: {epoch: ret}}) into one combined book at the
-    deployed weights, date-aligned on the UNION of dates (a sleeve absent on a day contributes 0 — i.e.
-    that day's capital sat in the funded sleeves present). Only funded (weight>0) sleeves count."""
+    deployed weights, date-aligned on the UNION of dates. Only funded (weight>0) sleeves count.
+
+    CRITICAL (the bug the canonical backtest caught): a hard-CAPPED sleeve (short-vol, a negatively-
+    skewed tail leg) must trade at EXACTLY its cap weight, every day, and NEVER be renormalized up to
+    fill a missing core leg — otherwise on days the pairs core has no data the book becomes ~100%
+    short-vol (a −46% tail). So: capped sleeves are pinned at their weight; the uncapped CORE sleeves
+    share the residual, renormalized among the cores PRESENT that day (a missing core → cash, never an
+    amplified diversifier). On a day with neither, the slice is cash and the day is skipped."""
     weights = weights or deployed_weights()
+    capped = capped if capped is not None else _capped_names()
     funded = {k: v for k, v in weights.items() if v > 0 and k in track_returns}
+    cores = [k for k in funded if k not in capped]
+    core_total = sum(funded[k] for k in cores)            # total weight the cores share
     all_dates = sorted({t for k in funded for t in track_returns[k]})
     daily, kept_dates = [], []
     for t in all_dates:
-        present = {k: track_returns[k][t] for k in funded if t in track_returns[k]}
-        if not present:
+        cap_present = {k: track_returns[k][t] for k in funded if k in capped and t in track_returns[k]}
+        core_present = {k: track_returns[k][t] for k in cores if t in track_returns[k]}
+        if not cap_present and not core_present:
             continue
-        # renormalize over the funded sleeves present that day (so missing data doesn't shrink exposure)
-        wsum = sum(funded[k] for k in present)
-        if wsum <= 0:
-            continue
-        daily.append(sum((funded[k] / wsum) * present[k] for k in present))
+        r = sum(funded[k] * cap_present[k] for k in cap_present)          # capped: pinned at cap weight
+        if core_present:                                                  # cores renorm among present
+            csum = sum(funded[k] for k in core_present)
+            r += sum((funded[k] / csum) * core_total * core_present[k] for k in core_present)
+        daily.append(r)
         kept_dates.append(t)
     eq = [1.0]
     for x in daily:

@@ -29,19 +29,37 @@ def test_combine_blends_funded_sleeves_at_weights():
     }
     book = combine_tracks(tr)
     assert isinstance(book, CombinedBook) and book.n_days == 2
-    # day 1: weights pairs 0.92 / short_vol 0.08 renormalized over the two present (sum 1.0)
-    wsum = 0.92 + 0.08
-    expect0 = (0.92 / wsum) * 0.01 + (0.08 / wsum) * 0.05
-    assert math.isclose(book.daily_returns[0], expect0, rel_tol=1e-9)
+    # day 1: pairs (core) 0.92 + short_vol (capped) 0.08 — both present, fully invested
+    assert math.isclose(book.daily_returns[0], 0.92 * 0.01 + 0.08 * 0.05, rel_tol=1e-9)
     assert "momentum" not in book.weights        # unfunded excluded
 
 
-def test_combine_renormalizes_when_a_sleeve_is_missing_that_day():
-    # short_vol missing on day 200 -> that day is 100% pairs (renormalized), not shrunk
+def test_capped_sleeve_is_NEVER_amplified_when_core_missing():
+    """The bug the canonical backtest caught: when the pairs CORE has no data, the capped short-vol
+    sleeve must stay at its 8% cap (the rest is cash), NOT be renormalized to ~100% (a −46% tail)."""
+    tr = {"pairs": {100: 0.01}, "short_vol": {100: 0.05, 200: 0.05}}
+    book = combine_tracks(tr)
+    assert book.n_days == 2
+    # day 100: both present -> 0.92*pairs + 0.08*shortvol
+    assert math.isclose(book.daily_returns[0], 0.92 * 0.01 + 0.08 * 0.05, rel_tol=1e-9)
+    # day 200: ONLY short-vol present -> it stays pinned at 0.08 (92% cash), NOT 1.0
+    assert math.isclose(book.daily_returns[1], 0.08 * 0.05, rel_tol=1e-9)
+
+
+def test_missing_capped_leg_leaves_core_at_its_weight_plus_cash():
+    # short_vol missing on day 200 -> that day is 0.92*pairs + 8% cash (NOT renormalized to 100% pairs)
     tr = {"pairs": {100: 0.01, 200: 0.03}, "short_vol": {100: 0.05}}
     book = combine_tracks(tr)
     assert book.n_days == 2
-    assert math.isclose(book.daily_returns[1], 0.03, rel_tol=1e-9)     # pure pairs that day
+    assert math.isclose(book.daily_returns[1], 0.92 * 0.03, rel_tol=1e-9)   # core at its weight + cash
+
+
+def test_multiple_cores_renormalize_among_present():
+    # two equal cores share residual 1.0; when one is missing the other absorbs the full core weight
+    tr = {"a": {1: 0.02, 2: 0.04}, "b": {1: 0.02}}
+    book = combine_tracks(tr, weights={"a": 0.5, "b": 0.5}, capped=set())
+    assert math.isclose(book.daily_returns[0], 0.5 * 0.02 + 0.5 * 0.02, rel_tol=1e-9)  # both present
+    assert math.isclose(book.daily_returns[1], 1.0 * 0.04, rel_tol=1e-9)               # only a -> a absorbs
 
 
 def test_combine_empty_is_safe():

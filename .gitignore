@@ -30,3 +30,7 @@ data/cache/
 
 # OS
 .DS_Store
+
+# derived caches (recomputable)
+data/pairs_wf_returns.json
+data/deployed_portfolio_backtest.json
