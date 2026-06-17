@@ -34,7 +34,8 @@ real uncorrelated legs. This report is the hunt for one.
 | 46 | Survivorship test of the **deployed** pairs edge | (a check, not a candidate) | **PASSED** — pairs robust, 0.83→0.93 |
 | 47 | Honest two-sleeve combiner (pairs + momentum) | gate #1 hinted a lift | momentum **negative over 2022→** (carried by 2021) → **dilutes** (0.47<0.83) |
 | 48 | Cross-sectional **seasonality** | +0.35 OOS, ρ=+0.06, generalizes | **regime-unstable** (−2025/−2026); "lift" was a **partial-2026 artifact** |
-| 49 | **Short-vol / VRP** | uncorrelated, 6/6 yrs, lifts | ✅ **CLEARS** — combined 0.83→1.08, DSR 0.90, DD unchanged at 12% size; asterisk = un-sampled −46% tail |
+| 49 | **Short-vol / VRP** | uncorrelated, 6/6 yrs, lifts | 🟡→❌ — *looked* like it cleared (combined 1.08) but the audit (Case 52) showed the lift is a 2022–23 vol-crush artifact; **−0.27 since 2024** → not a current diversifier |
+| 52 | **Adversarial self-audit** | refute our own claims | ⚠️ caught the OVERSELLING: pairs is forward ~0.3–0.5 (not 0.83), short-vol drags since 2024, 5 code bugs fixed; **one thin regime-dependent edge** stands |
 
 ---
 
@@ -84,23 +85,25 @@ real uncorrelated legs. This report is the hunt for one.
 
 ## Where it stands, and what's next
 
-**One deployable core edge (pairs, ~0.83, survivorship-stamped) — and, after three rejections, a first
-real second leg: short-vol / VRP (Case 49).** The binding constraint that finally cracked:
+**One deployable core edge (pairs) — and, after four rejections plus a self-audit, STILL no validated
+second leg.** The binding constraint:
 
 > **A leg that is positive over 2022→ AND uncorrelated with the pairs basket AND robust across years.**
 
-Value, momentum, and seasonality each failed it on a different axis. **Short-volatility clears it** — on
-a genuinely different risk axis (selling volatility): ρ=0.04 with pairs, positive 6/6 years, robust
-across leave-one-out, and it **lifts the combined book 0.83 → 1.08 (DSR 0.90)** while inverse-vol sizing
-holds the combined drawdown at −5.5%. **Its asterisk is non-negotiable and front-and-center:** short-vol
-is negatively skewed with an *un-sampled catastrophic tail* (−46% standalone; 2021–2026 had no
-volmageddon), so the Sharpe/DSR/DD all understate the true risk — it deploys only at small (~12%) size
-with explicit tail management, and a vol spike is the known failure mode. It now joins the forward
-paper-track (pairs + momentum + short-vol), each sized to honest conviction.
+Value, momentum, seasonality, and cross-asset trend each failed it on a different axis. **Short-vol
+*looked* like it cleared it** (Case 49: ρ=0.04, "6/6 years", combined 1.08) — but the **adversarial audit
+(Case 52) refuted the diversification**: the entire lift is the 2022–23 vol-crush, and **since 2024 the
+book lift is −0.27** (short-vol drags). The "6/6 years" was the standalone calendar Sharpe, not the book
+lift; ρ≈0 is real and stress-stable but "uncorrelated ≠ hedged" (pairs is dead weight in a vol spike).
+So short-vol is **not a current diversifier** — it stays on the forward track at a tiny 8% tail-cap only
+to observe whether the VRP regime returns. The audit also corrected the *core*: pairs WF 0.83 is
+regime-dependent (first-half 0.27, 2022 −0.9); forward-honest **~0.3–0.5**.
 
-Veins still untried with this rigor: a **market-neutral event signal** and **index reconstitution**
-(data-gated). The job, as always: reject cheaply, suspect any lift, and respect the tail you didn't
-sample.
+The honest direction: a **genuinely uncorrelated axis** — ideally a **long-volatility / convexity** sleeve
+that actually *hedges* short-vol's crash (the correlation analysis proved the current book's tail is
+undiversified), plus a market-neutral event signal — each cleared through the out-of-universe +
+out-of-regime bar, not an in-sample lift.
 
-*Bottom line: the platform tells the truth. It rejected three plausible second legs — each of which a
-naive backtest would have shipped — and then found a real one whose biggest risk it refuses to hide.*
+*Bottom line: the platform tells the truth — including about itself. It rejected four plausible second
+legs, then turned the same adversarial lens on its own "validated" claims and caught the overselling
+before a real reviewer (or a live drawdown) could.*

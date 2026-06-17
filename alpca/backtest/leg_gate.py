@@ -25,10 +25,19 @@ import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from alpca.backtest.combine import evaluate_combo, correlation
+from alpca.backtest.combine import evaluate_combo, correlation, inverse_vol_weights
 from alpca.backtest.evaluation import sharpe_of
 
 PPY = 252.0
+
+
+def _fold_lift(idx, book, candidate, book_label):
+    """Inverse-vol combined-vs-book lift on `idx` days, with weights RE-FIT on idx only (out-of-fold):
+    so 'lift survives excluding year Y' never reuses year-Y data to set the weights."""
+    streams = {book_label: [book[t] for t in idx], "candidate": [candidate[t] for t in idx]}
+    fw = inverse_vol_weights(streams)
+    blended = [fw[book_label] * book[t] + fw["candidate"] * candidate[t] for t in idx]
+    return sharpe_of(_eq(blended), PPY) - sharpe_of(_eq([book[t] for t in idx]), PPY)
 
 
 def _eq(daily, s=1.0):
@@ -73,31 +82,25 @@ def evaluate_leg_candidate(
     book_sh = sharpe_of(_eq(bv), PPY)
     rho = correlation(cv, bv)
     rep = evaluate_combo({book_label: bv, "candidate": cv}, ppy=PPY)
-    w = rep.invvol_weights
-    blended = {t: w[book_label] * book[t] + w["candidate"] * candidate[t] for t in common}
     combined_sh = rep.invvol_sharpe
     lift = combined_sh - book_sh
 
-    # leave-one-year-out: is the lift positive in most folds?
+    # leave-one-year-out: is the lift positive in most folds? (weights RE-FIT per fold via _fold_lift)
     years = sorted({_year(t) for t in common})
     loo_pos = 0; loo_n = 0
     for drop in years:
         idx = [t for t in common if _year(t) != drop]
         if len(idx) < 40:
             continue
-        cb = sharpe_of(_eq([blended[t] for t in idx]), PPY)
-        pa = sharpe_of(_eq([book[t] for t in idx]), PPY)
         loo_n += 1
-        if cb - pa > 0:
+        if _fold_lift(idx, book, candidate, book_label) > 0:
             loo_pos += 1
     loo_frac = (loo_pos / loo_n) if loo_n else 0.0
 
-    # partial-year safety: lift survives excluding the most-recent year
+    # partial-year safety: lift survives excluding the most-recent year (weights re-fit on the rest)
     recent = years[-1]
     idx = [t for t in common if _year(t) != recent]
-    ex_lift = 0.0
-    if len(idx) >= 40:
-        ex_lift = sharpe_of(_eq([blended[t] for t in idx]), PPY) - sharpe_of(_eq([book[t] for t in idx]), PPY)
+    ex_lift = _fold_lift(idx, book, candidate, book_label) if len(idx) >= 40 else 0.0
 
     checks = {
         "forward_positive": cand_sh > 0,

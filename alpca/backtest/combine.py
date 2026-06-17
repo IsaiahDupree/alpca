@@ -108,7 +108,10 @@ def return_translation(sharpe_annual: float, ann_vol: float, ppy: float = 252.0,
         "sharpe_annual": sharpe_annual, "ann_vol": ann_vol,
         "expected_excess_annual": excess_annual, "expected_total_annual": total_annual,
         "expected_daily_excess": daily_excess, "daily_vol": daily_vol,
-        "noise_to_edge_ratio": (daily_vol / daily_excess) if daily_excess > 1e-9 else float("inf"),
+        # signed: +inf for a (near-)zero positive edge, but a NEGATIVE ratio for a negative edge so a
+        # losing blend is never displayed identically to a near-zero-positive one.
+        "noise_to_edge_ratio": (daily_vol / daily_excess) if abs(daily_excess) > 1e-9
+                               else float("inf"),
     }
 
 

@@ -67,7 +67,15 @@ def test_combine_empty_is_safe():
     assert book.n_days == 0 and book.equity_curve == [1.0]
 
 
-def test_combine_custom_weights_override():
+def test_combine_custom_weights_override_on_uncapped():
+    # custom weights apply cleanly to UNCAPPED sleeves
+    tr = {"a": {1: 0.0}, "b": {1: 0.10}}
+    book = combine_tracks(tr, weights={"a": 0.5, "b": 0.5}, capped=set())
+    assert math.isclose(book.daily_returns[0], 0.05, rel_tol=1e-9)     # 50/50 blend
+
+
+def test_cap_is_enforced_internally_even_with_custom_weights():
+    # even if a caller passes short_vol=0.5, combine_tracks clamps it to its 0.08 cap (not caller-trust)
     tr = {"pairs": {1: 0.0}, "short_vol": {1: 0.10}}
     book = combine_tracks(tr, weights={"pairs": 0.5, "short_vol": 0.5})
-    assert math.isclose(book.daily_returns[0], 0.05, rel_tol=1e-9)     # 50/50 blend
+    assert math.isclose(book.daily_returns[0], 0.08 * 0.10, rel_tol=1e-9)   # short_vol pinned at cap

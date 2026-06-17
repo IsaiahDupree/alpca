@@ -83,12 +83,17 @@ def combine_tracks(track_returns: Dict[str, Dict[int, float]],
     CRITICAL (the bug the canonical backtest caught): a hard-CAPPED sleeve (short-vol, a negatively-
     skewed tail leg) must trade at EXACTLY its cap weight, every day, and NEVER be renormalized up to
     fill a missing core leg — otherwise on days the pairs core has no data the book becomes ~100%
-    short-vol (a −46% tail). So: capped sleeves are pinned at their weight; the uncapped CORE sleeves
-    share the residual, renormalized among the cores PRESENT that day (a missing core → cash, never an
-    amplified diversifier). On a day with neither, the slice is cash and the day is skipped."""
+    short-vol (a −46% tail). So: capped sleeves are pinned at min(weight, cap), every day (the cap is
+    enforced HERE, not just by caller convention). The uncapped CORE sleeves share the residual,
+    redistributed among the cores PRESENT that day — so a missing core is absorbed by the other present
+    cores (amplified up to `core_total`), and only when NO core is present that day does the core slice
+    go to cash. A day with neither any capped nor any core present is skipped."""
     weights = weights or deployed_weights()
     capped = capped if capped is not None else _capped_names()
-    funded = {k: v for k, v in weights.items() if v > 0 and k in track_returns}
+    cap_by = {s.name: s.cap for s in DEPLOYED if s.cap is not None}
+    # enforce the cap internally — never trust the caller's weight to already respect it
+    funded = {k: (min(v, cap_by[k]) if k in cap_by else v)
+              for k, v in weights.items() if v > 0 and k in track_returns}
     cores = [k for k in funded if k not in capped]
     core_total = sum(funded[k] for k in cores)            # total weight the cores share
     all_dates = sorted({t for k in funded for t in track_returns[k]})

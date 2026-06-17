@@ -145,7 +145,9 @@ def run_momentum(bars, spy_ret_by_ts, *, mode, top_frac=0.2, rebalance_days=21, 
             if mode == "adverse_borrow_neutral":
                 short_notional = float(-ws.sum())
                 long_notional = float(wl.sum())
-                if long_notional > short_notional > 0:
+                if short_notional <= 0:
+                    wl = wl * 0.0          # ALL shorts no-located -> dollar-neutral means FLAT, not 100% long
+                elif long_notional > short_notional:
                     wl = wl * (short_notional / long_notional)   # match long to available short
         w = wl + ws
         turnover = float(np.abs(w - prev).sum())

@@ -393,31 +393,42 @@ def delisting_aware_walkforward(
         screened = screen_pairs(cand, train_slice, min_overlap=int(train * 0.8),
                                 max_half_life=max_half_life, min_half_life=min_half_life, max_adf=max_adf)
         win_span = train_ts + test_ts
-        per_pair: List[List[float]] = []
+        test_set = set(test_ts)
+        # per pair: {test-window date -> that pair's return on that date}. Building it from the pair's
+        # OWN joined calendar (not a tail slice of the equity curve) is what keeps a delisted leg honest:
+        # a leg that delists mid-window simply has no joined bars after delisting, so its test-window
+        # contribution naturally ends there — no train-window bars bleed in, no date mislabeling.
+        per_pair: List[Dict[int, float]] = []
         for r in screened[:top_n]:
             a, b = r["a"], r["b"]
             for leg in (a, b):
                 if leg in delisted_syms:
                     del_leg_trades += 1
                     del_traded.add(leg)
-            seg_a = [bymap[a][t] for t in win_span if t in bymap[a]]
-            seg_b = [bymap[b][t] for t in win_span if t in bymap[b]]
-            if len(seg_a) < train * 0.5 or len(seg_b) < train * 0.5:
+            joined_ts = [t for t in win_span if t in bymap[a] and t in bymap[b]]   # 1:1 w/ aligned eq rows
+            if len(joined_ts) < train * 0.5:
                 continue
+            seg_a = [bymap[a][t] for t in joined_ts]
+            seg_b = [bymap[b][t] for t in joined_ts]
             lb = int(max(20, min(120, r["half_life"] * 3)))
             res = backtest_pairs(seg_a, seg_b, lookback=lb, entry_z=entry_z, exit_z=exit_z,
                                  cost_bps=cost_bps, hedge=r["hedge"])
-            eq = res.equity_curve
-            seg = eq[-(test + 1):] if len(eq) > test else eq
-            rr = [(seg[i] - seg[i - 1]) / seg[i - 1] for i in range(1, len(seg)) if seg[i - 1] > 0]
+            eq = res.equity_curve                       # eq[i] = value after joined_ts[i]
+            rr = {joined_ts[i]: eq[i] / eq[i - 1] - 1.0
+                  for i in range(1, min(len(eq), len(joined_ts)))
+                  if eq[i - 1] > 0 and joined_ts[i] in test_set}    # TEST-window days only, by real date
             if rr:
                 per_pair.append(rr)
         if per_pair:
-            m = min(len(x) for x in per_pair)
-            for t in range(m):
-                oos_rets.append(sum(x[t] for x in per_pair) / len(per_pair))
-            # map each basket return to the test-window calendar (test day t -> test_ts[t])
-            oos_dates.extend(test_ts[:m])
+            # aggregate per calendar date: equal-weight the pairs that actually traded that day
+            by_date: Dict[int, List[float]] = {}
+            for pr in per_pair:
+                for dt, ret in pr.items():
+                    by_date.setdefault(dt, []).append(ret)
+            for dt in sorted(by_date):
+                vals = by_date[dt]
+                oos_rets.append(sum(vals) / len(vals))
+                oos_dates.append(dt)
             windows += 1
         w += test
     eq = [1.0]

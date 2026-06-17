@@ -200,24 +200,26 @@ The multi-sleeve book is codified in one place — weights are HONEST CONVICTION
 (see `deployed_weights()` + `combine_tracks()`, and the live view `scripts/report_forward_track.py`,
 wired into the daily `com.alpca.forwardtrack` job):
 
-| Sleeve | Role | Weight | Evidence |
+| Sleeve | Role | Weight | Evidence (post-audit, Case 52) |
 |---|---|---|---|
-| **pairs** | CORE | 92% | WF ~0.83, survivorship-stamped 0.83→0.93 (Case 46) — the only standalone edge |
-| **short_vol** | DIVERSIFIER | 8% (hard cap) | first leg that *lifts* the book → combined 1.08, DSR 0.90, ρ=0.04 (Case 49); tail stress-validated (Case 50) |
-| **momentum** | PROBATION | 0% | dilutes over the OOS window (Case 47) — tracked only, zero trading capital |
+| **pairs** | CORE | 92% | WF 0.83 but **regime-dependent** (H1 0.27 / H2 1.39; 2022 −0.9); forward ~0.3–0.5; survivorship-robust (Case 46). The only standalone edge. |
+| **short_vol** | OBSERVE (not a validated leg) | 8% (hard cap) | *looked* like a diversifier (combined 1.08, Case 49) but the audit showed the **lift is a 2022–23 vol-crush artifact — since 2024 the book lift is −0.27**. Tail-cap stress-validated (Case 50); kept tiny only to observe if the VRP regime returns. |
+| **momentum** | PROBATION | 0% | dilutes over the OOS window (Case 47); gate flips on recency (Case 52) — tracked only, zero capital |
 
-The combined book (pairs + capped short-vol) backtests to **~1.08 Sharpe, −5.5% DD**; a simulated
-volmageddon at the 8% cap keeps the worst-case drawdown < ~10% (Case 50). All three sleeves log live
+Honest combined-book numbers (Case 52): over the period both legs were live, pairs+short-vol = **1.07
+(lift +0.24)** — but that lift is **entirely pre-2024**; on 2024+ data the lift is **−0.27** (short-vol
+drags). The canonical union book (incl. pairs-warmup days) is 0.92. The ρ≈0.04 correlation is real and
+stress-stable, but "uncorrelated ≠ hedged" — the combined tail is short-vol's. All three sleeves log live
 forward tracks; the reporter blends them into the single combined OOS curve that adjudicates the program.
 
 ## 8. The honest bottom line
 
-After **50 experiments**: **one validated, deployed, survivorship-stamped core edge (cointegrated-pairs
-basket, WF ~0.83, −4% DD) and — after rejecting value, momentum, and seasonality — one genuine second
-leg (short-volatility / VRP) that LIFTS the combined book to ~1.08 (DSR 0.90), sized tiny with a
-stress-validated tail cap.** The profit-per-day is still a few bps — invisible day-to-day, real over
-hundreds of days — but the book is now genuinely diversified across two uncorrelated risk axes
-(statistical mean-reversion + the variance-risk-premium). The lever for more remains additional
-*generalizing, robust, uncorrelated* legs sized to Kelly — found through the same brutal gauntlet that
-rejected three plausible candidates this session. The platform's value is unchanged: it tells the truth
-(including the tail it hasn't sampled) instead of a comfortable fiction.
+After **52 experiments and an adversarial self-audit (Case 52)**: **exactly one thin, regime-dependent
+edge** — the cointegrated-pairs basket, WF 0.83 but forward-honest ~0.3–0.5 (first-half 0.27, 2022 −0.9),
+survivorship-robust, deployed on a forward track. The short-vol "second leg" was **downgraded by the
+audit**: its diversification was a 2022–23 vol-crush artifact and it has *dragged* the book since 2024 —
+kept tiny only to observe. **Zero new edges have cleared the project's own out-of-universe + out-of-regime
+bar.** The profit-per-day is a few bps — invisible day-to-day, real over hundreds of days. The lever for
+more is a **genuinely uncorrelated additional axis** (ideally a long-vol / convexity sleeve that actually
+hedges short-vol's crash, which the correlation analysis proved is undiversified). The platform's value
+is exactly this: it caught its *own* overselling — the harness tells the truth, including about itself.

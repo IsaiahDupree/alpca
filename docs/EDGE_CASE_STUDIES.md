@@ -1147,6 +1147,43 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   honest hit rate this session: 1 win (short-vol) in 5 candidates — edges remain scarce, exactly as the
   program has found all along.
 
+## Case 52 — The adversarial AUDIT (the harness turns its lens on its own claims) ⚠️ (we were overselling)
+
+A 9-agent adversarial workflow audited the session's own code + tried to *refute* the two "validated"
+edges. It found the platform had been **overselling its own results** — the single most important finding
+of the program, because it's about *us*, not a rejected candidate. Honest corrections, all reproduced
+from code + cache (the *signals* are clean — advocate-confirmed no lookahead; secrets clean):
+
+- **Pairs basket is regime-dependent, not "0.83."** WF 0.831 is real but **front-loaded**: first-half
+  Sharpe **0.27** (bootstrap CI straddles zero), second-half **1.39**; per-year **2022 −0.9** → 2026 +1.9;
+  strip 10 of 945 days and it falls to **0.16** (excess kurtosis +6.77 — a snap-back payoff). It also
+  depends on a **fast re-screen cadence** (lengthen train 252→378 → Sharpe **−1.42**). Honest forward
+  expectation: **~0.3–0.5, regime-dependent**, not the headline 0.83. Still the best edge we have.
+- **Short-vol is NOT a current diversifier.** Its entire lift is the **2022–23 vol-crush**: pre-2024 book
+  lift **+0.92** (short-vol standalone +2.17), but **since 2024 the lift is −0.27** (−0.31 since 2025;
+  standalone ~0). The "6/6 positive years" was the *standalone* calendar Sharpe and masked that the
+  **book** lift went negative. It is "a 2022–23 vol-crush bet wearing a diversifier costume."
+- **The combined 1.08 / +0.09-lift headline is pre-2024-driven.** On the paper-relevant 2024+ window the
+  deployed-book lift is **negative**. The canonical 0.92 (union) book is also ~25% pairs-absent padding.
+- **The ρ=0.04 correlation is real and stress-stable** (no tail-trap — corr does *not* spike in stress),
+  but "uncorrelated ≠ hedged": pairs is **dead weight** in a vol spike, so the combined tail is
+  dominated by short-vol's own crash (4/5 worst combined days had both legs red).
+- **Momentum's gate verdict flipped NO-GO → GO** on appended bars (recency-driven in-sample lift) — the
+  gate window isn't pinned; verdict non-reproducible. Stays on probation, unproven out-of-universe.
+- **Bugs fixed (this commit):** (1) `delisting_aware_walkforward` bled train-window bars into OOS for
+  short-history/delisted legs (`eq[-(test+1):]` tail-slice) — replaced with date-honest joined-timestamp
+  emission (didn't affect shipped survivor-only numbers; corrupted any delisting-honest run);
+  (2) `adverse_borrow_neutral` ran 100% net-long when all shorts were no-located (beta leak);
+  (3) `combine_tracks` now enforces caps internally (not by caller trust); (4) `return_translation` no
+  longer hides negative edges as +inf; (5) the parity "nondeterminism" was benign wall-clock latency
+  telemetry (fixed the test, not the engine); (6) `leg_gate` now re-fits inverse-vol weights *out-of-fold*
+  in its robustness checks; (7) a silent-degradation overlap guard added to the canonical backtest.
+- **Net honest scoreboard:** **exactly one thin, regime-dependent edge (pairs, forward ~0.3–0.5)**;
+  short-vol is not a current diversifier; momentum unproven; **zero new edges have cleared the project's
+  own out-of-universe + out-of-regime bar.** The right next move is a *genuinely* uncorrelated axis —
+  ideally a **long-volatility / convexity** sleeve to actually hedge the short-vol crash the correlation
+  analysis proved is undiversified — and every candidate must clear the paid-twice holdout bar.
+
 ## Methodology capstone — the SECOND-LEG GATE (`alpca/backtest/leg_gate.py`)
 
 The Cases 47–51 hunt judged every candidate against the same gauntlet by hand. That gauntlet is now one

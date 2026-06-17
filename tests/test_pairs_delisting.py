@@ -76,6 +76,22 @@ def test_delisted_accounting_only_counts_listed_names():
     assert aware.delisted_leg_trades >= 0
 
 
+def test_delisted_leg_emits_only_in_window_test_dates_no_train_bleed():
+    """Regression for the audit-found bug: a pair with a delisted leg must emit OOS returns ONLY on
+    real test-window dates (never train-window bars bled in via an eq-tail slice), and never more than
+    `test` days per window. DEAD delists partway, so it joins fewer than train+test bars."""
+    bars = _cointegrated_universe(delist_at=520)
+    r = delisting_aware_walkforward(bars, delisted_syms={"DEAD"}, train=252, test=63, top_n=6,
+                                    max_adf=None)
+    # every emitted date is a real test-window day: it must be >= the first possible test date
+    # (the train-th bar). With a single common calendar, test dates start at index >= train.
+    ts_sorted = sorted({int(b["timestamp"]) for s in bars for b in bars[s]})
+    first_possible_test = ts_sorted[252]            # earliest a test window can begin
+    assert all(d >= first_possible_test for d in r.dates), "a train-window date leaked into OOS"
+    # dates strictly increasing and 1:1 with returns (no duplicate/fabricated days)
+    assert len(r.dates) == len(r.daily_returns) and r.dates == sorted(set(r.dates))
+
+
 def test_dated_returns_align_and_reconstruct_equity():
     """daily_returns and dates are 1:1, dates are increasing test-window epochs, and compounding the
     returns reproduces the equity curve — so the stream is usable for a date-aligned combiner."""

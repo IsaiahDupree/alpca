@@ -55,6 +55,14 @@ def main() -> int:
     svxy = _svxy_returns(args.vol_cache)
     print(f"[ok] pairs WF {pj['wf_sharpe']} ({len(pairs)} days) · short-vol ({len(svxy)} days)\n")
 
+    # GUARD against silent degradation: if the diversifier barely overlaps the core, the headline
+    # lift is computed against a near-zero-weight sleeve and is meaningless.
+    overlap = len(set(pairs) & set(svxy))
+    cov = overlap / max(1, min(len(pairs), len(svxy)))
+    if cov < 0.5:
+        print(f"[WARN] pairs<>short-vol overlap only {overlap} days ({cov:.0%} of the shorter series) — "
+              f"the diversifier is barely present; the lift below is NOT trustworthy. Refresh cache_vol/pairs.")
+
     w = deployed_weights()
     print("=== DEPLOYED WEIGHTS ===")
     for s in DEPLOYED:

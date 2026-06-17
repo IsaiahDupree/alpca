@@ -524,7 +524,14 @@ def test_run_parity_deterministic_same_seed():
     bars = _sine_bars(60, quotes=True)
     a = run_parity("donchian", bars, symbol="X", sim_seed=11)
     b = run_parity("donchian", bars, symbol="X", sim_seed=11)
-    assert a.to_dict() == b.to_dict()
+    # Drop wall-clock LATENCY telemetry (Order.mark_signal stamps time.time()); only these reporting
+    # fields jitter run-to-run. Every trading-relevant field (returns, fills, slippage, TCA) is
+    # bit-identical for a fixed seed — assert determinism on those, not on measured latency.
+    da, db = a.to_dict(), b.to_dict()
+    for d in (da, db):
+        d.get("live_path", {}).pop("signal_to_fill_p50_ms", None)
+        d.get("live_path", {}).pop("signal_to_fill_p95_ms", None)
+    assert da == db
 
 
 def test_run_parity_n_bars_matches_input():

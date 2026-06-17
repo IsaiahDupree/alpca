@@ -8,36 +8,34 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **51 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
-fundamental, run both by hand and by an AI research loop — **exactly one edge is validated, deployed, and
-now survivorship-stamped**: a cointegrated-pairs market-neutral basket (**WF ~0.83**, −4% DD, top-10 + 5%
-ADF; the earlier "0.29" was an over-diversified basket that diluted the edge). Re-run this session on a
-point-in-time large-cap universe via a new delisting-aware walk-forward, it holds at **+0.83 → +0.93** —
-the same survivorship test that demoted other candidates *clears* it. **And after a long hunt, a second
-leg has finally cleared every gate: short-volatility / VRP (Case 49)** — uncorrelated (ρ=0.04), positive
-6/6 years, robust, and it *lifts* the combined book to **1.08 (DSR 0.90)** with the drawdown unchanged at
-small (12%) size. Its asterisk is large and non-negotiable (an un-sampled catastrophic tail), so it
-deploys only tiny with tail management — but it is the first candidate that genuinely diversifies.
+Across **52 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+fundamental, run both by hand and by an AI research loop, **then adversarially audited (Case 52)** — the
+honest scoreboard is humbler than the in-flight headlines: **exactly ONE thin, regime-dependent edge
+(cointegrated-pairs basket), and zero new edges have cleared the project's own out-of-universe +
+out-of-regime bar.**
 
-The hunt that got there is the methodology in miniature — every *other* candidate failed a *different*
-honest gate: mid-cap **value** is a survivorship artifact (Case 43); mid-cap **momentum** looked like a
-~0.4 edge but its deployable form is **negative over the forward window** (carried by 2021) → the honest
-combiner *dilutes* (Case 47); **cross-sectional seasonality** is uncorrelated but regime-unstable, its
-"lift" a **partial-2026 artifact** (Case 48). The constraint that finally cracked: **positive over 2022→
-AND uncorrelated with pairs AND robust across years** — short-vol clears it, on a different risk axis
-(selling volatility) than anything else tried. A forward track now runs pairs + momentum + short-vol,
-each sized to its honest conviction.
+- **Pairs basket** — WF Sharpe **0.83** is real but **regime-front-loaded** (first-half 0.27, CI straddles
+  zero; second-half 1.39; 2022 −0.9; strip 10 of 945 days → 0.16) and **cadence-dependent** (train
+  252→378 → −1.42). Forward-honest expectation **~0.3–0.5**, *not* 0.83. Survivorship-robust (Case 46).
+  The deployed core, but "0.83" oversells it.
+- **Short-vol / VRP** *looked* like the first real second leg (Case 49: combined 1.08, ρ=0.04) — but the
+  audit showed the **lift is entirely a 2022–23 vol-crush artifact**: pre-2024 book lift +0.92, **since
+  2024 the lift is −0.27** (it *drags* the book). **Not a current diversifier;** on the forward track at a
+  tiny tail-capped weight only to observe.
+- Value (survivorship artifact, Case 43), momentum (dilutes / gate-flip-on-recency, Cases 47/52),
+  seasonality (partial-year artifact, Case 48), cross-asset trend (timing illusory, Case 51) — **all
+  rejected**, each on a different honest gate.
 
-That is not a failure of the project — it *is* the project. The deliverable is a harness whose job is
-to **reject** edges that don't generalize, and it has done so relentlessly, including against several
-candidates that looked excellent in-sample. Sized to Kelly, a ~0.83 market-neutral sleeve with −4% DD
-is a genuinely useful core; the lever for *more* is additional uncorrelated surviving legs — and after
-rejecting value, momentum, and seasonality, **short-vol is the first to actually clear the bar and lift
-the book** (with its tail risk respected, not hidden).
+That is not a failure of the project — it *is* the project. The deliverable is a harness whose job is to
+**reject** edges that don't generalize *and to catch its own overselling* — which Case 52 did, on our own
+claims. Sized to Kelly, a thin regime-dependent ~0.3–0.5 market-neutral core is still genuinely useful;
+the lever for *more* is a **genuinely uncorrelated additional axis** (ideally a long-vol/convexity sleeve
+that actually hedges the short-vol crash the correlation analysis proved is undiversified), each cleared
+through the out-of-universe + out-of-regime bar — not another in-sample lift.
 
 ---
 
-## The scoreboard (51 experiments, by outcome)
+## The scoreboard (52 experiments, by outcome)
 
 **✅ Validated & deployed (1):**
 - **Cointegrated-pairs basket** — market-neutral, walk-forward (re-screen each quarter, trade the
@@ -45,22 +43,19 @@ the book** (with its tail risk respected, not hidden).
   top-24 — diluting into weak pairs halved the edge), −4% drawdown. Deployed on a
   forward paper-track to let the *live* OOS curve adjudicate. **Now SURVIVORSHIP-STAMPED (Case 46):**
   re-run on a point-in-time large-cap universe (195 survivors + 32 representative delistings, SIP feed,
-  via a new delisting-aware walk-forward), the WF is **+0.83 → +0.93** — robust, not inflated. The same
+  via a new delisting-aware walk-forward), the WF is **+0.83 → +0.94** — robust, not inflated. The same
   test that demoted value and right-sized momentum *clears the deployed edge.*
 
-**🟢 First second leg that LIFTS the book — short-volatility / VRP (Case 49):** the borrow-free
-**long-SVXY** sleeve (variance-risk-premium harvest) is the first candidate to clear *every* gate that
-killed the others — positive **6/6 years** (even 2022), uncorrelated with pairs (**ρ=0.04**, tail ρ=0.12),
-robust (survives ex-2026 and 3/4 leave-one-year-out), and it **actually lifts the combiner: 0.83 → 1.08,
-DSR 0.90** (the only candidate to clear the strict 0.9 DSR), with the combined drawdown **unchanged at
-−5.5%** because inverse-vol sizes it to just 12%. **The asterisk is non-negotiable:** short-vol is
-*negatively skewed with an un-sampled catastrophic tail* (maxDD −46% standalone; 2021–2026 had no
-volmageddon), so the metrics *understate* the risk — a vol spike is the known failure mode. **Honest
-position: a real diversifying leg, deployable only at small (~12%) size with explicit tail management.**
-Going on the forward paper-track alongside pairs + momentum, sized tiny, eyes open. **Tail validated
-(Case 50):** a *simulated* volmageddon (−50% SVXY day injected at the book's worst moment) costs only
-−7.9% combined drawdown at the deployed **8% cap** (−9.4% even at a beyond-historical −70%) — the sizing
-is the tail management; the known failure mode is survivable.
+**🟡→❌ Short-volatility / VRP — looked like a second leg, DOWNGRADED by the audit (Cases 49→52):** the
+borrow-free **long-SVXY** sleeve *appeared* to clear every gate (Case 49: combined 1.08, ρ=0.04, "6/6
+positive years") and survived a simulated-volmageddon tail-stress at an 8% cap (Case 50, still valid: a
+−50% SVXY day → only −7.9% combined drawdown — the sizing is genuine tail management). **But the
+adversarial audit (Case 52) refuted the *diversification*:** the entire lift is the **2022–23 vol-crush**
+(pre-2024 book lift +0.92, short-vol standalone +2.17), and **since 2024 the lift is −0.27** — the leg
+*drags* the book. The "6/6 years" was the *standalone* calendar Sharpe, masking the negative *book* lift;
+ρ≈0 is real and stress-stable but "uncorrelated ≠ hedged" (pairs is dead weight in a vol spike, so the
+combined tail is short-vol's). **Net: NOT a current diversifier.** Kept on the forward track at the tiny
+8% tail-cap purely to observe whether the VRP regime returns — not counted as a validated leg.
 
 **🚀 On a forward paper-track (sized tiny, low expectations):** the borrow-free **long/index-hedged
 momentum sleeve** is wired into the daily `com.alpca.forwardtrack` job alongside the pairs basket. **But
