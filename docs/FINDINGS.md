@@ -8,7 +8,7 @@ summary of the honest-evaluation program: the scoreboard, the hard-won lessons, 
 
 ## Executive summary
 
-Across **52 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
+Across **53 distinct edge experiments** — price, market-microstructure, event-driven, positioning, and
 fundamental, run both by hand and by an AI research loop, **then adversarially audited (Case 52)** — the
 honest scoreboard is humbler than the in-flight headlines: **exactly ONE thin, regime-dependent edge
 (cointegrated-pairs basket), and zero new edges have cleared the project's own out-of-universe +
@@ -35,7 +35,7 @@ through the out-of-universe + out-of-regime bar — not another in-sample lift.
 
 ---
 
-## The scoreboard (52 experiments, by outcome)
+## The scoreboard (53 experiments, by outcome)
 
 **✅ Validated & deployed (1):**
 - **Cointegrated-pairs basket** — market-neutral, walk-forward (re-screen each quarter, trade the

@@ -1147,6 +1147,29 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   honest hit rate this session: 1 win (short-vol) in 5 candidates — edges remain scarce, exactly as the
   program has found all along.
 
+## Case 53 — Cross-sectional short-horizon REVERSAL ❌ (passed the leg gate, killed by the survivorship PIT)
+
+- **What.** A documented equity anomaly (long last-week's losers / short last-week's winners),
+  market-neutral, a different mechanism + horizon than the pairs basket — the audit (Case 52) flagged it
+  as a possible cadence-orthogonal new leg. Ran the FULL post-audit bar: cost-wall sweep + fresh-symbol
+  holdout + per-year + the 2024+ slice + the second-leg gate vs the cached pairs book.
+- **It looked like the first real post-audit candidate:** large-cap reversal is dead (efficient), but
+  **mid-cap reversal (3-day signal, 10-day rebalance)** scored **0.74 at 5 bps** (positive across *all 6*
+  window/rebalance configs — not cherry-picked; +0.52 even at 10 bps), fresh-holdout **+0.47**, **2024+
+  +1.17** (positive on recent data — the exact check short-vol failed), ρ=−0.04 vs pairs, and **passed
+  ALL FIVE leg-gate checks** (LOO 80%, ex-recent +0.20).
+- **Then the survivorship point-in-time test killed it:** add the representative delistings back and the
+  Sharpe goes **+0.69 → −0.40 (delta −1.08)**, 5/6 → 3/6 positive years. Reversal *longs losers* (the
+  survivor universe omits the dead losers that kept falling) and *shorts winners* (it omits the acquired
+  names that popped to a deal premium — reversal shorts them and eats the pop). Both adverse cases were
+  missing from survivor-only, inflating it.
+- **Verdict.** ❌ **REJECT — a survivorship artifact, like value (Case 43).** The decisive methodology
+  point: **the leg gate is necessary but NOT sufficient.** Reversal cleared every leg-gate check (positive,
+  uncorrelated, lifts, robust, partial-year-safe) AND the cost wall AND the 2024+ slice — and was still
+  wrong. **The survivorship point-in-time test is the deeper bar for any long/short equity factor** (it has
+  now caught value, EAR-PEAD, accruals, the momentum cherry-pick, and reversal — five artifacts). It belongs
+  *upstream* of the leg gate, not after it. Scoreboard unchanged: one thin regime-dependent edge (pairs).
+
 ## Case 52 — The adversarial AUDIT (the harness turns its lens on its own claims) ⚠️ (we were overselling)
 
 A 9-agent adversarial workflow audited the session's own code + tried to *refute* the two "validated"

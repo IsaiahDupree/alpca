@@ -190,6 +190,21 @@ def si_change_signal(si_by_sym, pub_lag: int = 10):
     return fn
 
 
+def short_horizon_return_signal(window: int = 5):
+    """Trailing `window`-day cumulative return, known AS OF t-1. Rank LOW (long_high=False) to trade the
+    short-horizon REVERSAL anomaly (long last-week's losers, short last-week's winners) — a different
+    mechanism/horizon than the pairs basket's pairwise cointegration mean-reversion. Note: reversal is
+    turnover-heavy, so the cost wall is the live test."""
+    def fn(master, syms, price):
+        T, N = price.shape
+        sig = np.full((T, N), np.nan)
+        for t in range(window, T):
+            p0, p1 = price[t - window], price[t]
+            sig[t] = np.where((p0 > 0) & np.isfinite(p1), p1 / p0 - 1.0, np.nan)
+        return sig
+    return fn
+
+
 def max_return_signal(window: int = 21):
     def fn(master, syms, price):
         T, N = price.shape
