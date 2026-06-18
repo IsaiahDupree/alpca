@@ -1147,6 +1147,31 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   honest hit rate this session: 1 win (short-vol) in 5 candidates — edges remain scarce, exactly as the
   program has found all along.
 
+## Case 55 — PEAD 3rd-leg hunt, definitive re-test ❌ (fresh-symbol holdout kills it a 3rd time; data-gated)
+
+The requested 3rd-leg hunt. PEAD was rejected twice before (surprise-PEAD → adverse-selection borrow,
+Case 14; EAR-PEAD → fresh-symbol holdout, Case 18). Re-ran the strongest variants through the *full
+post-audit gauntlet* (adverse borrow · fresh-symbol holdout · per-year + 2024+ · the second-leg gate vs
+the cadence-fixed pairs book) on the available data — earnings are **hard data-gated at 40/195** (AV free
+tier now rate-limits immediately; full breadth needs a premium key or Finnhub).
+
+- **EAR-PEAD (beta-hedged, trailing-beta index short — the borrow-free form): REJECT.** It clears **all
+  five leg-gate checks** (ρ=−0.01, lift +0.23, robust LOO, partial-year-safe), is positive across
+  per-year, and is positive on the **2024+ slice (+0.58)** — yet the **fresh-symbol holdout is NEGATIVE
+  (−0.22 at thr1, −0.64 at thr2)** on the 19 disjoint names. Same signature as Case 18 (−0.52) and reversal
+  (Case 53): leg-gate-clean, out-of-universe-dead. It's specific to the 40 mega-caps it's fit on.
+- **Surprise-PEAD L/S survives adverse borrow (+0.65) — but it's BETA, not alpha.** Flat-borrow +0.98 →
+  adverse +0.65 looks like survival, but the **short leg alone is −0.34** (a loser), so the dollar-neutral
+  L/S is carried entirely by the long (post-beat) leg = bull-market beta. Not a clean market-neutral
+  diversifier; consistent with Case 14's "the apparent edge is the long beta leg."
+- **Verdict.** ❌ **PEAD is not the 3rd leg** — three rejections now, the decisive one being the
+  fresh-symbol holdout (the out-of-universe bar that has caught value, EAR-PEAD ×3, accruals, the momentum
+  cherry-pick, and reversal). The recurring methodology point, paid for again: **the leg gate is necessary
+  but not sufficient; the out-of-universe holdout is the decisive bar.** EAR-PEAD passing all 5 gate checks
+  + 2024+ and STILL failing the fresh holdout is the cleanest demonstration yet. *(Data caveat: a
+  definitive full-breadth verdict needs the 195-name earnings, which is blocked on AV's free tier.)*
+  Scoreboard unchanged: one thin regime-dependent edge (pairs).
+
 ## Case 54 — Post-audit hardening sweep (cadence map · long-vol hedge · regime overlay) — parallel hunt
 
 Four audit-ranked directions run in parallel, each survivorship-PIT-first. Two delivered real value, one
