@@ -43,7 +43,9 @@ class PairsBook:
 
 def compute_pairs_book(
     bars_by_sym: Dict[str, List[dict]], *,
-    train: int = 378,
+    train: int = 252,                 # VALIDATED screen window (WF 0.83). The cadence map (Case 54)
+                                      # proved 378 INVERTS the edge (WF −1.42) and 252 is the robust
+                                      # interior; 315 already degrades to 0.30. Do NOT lengthen.
     top_n: int = 10,                  # CONCENTRATED top-10 (WF 0.83); diluting to 20+ halved it
     lookback: int = 60,
     entry_z: float = 2.0,

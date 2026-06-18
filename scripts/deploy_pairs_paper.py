@@ -81,8 +81,9 @@ def main() -> int:
         print(f"[track] prior book ({prior['date']}) marked to today: realized return {r*100:+.3f}%")
 
     # ---- 2. compute + size today's book ----
-    book = compute_pairs_book(bars, train=378, top_n=10, lookback=60, entry_z=2.0, exit_z=0.5,
-                              max_half_life=30, min_half_life=3, max_adf=-2.86,   # validated config (WF 0.83)
+    book = compute_pairs_book(bars, train=252, top_n=10, lookback=60, entry_z=2.0, exit_z=0.5,
+                              max_half_life=30, min_half_life=3, max_adf=-2.86,   # validated cadence:
+                              # train=252 (WF 0.83); 378 INVERTS to −1.42 (Case 54 cadence map).
                               prior_state=(prior.get("state") if prior else None))
     # diversification guard: a thin book (few active pairs) is sized down vs a full basket
     div = min(1.0, book.n_active / max(1, args.target_pairs))

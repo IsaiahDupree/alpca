@@ -1147,6 +1147,38 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   honest hit rate this session: 1 win (short-vol) in 5 candidates — edges remain scarce, exactly as the
   program has found all along.
 
+## Case 54 — Post-audit hardening sweep (cadence map · long-vol hedge · regime overlay) — parallel hunt
+
+Four audit-ranked directions run in parallel, each survivorship-PIT-first. Two delivered real value, one
+a conditional candidate, one a clean reject:
+
+- **Pairs cadence map → HARDENING APPLIED (a live-config fix).** Gridded the WF across train/test/top_n on
+  the large-cap universe. The edge is **robust to selection breadth** (top_n 6/10/15 → 0.79/0.83/0.86, all
+  stable) but **fragile to the train (screen) window**: train 252 → **0.83**, 315 → 0.30, **378 → −1.42
+  (inverts)**. Test cadence: test=42 is the sweet spot (**0.91**, H1 0.53 — far less regime-front-loaded
+  than the deployed 63's H1 0.27). **Decisive catch: the LIVE deploy was screening on `train=378` — the
+  −1.42 cadence.** Fixed `compute_pairs_book` + `deploy_pairs_paper` to **train=252** (validated, robust
+  interior; the map says never lengthen, and avoid test≥126). The one deployed edge now runs on the
+  evidence-chosen cadence instead of a cliff. *(Data caveat: a flaky external-drive read jittered maxDD /
+  the 2024-slice but Sharpe + H1/H2 were identical across reads — the load-bearing signal is solid.)*
+- **Long-vol / convexity hedge → CANDIDATE, narrowly scoped.** A long-VXX sleeve pays **+1.2 to +1.9% on
+  the book's worst-10% days** (real, correctly-signed convexity) at −24 to −48%/yr carry. **On pure pairs
+  it HURTS** at every weight (raises maxDD) — the pairs tail is a slow stat-arb grind, not a vol spike, so
+  the convexity never fires and the carry dominates. **On the pairs+short-vol book** (the audit's
+  undiversified-tail concern) it clearly **works**: VXX 5% → Calmar 0.806→1.136, maxDD 9.6%→4.6% (−5pp),
+  Sharpe +0.06 — cuts the tail harder than the return. A *term-structure-managed* version (long-vol only
+  when VIXY/VIXM short-end is rich, ~24% of days) halves the carry. **Verdict: reserve it as the hedge for
+  short-vol IF short-vol is ever revived as a leg** (the audit downgraded short-vol to OBSERVE, so it's not
+  deployed today); do NOT bolt it onto pure pairs. The leg gate FAILS by design (a negative-carry hedge
+  can't pass a Sharpe-lift gate) — a hedge is judged on Calmar/maxDD, not lift.
+- **Regime overlay on pairs → REJECT.** Pairs lost in 2022 (−0.9), but that hole is a **concentrated
+  ~2-month event, not a trailing-regime-detectable state** — a no-lookahead overlay (trailing vol /
+  drawdown / dispersion) can't isolate it, and conditioning the book on its own favorable regime mostly
+  cuts exposure in the years pairs does *best* (net harm). Even a lookahead oracle (zero 2022 exposure)
+  only lifts full-sample Sharpe to 1.06. Keep the pairs book un-overlaid.
+- *(Defensive low-beta hunt + the synthesis agent hit the session limit mid-run; defensive-low-beta is
+  queued to re-run.)*
+
 ## Case 53 — Cross-sectional short-horizon REVERSAL ❌ (passed the leg gate, killed by the survivorship PIT)
 
 - **What.** A documented equity anomaly (long last-week's losers / short last-week's winners),
