@@ -51,6 +51,9 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 33 | **Short-interest CHANGE** (ΔDTC, not level) | Positioning MN | main −0.27, only 2/6 yrs, fresh +0.68 inconsistent w/ negative main | ❌ **Rejected** — not regime-robust, dies to cost; the *change* is no better than the *level* (Case 21) |
 | 34 | **Gross profitability** (Novy-Marx, EDGAR Rev−COGS/Assets) | Fundamental MN | main −0.31, OOS −1.72, fresh −0.40, regime-flipping (2021 +2.08 → 2026 −2.51) | ❌ **Rejected** — the "most robust factor" is net-negative on our large-caps |
 | 35 | **Financials-excluded accruals & value** (SIC fetch) | Fundamental MN | accruals in-sample +0.70/6-of-6 but **fresh still −0.51**; value unchanged (+0.22 fresh) | ⚠️/❌ **Sector-rescue refuted** — excluding financials cleans accruals in-sample but doesn't fix its out-of-universe failure |
+| 36 | **Published formulaic-alpha zoo** (Alpha101 / Alpha158 / GTJA191, 21 de-collinearized family reps) | Microstructure MN | best DSR **0.596** (gate 0.90), **0/21 pass Bonferroni**; in-sample/OOS winners INVERT on fresh symbols (gap-reversal +1.29→−0.16, intraday +1.01→−0.77) | ❌ **DEBUNKED** (Case 56) — the famous 101/158/191 libraries collapse on our venue exactly like value/momentum/seasonality |
+| 37 | **Pairs OU-refinement** (cost-calibrated entry-z + OU-proportional sizing) | MN hardening | **INERT** at ≤~20bps — bit-identical to the validated baseline (0.83); the `regime_monitor` variant DESTROYS the edge (0.83→−0.32) | ❌ **No improvement** (Case 56) — nothing to commit; footgun flagged in source |
+| 38 | **Defensive low-beta / BAB** | Factor long-short | defensive (long-low-β) BAB Sharpe **−1.06** (a loser); only the reverse (long-high-β) is positive (+1.05) and is pure beta (β to SPY −0.65) | ❌ **reject_beta** (Case 56) — dampened market exposure, not alpha |
 
 ---
 
@@ -1146,6 +1149,53 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   the timing is the problem, not the tuning. **Book stays at two legs (pairs + short-vol).** The hunt's
   honest hit rate this session: 1 win (short-vol) in 5 candidates — edges remain scarce, exactly as the
   program has found all along.
+
+## Case 56 — Three negatives in one gauntlet: the formulaic-alpha zoo, the pairs OU-refinement, defensive low-beta ❌❌❌
+
+A 4-agent honest-gauntlet sweep of the **uncommitted, unvalidated work** sitting in the repo — built but never run
+through the bar. Three independent candidates, one shared lookahead audit. Every one rejected on a *different* honest
+gate; the scoreboard holds at one thin edge (pairs). This is the harness doing its job — the value is rejecting cheaply.
+
+- **The published formulaic-alpha zoo — DEBUNKED.** `alpha101.py` implements 21 *de-collinearized family
+  representatives* of the Kakushadze **Alpha101** library and the overlapping **Alpha158/Qlib158** and **GTJA191** sets
+  (one clean representative per microstructure family — rank-reversal, price-volume corr, decay-momentum, K-bar
+  microstructure, returns-vol — so the test covers the *class*, not 450 near-clones). Run through the same bar the rest
+  of the zoo faced (main 194-sym universe + **disjoint 30-sym fresh-symbol holdout** + 70/30 OOS + per-year + 2bps cost
+  + Deflated Sharpe with n_trials=21 + an explicit Bonferroni PSR≥0.9976): **all 21 rejected.** The best factor
+  (`A_a4_tsrank_low`) tops out at **DSR 0.596** — far below the 0.90 gate — and 0/21 clear Bonferroni. The headline is
+  the **out-of-universe inversion**: the factors that looked strongest in-sample flip sign on never-seen symbols
+  (`gap_reversal` OOS **+1.29 → fresh −0.16**; `intraday` OOS **+1.01 → fresh −0.77**). High in-sample/OOS Sharpe is
+  pure overfit to the *selection universe*. The famous "101/158/191 alphas" collapse on our venue exactly like value,
+  momentum, and seasonality did. *(Confirmed lookahead-clean — see audit below.)*
+- **Lookahead audit — clean, but caught a real correctness bug.** An adversarial audit verified **no look-ahead** in any
+  of the 21 builders — confirmed *empirically* by corrupting day T-1's OHLCV and checking every earlier signal row stays
+  byte-identical (no builder reads a future index), plus the engine's strict **1-bar lag** (trade on `signal[t-1]`, earn
+  `ret[t]`, no same-bar close fill). It did find one genuine bug: `_decay_linear` had its weights **inverted**
+  (`arange(d,0,-1)` put the *heaviest* weight on the *oldest* day — an anti-decay filter), mislabeling which momentum
+  variant `decay_mom` tested. **Fixed** (recent-heavy `arange(1,d+1)`); the verdict is unchanged (recent-weighted decay
+  momentum is still momentum = beta, already debunked, and `decay_mom` did not survive either way). *No survivor was ever
+  manufactured by a bug — the gauntlet's no-lookahead guarantee holds.*
+- **Pairs OU-refinement — INERT, nothing to commit.** The uncommitted `cost_cal_entry` (per-pair
+  `act_entry_z = max(entry_z, 4·cost_frac/ou_std)`) + `ou_sizing` (leg ∝ `min(|z|/act_entry_z, 1)`) refinement to the
+  *one real edge* produces **bit-for-bit identical** daily returns to the validated baseline (WF 0.83, −5.5% DD) on both
+  the fitted large-cap set AND a disjoint mid-cap holdout — each flag alone and together, to <1e-12. Root cause
+  (instrumented): at 2bps, `4·cost_frac = 0.0008` while the log-price spread `ou_std ≈ 0.02–0.15`, so the cost-floor
+  `0.0008/ou_std` is always ≪ `entry_z = 2.0` → `act_entry_z = 2.0` always → zero pairs skipped, no reshape. The flags
+  would only bind at **>~20bps cost or far tighter spreads**. Lookahead-clean (act_entry_z from a TRAIN-only OU fit;
+  ou_sizing from trailing z; hedge fit on TRAIN). **No improvement to the deployed basket.** The co-tested
+  `regime_monitor` overlay is worse than inert — it **DESTROYS** the edge (WF 0.83 → **−0.32**, ret +14.9% → −1.1%): the
+  rolling-ADF gate flattens pairs exactly when the spread mean-reverts hardest. Both kept default-OFF; the footgun is now
+  loudly labeled in `pairs.py`.
+- **Defensive low-beta — reject_beta.** Classic Betting-Against-Beta (long-low-β / short-high-β) on 265 mid-caps
+  (2021–2026) is a **loser**: Sharpe **−1.06**, −50% return, −53% DD. The *only* positive sign is the reverse
+  (long-high-β) at +1.05 — and it is **pure beta** (high SPY correlation; the defensive book's β to SPY is −0.65). A
+  low-β long sleeve is dampened market exposure, not alpha; it fails the leg gate. (Run on a survivor universe — even the
+  survivorship-favored version is negative on the defensive side.)
+- **Verdict.** ❌❌❌ Three independent rejections, three different gates (out-of-universe holdout / cost-inertness /
+  beta-decomposition). **Zero new edges; scoreboard unchanged: one thin regime-dependent edge (pairs).** The hard-won
+  lesson re-confirmed: a high in-sample or OOS Sharpe means nothing until it clears the **fresh-symbol holdout**, and a
+  "refinement" to a real edge must *change the returns out-of-universe* to count. Negative results, banked cheaply, so we
+  never re-litigate the formulaic-alpha zoo, OU-entry tuning, or low-β again.
 
 ## Case 55 — PEAD 3rd-leg hunt, definitive re-test ❌ (fresh-symbol holdout kills it a 3rd time; data-gated)
 

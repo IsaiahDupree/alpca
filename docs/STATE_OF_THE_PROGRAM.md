@@ -1,6 +1,6 @@
 # Alpca — State of the Program (the package)
 
-*The single-page truth, current as of 2026-06-18. For depth: `FINDINGS.md` (executive synthesis),
+*The single-page truth, current as of 2026-06-20. For depth: `FINDINGS.md` (executive synthesis),
 `EDGE_CASE_STUDIES.md` (all 55 cases), `SECOND_LEG_HUNT.md` (the 2nd-leg narrative), `SYSTEM_MAP.md`
 (platform + deployed portfolio), `AI_RESEARCH_LOOP.md`, `PIPELINE_AND_AUTOMATION.md`. This file is the
 honest scoreboard + what we'd hand to a skeptical reviewer.*
@@ -9,7 +9,7 @@ honest scoreboard + what we'd hand to a skeptical reviewer.*
 
 An **honest-evaluation platform** for systematic trading on Alpaca. Its deliverable is not a pile of
 "edges" — it is a harness whose job is to **reject** strategies that don't generalize, and to catch its
-*own* overselling. Across **55 distinct edge experiments** (price, microstructure, event-driven,
+*own* overselling. Across **56 distinct edge experiments** (price, microstructure, event-driven,
 positioning, fundamental — run by hand and by an AI research loop, then adversarially self-audited), the
 honest result is **exactly one thin, regime-dependent edge**, with everything else rejected on a
 *different* honest gate. That is the point, not a disappointment: real edges are scarce, and the machine
@@ -46,6 +46,9 @@ lever for *more* dollars/day is **additional uncorrelated surviving legs** — w
 | Cross-asset **trend / managed-futures** | crisis-alpha hedge | **timing illusory** (loses to B&H + long-only) |
 | Short-horizon **reversal** | 0.74, passed the leg gate | **survivorship artifact** (Case 53: +0.69 → −0.40) |
 | **PEAD / EAR-PEAD** (×3) | 0.6–0.7, passed the leg gate | **fresh-symbol holdout** (Case 55: −0.22/−0.64) |
+| The **formulaic-alpha zoo** (Alpha101/158/GTJA191, 21 family reps) | the famous "101/158/191 alphas" | **fresh-symbol holdout** (Case 56: best DSR 0.596, 0/21 Bonferroni; OOS winners *invert* out-of-universe) |
+| **Pairs OU-refinement** (cost-cal entry-z + OU sizing) | hardens the one edge | **inert** (Case 56: bit-identical at ≤20bps; `regime_monitor` variant *destroys* it 0.83→−0.32) |
+| **Defensive low-beta / BAB** | low-risk premium | **beta** (Case 56: defensive −1.06; only long-high-β positive, β−0.65 = dampened market) |
 | Market-making / HFT / crypto / news | various | **infeasible on the venue / data** |
 
 ## The hard-won lessons (the real IP)
@@ -85,6 +88,8 @@ legs** and **(b) Kelly-scaled sizing** — never trading the one thin edge harde
 Keep hunting *generalizing* edges, each cleared through the survivorship-PIT + fresh-symbol + out-of-regime
 bar (the leg gate alone is not enough). Open threads: a **Finnhub earnings source** to unblock a
 *full-breadth* PEAD verdict (the 40-name result is suggestive, not definitive); a genuine
-**long-vol/convexity hedge** *if* short-vol is ever revived; **defensive low-beta** (re-queued). The
-binding constraint is unchanged: **a leg positive over 2022→, uncorrelated with pairs, and robust across
-years.** None found yet — and the platform's value is that it tells us so.
+**long-vol/convexity hedge** *if* short-vol is ever revived. *Closed this round (Case 56): the
+formulaic-alpha zoo (debunked out-of-universe), the pairs OU-refinement (inert), and defensive low-beta
+(beta, not alpha) — all rejected.* The binding constraint is unchanged: **a leg positive over 2022→,
+uncorrelated with pairs, and robust across years.** None found yet — and the platform's value is that it
+tells us so.

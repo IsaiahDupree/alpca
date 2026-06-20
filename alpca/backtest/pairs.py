@@ -85,6 +85,34 @@ def mean_reversion_stats(spread: List[float]) -> Tuple[float, float]:
     return lam, -math.log(2) / lam
 
 
+def ou_sigma_eq(spread: List[float]) -> float:
+    """Equilibrium (stationary) std of the OU/AR(1) fit on a spread: ou_std = sigma_eps / sqrt(1 - phi^2)
+    where d(spread)_t = a + lam*spread_{t-1} + eps, phi = 1+lam (the AR(1) coefficient), and sigma_eps is
+    the residual std of that regression. This is the natural z=1 width of the spread (equivalent to the OU
+    sigma/sqrt(2*theta) in the continuous limit). Estimated TRAIN-only -> no look-ahead. Returns 0.0 if the
+    spread is not mean-reverting (phi>=1) or too short."""
+    n = len(spread)
+    if n < 5:
+        return 0.0
+    slag = spread[:-1]
+    ds = [spread[i] - spread[i - 1] for i in range(1, n)]
+    ml = statistics.fmean(slag)
+    md = statistics.fmean(ds)
+    var = sum((x - ml) ** 2 for x in slag)
+    if var <= 0:
+        return 0.0
+    lam = sum((slag[i] - ml) * (ds[i] - md) for i in range(len(ds))) / var
+    a = md - lam * ml
+    resid = [ds[i] - (a + lam * slag[i]) for i in range(len(ds))]
+    if len(resid) < 3:
+        return 0.0
+    sig_eps = statistics.pstdev(resid)
+    phi = 1.0 + lam
+    if not (-1.0 < phi < 1.0) or sig_eps <= 0:
+        return 0.0
+    return sig_eps / math.sqrt(1.0 - phi * phi)
+
+
 def adf_stat(series: List[float]) -> float:
     """
     Dickey-Fuller test statistic for a unit root: regress d(y)_t = a + b*y_{t-1} + e and
@@ -166,13 +194,37 @@ class WalkForwardResult:
     test: int
     top_n: int
     equity_curve: List[float] = field(default_factory=list)
+    daily_returns: List[float] = field(default_factory=list)
+    dates: List[int] = field(default_factory=list)  # epoch per OOS daily return (test-window calendar)
+
+
+def adf_pvalue(adf_t: float) -> float:
+    """Crude Dickey-Fuller t-stat -> p-value via MacKinnon-style interpolation over the standard
+    no-trend critical values (1% -3.43, 5% -2.86, 10% -2.57). Monotone, piecewise-linear, clipped to
+    [0,1]. Used ONLY by the regime monitor (refinement c) to express rolling cointegration health on the
+    article's p-value scale (warn 0.10 / halt 0.20). More-negative t -> smaller p (more stationary)."""
+    pts = [(-3.43, 0.01), (-2.86, 0.05), (-2.57, 0.10), (-1.95, 0.30), (-1.62, 0.50),
+           (-0.50, 0.80), (0.0, 0.95), (1.0, 0.99)]
+    if adf_t <= pts[0][0]:
+        return 0.005
+    if adf_t >= pts[-1][0]:
+        return 0.995
+    for i in range(1, len(pts)):
+        x0, p0 = pts[i - 1]
+        x1, p1 = pts[i]
+        if adf_t <= x1:
+            return p0 + (p1 - p0) * (adf_t - x0) / (x1 - x0)
+    return 0.995
 
 
 def walkforward_pairs(bars_by_sym: Dict[str, List[dict]], *, train: int = 252, test: int = 63,
                       top_n: int = 15, max_half_life: float = 30.0, min_half_life: float = 3.0,
                       entry_z: float = 2.0, exit_z: float = 0.5, cost_bps: float = 2.0,
                       starting_equity: float = 100_000.0, periods_per_year: float = 252.0,
-                      max_adf: Optional[float] = None, use_kalman: bool = False) -> "WalkForwardResult":
+                      max_adf: Optional[float] = None, use_kalman: bool = False,
+                      cost_cal_entry: bool = False, ou_sizing: bool = False,
+                      regime_monitor: bool = False, regime_window: int = 60,
+                      regime_warn_p: float = 0.10, regime_halt_p: float = 0.20) -> "WalkForwardResult":
     """
     Rigorous walk-forward market-neutral pairs. Each step: SCREEN + hedge-fit on a trailing
     `train` window, then TRADE the selected top_n pairs on the next `test` window (genuinely
@@ -181,6 +233,25 @@ def walkforward_pairs(bars_by_sym: Dict[str, List[dict]], *, train: int = 252, t
     resulting Sharpe is the HONEST number (every trade is on unseen data). Pairs are
     re-selected each window (rolling re-screen) and the hedge is re-fit each window (rolling
     hedge) — the two upgrades over a single static screen.
+
+    REFINEMENTS (all default-OFF, additive, lookahead-free — params from TRAIN/trailing only):
+      - `cost_cal_entry` (a): per pair, act_entry_z = max(entry_z, 4*cost_frac/ou_std) where ou_std is the
+        equilibrium std of the OU/AR(1) fit on the TRAIN spread (z-units, since z is standardized by that
+        same spread scale). Skips pairs whose threshold is unreachable (act_entry_z too large to fire).
+      - `ou_sizing` (b): each leg sized leg_notional_pct * min(|z|/act_entry_z, 1.0) (max_fraction =
+        leg_notional_pct -> pure reshape, no leverage bump).
+      - `regime_monitor` (c): per pair, a rolling ADF p-value on the trailing `regime_window` of the hedged
+        spread (TRAIN hedge) gates the TEST-window position: ACTIVE (p < warn) trade normally / WARNING
+        (warn<=p<halt) hold, open nothing new / HALTED (p>=halt) flatten the pair. Risk overlay only.
+
+    EMPIRICAL VERDICT (Case 56, 4-agent gauntlet — do NOT re-litigate):
+      - `cost_cal_entry` + `ou_sizing` are INERT at the deployable ≤~20bps cost: at 2bps they reproduce the
+        baseline daily returns bit-for-bit (4*cost_frac/ou_std << entry_z=2.0 for every selected pair, so
+        act_entry_z=2.0 always and the OU reshape never binds). Lookahead-clean, no improvement, nothing to
+        commit as an edge. They would only bind on far tighter spreads or much higher costs.
+      - `regime_monitor` is a FOOTGUN — DO NOT ENABLE. It DESTROYS the edge (WF 0.83 -> -0.32, Sortino
+        1.24 -> -0.41, ret +14.9% -> -1.1%): the rolling-ADF gate flattens pairs exactly when the spread is
+        mean-reverting hardest (its most profitable state). Kept default-OFF for reproducibility only.
     """
     from alpca.backtest.evaluation import max_drawdown_of, sharpe_of
 
@@ -193,8 +264,10 @@ def walkforward_pairs(bars_by_sym: Dict[str, List[dict]], *, train: int = 252, t
 
     bymap = {s: {float(b["timestamp"]): b for b in bars_by_sym[s]} for s in syms}
     aligned = {s: [bymap[s][t] for t in common] for s in syms}
+    cost_frac = cost_bps / 1e4
 
     oos_rets: List[float] = []
+    oos_dates: List[int] = []
     windows = 0
     w = 0
     while w + train + test <= n:
@@ -206,9 +279,35 @@ def walkforward_pairs(bars_by_sym: Dict[str, List[dict]], *, train: int = 252, t
             seg_a = aligned[r["a"]][w:w + train + test]
             seg_b = aligned[r["b"]][w:w + train + test]
             lb = int(max(20, min(120, r["half_life"] * 3)))
-            res = backtest_pairs(seg_a, seg_b, lookback=lb, entry_z=entry_z, exit_z=exit_z,
-                                 cost_bps=cost_bps, hedge=r["hedge"],  # hedge fit on TRAIN only
-                                 use_kalman=use_kalman)
+            h = r["hedge"]
+            act_z: Optional[float] = None
+            if cost_cal_entry or ou_sizing:
+                # OU std on the TRAIN spread only (no look-ahead)
+                tr_a = aligned[r["a"]][w:w + train]
+                tr_b = aligned[r["b"]][w:w + train]
+                tr_rows = align(tr_a, tr_b)
+                la_t = [math.log(c) for _, c, _ in tr_rows]
+                lb_t = [math.log(c) for _, _, c in tr_rows]
+                tr_spread = [la_t[k] - h * lb_t[k] for k in range(len(tr_rows))]
+                ou_std = ou_sigma_eq(tr_spread)
+                if ou_std <= 0:
+                    continue                                   # not mean-reverting on TRAIN -> skip
+                act_z = max(entry_z, 4.0 * cost_frac / ou_std)
+                if act_z > 8.0:        # unreachable threshold -> pair too tight to cover cost, skip
+                    continue
+            if regime_monitor:
+                res = _backtest_pairs_regime(
+                    seg_a, seg_b, lookback=lb, entry_z=entry_z, exit_z=exit_z, cost_bps=cost_bps,
+                    hedge=h, act_entry_z=(act_z if cost_cal_entry else None),
+                    ou_sizing=ou_sizing, regime_window=regime_window, train_len=len(align(
+                        aligned[r["a"]][w:w + train], aligned[r["b"]][w:w + train])),
+                    warn_p=regime_warn_p, halt_p=regime_halt_p)
+            else:
+                res = backtest_pairs(seg_a, seg_b, lookback=lb, entry_z=entry_z, exit_z=exit_z,
+                                     cost_bps=cost_bps, hedge=h,  # hedge fit on TRAIN only
+                                     use_kalman=use_kalman,
+                                     act_entry_z=(act_z if cost_cal_entry else None),
+                                     ou_sizing=ou_sizing)
             eq = res.equity_curve
             seg = eq[-(test + 1):] if len(eq) > test else eq
             rr = [(seg[i] - seg[i - 1]) / seg[i - 1] for i in range(1, len(seg)) if seg[i - 1] > 0]
@@ -216,8 +315,13 @@ def walkforward_pairs(bars_by_sym: Dict[str, List[dict]], *, train: int = 252, t
                 per_pair.append(rr)
         if per_pair:
             m = min(len(x) for x in per_pair)
+            # the m aggregated returns are the LAST m bars of the test window (returns are
+            # bar-to-bar, so they map to the final m of common[w+train : w+train+test]).
+            test_ts = [int(t) for t in common[w + train:w + train + test]]
+            date_tail = test_ts[-m:] if len(test_ts) >= m else test_ts
             for t in range(m):
                 oos_rets.append(sum(x[t] for x in per_pair) / len(per_pair))
+                oos_dates.append(date_tail[t] if t < len(date_tail) else 0)
             windows += 1
         w += test
 
@@ -227,7 +331,7 @@ def walkforward_pairs(bars_by_sym: Dict[str, List[dict]], *, train: int = 252, t
     total = (eq[-1] - starting_equity) / starting_equity if len(eq) > 1 else 0.0
     return WalkForwardResult(len(syms), windows, len(oos_rets), total,
                              sharpe_of(eq, periods_per_year), max_drawdown_of(eq),
-                             train, test, top_n, eq)
+                             train, test, top_n, eq, oos_rets, oos_dates)
 
 
 def kalman_spread(la: List[float], lb: List[float], *, delta: float = 1e-4, R: float = 1e-3):
@@ -265,13 +369,24 @@ def backtest_pairs(a_bars: List[dict], b_bars: List[dict], *, sym_a: str = "A", 
                    lookback: int = 60, entry_z: float = 2.0, exit_z: float = 0.5,
                    starting_equity: float = 100_000.0, leg_notional_pct: float = 0.5,
                    cost_bps: float = 2.0, periods_per_year: float = 252.0,
-                   hedge: Optional[float] = None, use_kalman: bool = False) -> PairsResult:
+                   hedge: Optional[float] = None, use_kalman: bool = False,
+                   act_entry_z: Optional[float] = None,
+                   ou_sizing: bool = False) -> PairsResult:
+    """REFINEMENTS (default-OFF, additive — do not change validated behavior):
+      - `act_entry_z` (refinement a, cost-calibrated min entry-z): if set, this REPLACES `entry_z` as the
+        effective entry threshold (the caller computes act_entry_z = max(entry_z, 4*cost_frac/ou_std) on the
+        TRAIN spread). A pair whose computed act_entry_z is unreachable simply never trades -> it is skipped.
+      - `ou_sizing` (refinement b, OU-proportional sizing): when True, each leg is sized
+        leg_notional_pct * min(|z|/act_entry_z, 1.0) at entry (max_fraction = leg_notional_pct -> pure reshape,
+        no leverage bump). Biggest at the threshold, smaller deeper in (de-risks into convergence).
+    """
     from alpca.backtest.evaluation import max_drawdown_of, sharpe_of
 
     rows = align(a_bars, b_bars)
     if len(rows) < lookback + 5:
         return PairsResult(sym_a, sym_b, len(rows), 0.0, 0.0, 0.0, 0, hedge or 1.0, [])
 
+    eff_entry = act_entry_z if act_entry_z is not None else entry_z
     la = [math.log(c) for _, c, _ in rows]
     lb = [math.log(c) for _, _, c in rows]
     if use_kalman:
@@ -300,7 +415,7 @@ def backtest_pairs(a_bars: List[dict], b_bars: List[dict], *, sym_a: str = "A", 
     trades = 0
     equity: List[float] = []
 
-    def rebalance(target: int, pa: float, pb: float):
+    def rebalance(target: int, pa: float, pb: float, frac: float = 1.0):
         nonlocal cash, qa, qb, state, trades
         if target == state:
             return
@@ -309,7 +424,7 @@ def backtest_pairs(a_bars: List[dict], b_bars: List[dict], *, sym_a: str = "A", 
         cash -= cost_bps / 1e4 * (abs(qa) * pa + abs(qb) * pb)
         qa = qb = 0.0
         if target != 0:
-            leg = leg_notional_pct * cash
+            leg = leg_notional_pct * frac * cash      # frac=1.0 by default (validated); <1 only under ou_sizing
             qa = (leg / pa) * target
             qb = (leg / pb) * (-target)
             cash -= qa * pa + qb * pb        # buy long leg (cash down), short leg (cash up)
@@ -322,11 +437,115 @@ def backtest_pairs(a_bars: List[dict], b_bars: List[dict], *, sym_a: str = "A", 
         z = z_series[i]
         if z is not None:
             if state == 0:
-                if z > entry_z:
-                    rebalance(-1, pa, pb)
-                elif z < -entry_z:
-                    rebalance(1, pa, pb)
+                if z > eff_entry:
+                    f = min(abs(z) / eff_entry, 1.0) if ou_sizing else 1.0
+                    rebalance(-1, pa, pb, f)
+                elif z < -eff_entry:
+                    f = min(abs(z) / eff_entry, 1.0) if ou_sizing else 1.0
+                    rebalance(1, pa, pb, f)
             elif state == 1 and z >= -exit_z:
+                rebalance(0, pa, pb)
+            elif state == -1 and z <= exit_z:
+                rebalance(0, pa, pb)
+        equity.append(cash + qa * pa + qb * pb)
+
+    total_return = (equity[-1] - starting_equity) / starting_equity if equity else 0.0
+    return PairsResult(sym_a, sym_b, len(rows), total_return,
+                       sharpe_of(equity, periods_per_year), max_drawdown_of(equity),
+                       trades, h, equity)
+
+
+def _backtest_pairs_regime(a_bars: List[dict], b_bars: List[dict], *, sym_a: str = "A", sym_b: str = "B",
+                           lookback: int = 60, entry_z: float = 2.0, exit_z: float = 0.5,
+                           starting_equity: float = 100_000.0, leg_notional_pct: float = 0.5,
+                           cost_bps: float = 2.0, periods_per_year: float = 252.0,
+                           hedge: Optional[float] = None, act_entry_z: Optional[float] = None,
+                           ou_sizing: bool = False, regime_window: int = 60,
+                           train_len: int = 0, warn_p: float = 0.10, halt_p: float = 0.20) -> PairsResult:
+    """Refinement (c) — 3-state cointegration-health regime monitor as a RISK OVERLAY on the
+    classic z-entry pairs backtest. Identical to `backtest_pairs` (fixed TRAIN hedge `h`, rolling
+    z-score, optional cost-calibrated `act_entry_z` and `ou_sizing`) EXCEPT each bar first computes a
+    rolling ADF p-value on the trailing `regime_window` of the hedged spread and gates positions:
+      ACTIVE   (p <  warn_p)            -> trade normally (z-entry / z-exit as usual)
+      WARNING  (warn_p <= p <  halt_p)  -> HOLD existing position, open NOTHING new
+      HALTED   (p >= halt_p)            -> FLATTEN the pair immediately, open nothing
+    Lookahead-free: the rolling ADF uses only the trailing `regime_window` spread values up to and
+    INCLUDING the current bar (the spread itself is built with the TRAIN-only hedge `h`). `train_len`
+    is informational (the regime monitor is active across the whole segment, gating the test window).
+    No new leverage: sizing identical to `backtest_pairs`; this only ever REDUCES exposure."""
+    from alpca.backtest.evaluation import max_drawdown_of, sharpe_of
+
+    rows = align(a_bars, b_bars)
+    if len(rows) < lookback + 5:
+        return PairsResult(sym_a, sym_b, len(rows), 0.0, 0.0, 0.0, 0, hedge or 1.0, [])
+
+    eff_entry = act_entry_z if act_entry_z is not None else entry_z
+    la = [math.log(c) for _, c, _ in rows]
+    lb = [math.log(c) for _, _, c in rows]
+    h = hedge if hedge is not None else _hedge_ratio(la, lb)
+    spread = [la[i] - h * lb[i] for i in range(len(rows))]
+
+    z_series: List[Optional[float]] = []
+    win = deque(maxlen=lookback)
+    for i in range(len(rows)):
+        win.append(spread[i])
+        if len(win) >= lookback:
+            mu = statistics.fmean(win)
+            sd = statistics.pstdev(win)
+            z_series.append((spread[i] - mu) / sd if sd > 0 else 0.0)
+        else:
+            z_series.append(None)
+
+    # rolling regime state per bar from a trailing-window ADF p-value (no look-ahead)
+    rwin = max(20, regime_window)
+    regime: List[int] = []  # 0 ACTIVE, 1 WARNING, 2 HALTED
+    for i in range(len(rows)):
+        if i + 1 < rwin:
+            regime.append(0)  # warm-up: assume healthy (no gating until window fills)
+            continue
+        seg = spread[i + 1 - rwin:i + 1]
+        p = adf_pvalue(adf_stat(seg))
+        regime.append(2 if p >= halt_p else (1 if p >= warn_p else 0))
+
+    cash = starting_equity
+    qa = qb = 0.0
+    state = 0
+    trades = 0
+    equity: List[float] = []
+
+    def rebalance(target: int, pa: float, pb: float, frac: float = 1.0):
+        nonlocal cash, qa, qb, state, trades
+        if target == state:
+            return
+        cash += qa * pa + qb * pb
+        cash -= cost_bps / 1e4 * (abs(qa) * pa + abs(qb) * pb)
+        qa = qb = 0.0
+        if target != 0:
+            leg = leg_notional_pct * frac * cash
+            qa = (leg / pa) * target
+            qb = (leg / pb) * (-target)
+            cash -= qa * pa + qb * pb
+            cash -= cost_bps / 1e4 * (abs(qa) * pa + abs(qb) * pb)
+            trades += 1
+        state = target
+
+    for i in range(len(rows)):
+        _, pa, pb = rows[i]
+        z = z_series[i]
+        reg = regime[i]
+        if reg == 2:                         # HALTED -> flatten, no trading
+            if state != 0:
+                rebalance(0, pa, pb)
+        elif z is not None:
+            if state == 0:
+                if reg == 0:                 # only open NEW positions when ACTIVE
+                    if z > eff_entry:
+                        f = min(abs(z) / eff_entry, 1.0) if ou_sizing else 1.0
+                        rebalance(-1, pa, pb, f)
+                    elif z < -eff_entry:
+                        f = min(abs(z) / eff_entry, 1.0) if ou_sizing else 1.0
+                        rebalance(1, pa, pb, f)
+            elif state == 1 and z >= -exit_z:  # exits always allowed (ACTIVE or WARNING)
                 rebalance(0, pa, pb)
             elif state == -1 and z <= exit_z:
                 rebalance(0, pa, pb)
