@@ -9,7 +9,7 @@ honest scoreboard + what we'd hand to a skeptical reviewer.*
 
 An **honest-evaluation platform** for systematic trading on Alpaca. Its deliverable is not a pile of
 "edges" — it is a harness whose job is to **reject** strategies that don't generalize, and to catch its
-*own* overselling. Across **56 distinct edge experiments** (price, microstructure, event-driven,
+*own* overselling. Across **57 distinct edge experiments** (price, microstructure, event-driven,
 positioning, fundamental — run by hand and by an AI research loop, then adversarially self-audited), the
 honest result is **exactly one thin, regime-dependent edge**, with everything else rejected on a
 *different* honest gate. That is the point, not a disappointment: real edges are scarce, and the machine
@@ -49,6 +49,7 @@ lever for *more* dollars/day is **additional uncorrelated surviving legs** — w
 | The **formulaic-alpha zoo** (Alpha101/158/GTJA191, 21 family reps) | the famous "101/158/191 alphas" | **fresh-symbol holdout** (Case 56: best DSR 0.596, 0/21 Bonferroni; OOS winners *invert* out-of-universe) |
 | **Pairs OU-refinement** (cost-cal entry-z + OU sizing) | hardens the one edge | **inert** (Case 56: bit-identical at ≤20bps; `regime_monitor` variant *destroys* it 0.83→−0.32) |
 | **Defensive low-beta / BAB** | low-risk premium | **beta** (Case 56: defensive −1.06; only long-high-β positive, β−0.65 = dampened market) |
+| **Mid-cap cointegrated-pairs** (the one mechanism, disjoint universe) | a diversifying 2nd pairs sleeve | **too weak** (Case 57: *clears* survivorship + disjoint-holdout — first mid-cap family to — but DSR 0.06, cadence knife-edge, ρ≈0 yet combiner lift −0.04 = dilutes) |
 | Market-making / HFT / crypto / news | various | **infeasible on the venue / data** |
 
 ## The hard-won lessons (the real IP)
@@ -57,9 +58,14 @@ lever for *more* dollars/day is **additional uncorrelated surviving legs** — w
    fit, a positive time-split, per-year stability, a high Deflated Sharpe, subset resampling, *and* a
    five-check leg gate can **all pass on an edge that is still overfit.** The fresh-symbol holdout has now
    caught ~7 such candidates.
-2. **The leg gate is necessary but NOT sufficient.** Reversal and EAR-PEAD cleared every leg-gate check
-   (positive, uncorrelated, lifts, robust LOO, partial-year-safe) *and* the 2024+ slice — and still died
-   on the survivorship/fresh-symbol bar, which sits **upstream**.
+2. **The two upstream bars are COMPLEMENTARY — clear BOTH, neither alone suffices.** Reversal and EAR-PEAD
+   cleared every leg-gate check (positive, uncorrelated, lifts, robust LOO, partial-year-safe) *and* the 2024+
+   slice — and still died on the survivorship/fresh-symbol bar (it catches *fake-but-strong* edges). The
+   *converse* (Case 57): mid-cap pairs **cleared** the survivorship + disjoint-half holdout — the first mid-cap
+   family to — yet the leg gate killed it on **strength** (DSR 0.06, cadence knife-edge, combiner lift −0.04 =
+   dilutes). The survivorship bar catches fake-but-strong; the leg gate catches *real-but-too-weak*. *(And an
+   **inverted survivorship delta** — PIT > survivor — is a yellow flag, not a green one: it can mean a few
+   delisting events are propping up a losing book.)*
 3. **Survivorship bias can flip which signal is real — and a careless "fix" re-biases the other way.** Only
    the *full, outcome-blind* point-in-time universe (all delistings, selected on entry-date traits) is honest.
 4. **A combiner number is only honest if BOTH legs are OOS and measured over the SAME window** (the in-sample
@@ -87,9 +93,10 @@ legs** and **(b) Kelly-scaled sizing** — never trading the one thin edge harde
 
 Keep hunting *generalizing* edges, each cleared through the survivorship-PIT + fresh-symbol + out-of-regime
 bar (the leg gate alone is not enough). Open threads: a **Finnhub earnings source** to unblock a
-*full-breadth* PEAD verdict (the 40-name result is suggestive, not definitive); a genuine
-**long-vol/convexity hedge** *if* short-vol is ever revived. *Closed this round (Case 56): the
-formulaic-alpha zoo (debunked out-of-universe), the pairs OU-refinement (inert), and defensive low-beta
-(beta, not alpha) — all rejected.* The binding constraint is unchanged: **a leg positive over 2022→,
+*full-breadth* PEAD verdict (the 40-name result is suggestive, not definitive — and blocked: no Finnhub key);
+a genuine **long-vol/convexity hedge** *if* short-vol is ever revived. *Closed recently: the formulaic-alpha
+zoo (debunked out-of-universe), the pairs OU-refinement (inert), defensive low-beta (beta) — Case 56; and
+**mid-cap cointegrated-pairs** — Case 57: the mechanism generalizes out-of-universe (a real finding) but is
+too weak (DSR 0.06) to lift the combiner.* The binding constraint is unchanged: **a leg positive over 2022→,
 uncorrelated with pairs, and robust across years.** None found yet — and the platform's value is that it
 tells us so.

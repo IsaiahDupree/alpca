@@ -54,6 +54,7 @@ Overtrading dies to costs. HFT / market-making is structurally infeasible here.
 | 36 | **Published formulaic-alpha zoo** (Alpha101 / Alpha158 / GTJA191, 21 de-collinearized family reps) | Microstructure MN | best DSR **0.596** (gate 0.90), **0/21 pass Bonferroni**; in-sample/OOS winners INVERT on fresh symbols (gap-reversal +1.29→−0.16, intraday +1.01→−0.77) | ❌ **DEBUNKED** (Case 56) — the famous 101/158/191 libraries collapse on our venue exactly like value/momentum/seasonality |
 | 37 | **Pairs OU-refinement** (cost-calibrated entry-z + OU-proportional sizing) | MN hardening | **INERT** at ≤~20bps — bit-identical to the validated baseline (0.83); the `regime_monitor` variant DESTROYS the edge (0.83→−0.32) | ❌ **No improvement** (Case 56) — nothing to commit; footgun flagged in source |
 | 38 | **Defensive low-beta / BAB** | Factor long-short | defensive (long-low-β) BAB Sharpe **−1.06** (a loser); only the reverse (long-high-β) is positive (+1.05) and is pure beta (β to SPY −0.65) | ❌ **reject_beta** (Case 56) — dampened market exposure, not alpha |
+| 39 | **Mid-cap cointegrated-pairs** (the one mechanism, on a disjoint universe) | Market-neutral | survivor **−0.43**, PIT **+0.28**; **clears** the survivorship + disjoint-half-holdout bar (A +0.16 / B +0.34, both positive) — the first mid-cap family to — but DSR **0.06**, cadence **knife-edge** (positive only at train=252), ρ −0.01 yet combiner lift **−0.04** | ❌ **Too weak** (Case 57) — mechanism *generalizes* but doesn't *lift*; diluting, cadence-fragile, statistically ≈ noise |
 
 ---
 
@@ -1149,6 +1150,42 @@ robust, regime-independent results are the ρ≈0 and the 6/6-year coverage, not
   the timing is the problem, not the tuning. **Book stays at two legs (pairs + short-vol).** The hunt's
   honest hit rate this session: 1 win (short-vol) in 5 candidates — edges remain scarce, exactly as the
   program has found all along.
+
+## Case 57 — Mid-cap cointegrated-pairs as a 2nd leg ❌ (the mechanism *generalizes* — it's just too weak to *lift*)
+
+The highest-prior 2nd-leg hunt: take the **one mechanism that works** — mean-reversion of cointegrated price residuals,
+which gave WF 0.83 on large-caps and *strengthened* under survivorship (Case 46: +0.83→+0.94) — and ask whether it
+generalizes to a **disjoint mid-cap universe** as a diversifying leg. Built on the exact validated cadence
+(train=252/test=63/top-10/5%-ADF/2bps) via the delisting-aware walk-forward, two-phase: build + survivorship gate, then
+(only on survival) a full gauntlet. The result is the most *instructive* rejection in the book because it cleanly
+separates two questions the platform usually conflates.
+
+- **It CLEARS the survivorship bar — the first mid-cap family to do so.** PIT Sharpe **+0.28** vs survivor **−0.43**; the
+  disjoint-symbol-half holdout (md5-parity split, each half its own PIT universe) is **positive in BOTH halves**
+  (selection +0.16 / holdout +0.34). This is the exact out-of-universe bar that *inverted* mid-cap value (Case 43:
+  +0.35→−0.45), mid-cap momentum (Case 45), reversal (Case 53) and EAR-PEAD (Case 55) into negatives. Pairs survives it:
+  the mechanism is genuinely **not name-specific** — it really does carry to never-selected mid-cap symbols. ρ to the
+  large-cap book = **−0.009** over the shared 945 days: a *perfect* diversifier in character.
+- **But it FAILS on strength, and the leg gate (not the survivorship bar) caught it.** Honest read of the same numbers:
+  the **survivor universe is a net loser (−0.43)** — the +0.28 is carried by adding 75 delistings (an *inverted*
+  survivorship delta: dead names *lifting* a losing book via ~11 idiosyncratic merger/crash freezes — CADE/DM/EDR/MUDS/
+  SAFM — not a robust mechanism). It is a **cadence knife-edge**: train sweep 189→−0.55, **252→+0.28**, 315→−0.20,
+  378→−0.55 — positive at *exactly one point*, negative on both neighbors; ADF-off inverts it to −0.14 (vs large-cap,
+  which stays positive 252→315). **DSR 0.060** at honest n_trials=30 — statistically indistinguishable from best-of-30
+  noise (t≈0.86); two *consecutive* losing years (2022 **and** 2023). The leg gate fails **3/5** (lifts=n, robust_loo=n,
+  partial_year_safe=n), and the honest **same-window** inverse-vol combiner lift is **−0.04**: a 0.28-Sharpe sleeve at
+  ~0.42 inverse-vol weight **dilutes** the 0.83 book to 0.79. Uncorrelated + positive is *necessary but not sufficient* —
+  the sleeve must be strong enough that blending nets positive, and this one isn't.
+- **Verdict.** ❌ **Reject as a 2nd leg — but a different rejection than all the others.** Not a survivorship artifact
+  (PIT-positive), not overfit-to-names (disjoint halves both positive), not redundant beta (ρ≈0) — simply **too weak**:
+  cadence-fragile, DSR≈noise, and combiner-diluting. This is the cleanest demonstration that the platform's two upstream
+  bars are **complementary**: the survivorship/holdout bar catches *fake-but-strong* edges; the leg gate's
+  lift/robustness checks catch *real-but-too-weak* ones — and a candidate must clear **both**. (Methodology banked: an
+  *inverted* survivorship delta — PIT > survivor — is a yellow flag, not a green one; it can mean a few delisting events
+  are propping up a losing book. And the **cadence map** was decisive again, as with the large-cap 378-inversion.)
+  Scoreboard unchanged: **one validated edge (large-cap pairs).** *Possible non-deployment future use: as a tiny
+  diversifying sleeve **inside** the pairs book under a non-inverse-vol weighting — but at −0.04 the gap is real, not noise
+  to optimize away, so not pursued.*
 
 ## Case 56 — Three negatives in one gauntlet: the formulaic-alpha zoo, the pairs OU-refinement, defensive low-beta ❌❌❌
 
