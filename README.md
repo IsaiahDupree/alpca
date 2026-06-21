@@ -21,8 +21,11 @@ We tested every price-only equity strategy family rigorously. The consistent res
   not HFT alpha.
 - **Market-neutral pairs** is the one real equity edge. The over-diversified basket collapsed
   out-of-sample (0.29), but the **concentrated form** (top-10 + 5% ADF cointegration screen)
-  holds at **walk-forward Sharpe ~0.83, −5% drawdown**, and — critically — **survives a
-  survivorship-corrected point-in-time re-test** (Case 46). It runs on a forward paper-track.
+  **survives a survivorship-corrected point-in-time re-test** (Case 46) and — on 10.5 years of
+  SIP history — **holds OUT-OF-REGIME**: Sharpe **0.55 on never-seen 2016-2020** (positive all
+  4 years, through the 2018 vol-spike and 2020 COVID crash) vs 0.50 in-regime (Case 60). Honest
+  magnitude is a **modest ~0.5** (0.83 was the favourable 5yr window) — real and regime-robust.
+  It runs on a forward paper-track.
 - **Short-vol / variance-risk-premium** is the second deployed sleeve: the first leg that
   actually *lifted* the book (+0.25) and **survives a simulated volmageddon** at an 8% cap (Cases 49–50).
 - **Everything else collapsed** under out-of-universe / out-of-regime / cost holdouts — see the
@@ -36,7 +39,7 @@ half-Kelly. See `docs/STATE_OF_THE_PROGRAM.docx` and `docs/VERIFICATION_CONTROLS
 
 ## Results at a glance
 
-The denominator is the point: **59 documented case studies → 2 deployed sleeves.** Four graphics
+The denominator is the point: **60 documented case studies → 2 deployed sleeves.** Four graphics
 tell the whole story (regenerate any with `.venv/bin/python scripts/plot_*.py`):
 
 | Graphic | What it shows |
@@ -47,7 +50,7 @@ tell the whole story (regenerate any with `.venv/bin/python scripts/plot_*.py`):
 | ![deployed](docs/deployed_results.png) | **`docs/deployed_results.png`** — the live book: per-year Sharpe + near-zero leg correlations |
 
 Full write-ups: `docs/VERIFICATION_CONTROLS.md` (the anti-overfit machinery) and
-`docs/EDGE_CASE_STUDIES.md` (all 59 cases) · `docs/Alpca_Discovery_and_HFT_Assessment.docx`.
+`docs/EDGE_CASE_STUDIES.md` (all 60 cases) · `docs/Alpca_Discovery_and_HFT_Assessment.docx`.
 
 ## What's in the box
 

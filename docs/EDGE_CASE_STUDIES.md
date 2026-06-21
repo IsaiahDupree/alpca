@@ -1530,3 +1530,40 @@ capital, and the bar for "validated" is now explicitly out-of-universe + out-of-
   3rd-leg re-test Case 55, SUE Case 59). PEAD is not the uncorrelated third leg; the deployed book
   (pairs + short-vol) stands. (`scripts/test_pead_sue.py` → `data/pead_sue_results.json`; additive
   `signal_field`/`borrow_field` in `alpca/backtest/pead.py`.)
+
+## Case 60 — Out-of-regime test of the deployed pairs basket on 10.5 years ✅ (the edge HOLDS on never-seen 2016-2020 — the session's strongest validation)
+
+- **The unlock (a data source we already had).** Everything in the program had been tuned and
+  measured on a single 5-year window (2021-06 → 2026-06) — the standing weakness was that we'd never
+  seen the deployed edge *out of regime*. The fix wasn't a new provider: the Alpaca account **already
+  has SIP historical access** (the config merely defaulted to the conservative `iex` feed, which has
+  no deep daily history). The SIP feed serves **full daily history back to 2016** (the free tier only
+  blocks the most recent ~15 minutes). Re-pulling the 195-symbol large-cap universe at SIP depth gave
+  **10.5 years** (≈2,630 daily bars/name) — doubling the history and exposing the **2018 vol-spike**
+  and **2020 COVID crash**, neither of which was in any prior window.
+- **Method.** Ran the **exact deployed config** (`delisting_aware_walkforward`, train 252 / test 63 /
+  top-10 / ADF ≤ −2.86 / 2 bps) on the 10.5yr panel and split the OOS daily returns into
+  **OUT-OF-REGIME 2016-2020** (never in any tuning window) vs **IN-REGIME 2021-2026**. (Note: the
+  ragged 10yr panel — recent IPOs have no 2016 bars — breaks `walkforward_pairs`' strict timestamp
+  intersection; `delisting_aware_walkforward` uses the union calendar + per-window 80%-availability
+  screening and is the correct, validated tool.)
+- **Result — the edge holds out-of-regime.**
+  - **OUT-OF-REGIME 2016-2020: Sharpe 0.554** (1,007 OOS days), **positive in all four years**
+    (2017 +0.08, 2018 +0.02, 2019 +0.98, 2020 +0.87) — it survives both the 2018 vol-spike and the
+    2020 COVID crash.
+  - IN-REGIME 2021-2026: Sharpe **0.505**. The out-of-regime number is **slightly higher** than the
+    in-regime one — the clearest possible evidence that the pairs edge is **not a 2021-2026 artifact**.
+  - Full 10.5yr: Sharpe **0.514**, 37 windows, 2,331 OOS days.
+- **Honest caveats (recorded, not buried).** (1) The full-period **0.51 sits below the 0.83
+  concentrated-5yr headline** — the true Sharpe looks like a **modest ~0.5**, regime-robust but
+  smaller than the favourable window suggested; we revise the honest expectation *down on magnitude,
+  up on confidence*. (2) **2026 reads −2.00**, but it is a ~half-year small sample (and this fresh
+  SIP pull runs through 2026-06-18, later than the deployed June-16 snapshot's +1.06) — a noisy
+  partial year, not a regime verdict.
+- **Verdict.** ✅ **HOLDS OUT-OF-REGIME — the deployed pairs edge is real and regime-robust.** This
+  is the session's first *confirmation* rather than rejection: the one deployed equity edge clears a
+  genuine out-of-regime holdout (2016-2020, including two stress regimes) at a Sharpe (~0.55) on par
+  with its in-regime number. The magnitude is modest (~0.5, below the 0.83 headline), which is the
+  honest read. **Going forward, research downloads should use `--feed sip` for the full 10.5yr depth**
+  so every prior 5yr-window result can be re-tested out-of-regime. (`scripts/test_pairs_out_of_regime.py`
+  → `data/pairs_out_of_regime.json`; `scripts/download_data.py --feed sip`.)

@@ -117,12 +117,18 @@ def main() -> int:
     ap.add_argument("--quote-days", type=int, default=2)
     ap.add_argument("--quote-limit", type=int, default=200_000, help="max quotes per day")
     ap.add_argument("--out", default="data/cache")
+    ap.add_argument("--feed", default=None,
+                    help="override data feed (iex|sip). sip serves full history back to 2016 "
+                         "(free tier blocks only the last ~15 min); iex has no deep daily history.")
     args = ap.parse_args()
 
+    import dataclasses
     from alpca.config import load_config
     from alpca.data.bars import attach_quotes_to_bars, fetch_alpaca_bars
 
     cfg = load_config()
+    if args.feed:
+        cfg = dataclasses.replace(cfg, data_feed=args.feed.lower())
     if not cfg.has_credentials:
         print("[FAIL] no Alpaca credentials (Alpca/.env).")
         return 1
