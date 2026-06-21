@@ -19,14 +19,35 @@ We tested every price-only equity strategy family rigorously. The consistent res
 - **HFT is structurally infeasible** on this venue (~1.2s measured fills, IEX top-of-book
   only, no maker rebates). The latency instrumentation is for *execution-quality measurement*,
   not HFT alpha.
-- **Market-neutral pairs** looked promising (in-sample Sharpe 1.78) but **collapsed
-  out-of-sample** (walk-forward Sharpe 0.43), and the textbook fixes (ADF cointegration
-  screen, Kalman dynamic hedge) made it *worse* (−0.26). No reliable edge.
-- **Short-term reversal**: rejected (negative in- and out-of-sample after costs).
+- **Market-neutral pairs** is the one real equity edge. The over-diversified basket collapsed
+  out-of-sample (0.29), but the **concentrated form** (top-10 + 5% ADF cointegration screen)
+  holds at **walk-forward Sharpe ~0.83, −5% drawdown**, and — critically — **survives a
+  survivorship-corrected point-in-time re-test** (Case 46). It runs on a forward paper-track.
+- **Short-vol / variance-risk-premium** is the second deployed sleeve: the first leg that
+  actually *lifted* the book (+0.25) and **survives a simulated volmageddon** at an 8% cap (Cases 49–50).
+- **Everything else collapsed** under out-of-universe / out-of-regime / cost holdouts — see the
+  funnel below. EAR-PEAD, short-interest tilt, accruals, the Alpha101/158/191 zoo, overnight
+  reversal: all looked great in-sample, none generalized.
 
-The deployable result is honest and modest: a handful of strategies (`rsi-mr`, `supertrend`,
-`ema-momentum`, `ensemble`) are **statistically significant, stable, lower-drawdown ways to be
-long the market** — risk-reduced beta, not a market-beater. See `docs/Alpca_Discovery_and_HFT_Assessment.docx`.
+The deployable book is honest and modest: **pairs (~92%) + short-vol (~8%)**, full-period
+**Sharpe ~0.92, DSR ~0.87, max DD ~−5%, positive in 5 of 6 years** — market-neutral, uncorrelated
+to beta, real because of everything it had to survive. The honest ceiling is ~1–2 bps/day at
+half-Kelly. See `docs/STATE_OF_THE_PROGRAM.docx` and `docs/VERIFICATION_CONTROLS.md`.
+
+## Results at a glance
+
+The denominator is the point: **57 documented case studies → 2 deployed sleeves.** Four graphics
+tell the whole story (regenerate any with `.venv/bin/python scripts/plot_*.py`):
+
+| Graphic | What it shows |
+|---|---|
+| ![funnel](docs/edge_funnel.png) | **`docs/edge_funnel.png`** — every case classified by the control that killed it, down to the 2 survivors |
+| ![collapse](docs/holdout_collapse.png) | **`docs/holdout_collapse.png`** — headline vs honest Sharpe for every edge; the gap below the diagonal *is* the overfit |
+| ![landscape](docs/strategy_landscape.png) | **`docs/strategy_landscape.png`** — the overfit catch + per-year regime stability + the profit-per-day reality |
+| ![deployed](docs/deployed_results.png) | **`docs/deployed_results.png`** — the live book: per-year Sharpe + near-zero leg correlations |
+
+Full write-ups: `docs/VERIFICATION_CONTROLS.md` (the anti-overfit machinery) and
+`docs/EDGE_CASE_STUDIES.md` (all 57 cases) · `docs/Alpca_Discovery_and_HFT_Assessment.docx`.
 
 ## What's in the box
 

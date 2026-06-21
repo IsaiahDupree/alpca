@@ -32,8 +32,11 @@ ATTACHMENTS = [
     ROOT / "docs" / "STATE_OF_THE_PROGRAM.docx",
     ROOT / "docs" / "GETTING_STARTED_WITH_AI.docx",
     ROOT / "docs" / "EDGE_CASE_STUDIES.docx",
+    ROOT / "docs" / "VERIFICATION_CONTROLS.docx",
     ROOT / "docs" / "strategy_landscape.png",
     ROOT / "docs" / "deployed_results.png",
+    ROOT / "docs" / "edge_funnel.png",
+    ROOT / "docs" / "holdout_collapse.png",
 ]
 
 
