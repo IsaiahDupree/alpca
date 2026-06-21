@@ -3,8 +3,8 @@
 This is the catalog of *controls* the evaluation harness applies to every edge before it is
 allowed to be called "validated." It is the most important asset in the repo: the strategies
 come and go, but the controls are what make a result trustworthy. The companion graphic is
-`docs/edge_funnel.png` — 56 documented case studies in, 2 deployed sleeves out, classified by
-the control that killed each one.
+`docs/edge_funnel.png` — every documented case study classified by the control that killed it,
+down to the 2 deployed sleeves.
 
 **The thesis of the whole program:** the *denominator* is the point. Anyone can show you a
 backtest with a Sharpe of 2. The question that matters is *how many things did you try, and what
@@ -123,4 +123,4 @@ Per-day profit targeting is noise-mining; the edge compounds slowly and only bec
 
 *Companion artifacts: `docs/edge_funnel.png` (this catalog, visualized), `docs/strategy_landscape.png`
 (the overfit catch), `docs/deployed_results.png` (the live book), `docs/EDGE_CASE_STUDIES.md`
-(all 57 cases in full).*
+(all 58 cases in full).*

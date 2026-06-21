@@ -121,7 +121,7 @@ def panel_c(ax):
 def panel_d(ax):
     ax.axis("off")
     ax.set_title("D · What actually defines a high-profit-per-day algo", fontsize=9.3, loc="left")
-    n_total = 57
+    n_total = 58
     n_surv = sum(1 for r in REC if r["survives"] and r["kill"] == "deployed")
     lines = [
         ("1. A REAL edge that GENERALIZES.", "Must clear out-of-universe (new symbols) AND"),

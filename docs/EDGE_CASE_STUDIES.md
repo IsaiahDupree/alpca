@@ -1463,3 +1463,37 @@ genuinely-uncorrelated legs sized to Kelly** — but a candidate only counts *af
 out-of-universe holdout, not before. We found zero such legs this session; we correctly rejected five
 candidates (Cases 17, 18, 19, 20, 21) and shipped none. That is the right outcome: no false edge reached
 capital, and the bar for "validated" is now explicitly out-of-universe + out-of-regime.
+
+## Case 58 — Meta-labeling (López de Prado) on the deployed pairs basket ❌ (the secondary model has no out-of-sample skill)
+
+- **The idea.** Don't hunt a new edge — *amplify* the one we've validated. Take the deployed
+  cointegrated-pairs basket's primary signals and train a **secondary classifier** (meta-model) to
+  predict, **at entry**, whether each individual pair-trade will be profitable, then **skip the
+  low-conviction trades**. This is the canonical meta-labeling setup (AFML ch. 3). It was the
+  lowest-risk candidate on the register (RESEARCH_CANDIDATES #8) precisely because it needs no new
+  data and can only filter an edge we already trust.
+- **Method (no-lookahead, rigorous).** Replayed the **deployed config** (train 252 / test 63 /
+  top-10 / ADF ≤ −2.86 / 2 bps) on the 195 large-cap daily bars with a trade-emitting backtest,
+  collecting **430 pair-trades across 15 OOS windows** with *entry-only* features (|entry-z|, ADF
+  stat, half-life, |hedge|, lookback, train-spread vol, side) and label = trade net return > 0.
+  Trained a numpy logistic meta-model under **purged, embargoed, expanding-window CV** (5 folds over
+  the back 60%, 5-day embargo) → out-of-sample P(profit) per trade. Reconstructed the basket
+  faithfully (dropping a trade = that pair sits flat; same per-window denominator) for a τ sweep,
+  plus a **shuffle-label placebo**.
+- **Result — no usable signal.** The replay's baseline basket Sharpe reproduced the validated
+  **0.831** bit-for-bit (the harness is faithful). But the meta-model's **out-of-sample AUC was
+  0.379 — *below* 0.5, i.e. anti-predictive — and *below* its own shuffle-label placebo (0.46).**
+  The secondary model has **zero out-of-sample skill** at separating winning from losing pair-trades
+  on these features.
+- **The τ-sweep trap (why the "Sharpe 1.31" is a mirage).** Filtering at τ=0.60 *appeared* to lift
+  the basket to Sharpe 1.31 — but it did so by **dropping 185 of 258 eval trades** to leave just 73,
+  and since AUC < 0.5 the model is **anti-predictive**, so it cannot be choosing the right ones. The
+  apparent lift is a **trade-count-reduction / luck artifact**, not skill: with a model worse than a
+  coin, any Sharpe change is noise from slashing exposure. The verdict gate (AUC > 0.55 **and** beats
+  placebo **and** retains ≥40% of trades) correctly rejects it.
+- **Verdict.** ❌ **REJECT — honest null confirmed.** Meta-labeling adds no out-of-sample
+  information here; the deployed basket is already near the information content its own signals carry.
+  This is a *clean* negative: the baseline matched 0.831 exactly, the placebo bracketed the result,
+  and the one number that looked good (τ=0.60) was unmasked as a count-reduction artifact by the
+  AUC. The pairs basket stays deployed **as-is** — there is no conviction-filter to bolt on.
+  (`scripts/test_meta_labeling.py` → `data/meta_labeling_results.json`.)
