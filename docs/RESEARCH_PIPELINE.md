@@ -89,9 +89,18 @@ intakes.
 | Mined edge | Source | Verdict |
 |---|---|---|
 | Conference-driven return drift (AAPL/GOOGL/MSFT) | Quantpedia | ❌ Case 61 — beta dressed as alpha; long-only 0.63 < B&H 1.06; hedged 0.54 is a 29-event recency artifact |
-| Market-neutral conference variant | Quantpedia | ❌ flagged infeasible (single-name/index short framing) at extraction |
-| 11-factor Lasso market-neutral (NYSE) | arXiv 2412.12350 | ⏳ extracted; flagged infeasible at extraction (40-name shorting + fundamentals + adverse borrow) — revisit if the long-only / index-hedged form is tractable |
+| Option-expiration-week SPY | mined (calendar) | ❌ Case 62A — anomaly inverted (opex days +1.6 vs +7.6 bps/day); below 93% of random-week placebos |
+| Bond-ETF duration rotation (median tier) | mined (ETF RV) | ❌ Case 62B — duration beta; rotation 0.01 < equal-weight 0.15 < BND 0.37; alpha −2%/yr |
+| Higher-moment tail hedge (SPY skew/kurt) | mined (vol) | ⚠️ Case 62C — REAL+robust (+0.05 Sharpe, 100% of configs) but a beta DD-overlay, not market-neutral alpha; no beta sleeve to deploy on |
+| Insider buying (small-cap, long-only) | Quantpedia/SSRN | ⏳ test-now — long-only = NO borrow wall (real advantage); blocked on AV quota today → build a free **SEC EDGAR Form 4** fetcher next |
+| 11-factor Lasso market-neutral (NYSE) | arXiv 2412.12350 | ⏳ queued — 40-name shorting + adverse borrow; revisit the long-only / index-hedged form |
 
-The corpus currently holds **2,000+ news articles** (AlphaVantage) plus the harvested research
-write-ups. As the queue grows, every novel + feasible spec gets the same honest battery — and the
-denominator (how many we killed) is the credibility, exactly as in the main case-study log.
+### The big harvest (Case 62 run)
+A 16-agent workflow fan-out (146 sub-agents, ~6.7M tokens) harvested **176 published strategies** →
+**65 novel + venue-feasible** after dedup vs our 61 cases → adversarial triage: **7 test-now, 11
+queued (data-gated), 47 dropped**. Full structured catalog (test-now / queued / dropped with reasons,
+test plans, predicted kills): **`data/research/harvest_catalog.json`**.
+
+The corpus holds **2,000+ news articles** (AlphaVantage) + harvested research write-ups + the 176-spec
+catalog. Every novel + feasible spec gets the same honest battery — the denominator (how many we
+killed) is the credibility, exactly as in the main case-study log.

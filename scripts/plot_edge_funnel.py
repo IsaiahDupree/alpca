@@ -77,8 +77,8 @@ BUCKETS = {
     },
     "Beta, not alpha": {
         "color": "#80b1d3",
-        "cases": [2, 25, 38, 61],
-        "note": "dampened market exposure, needs leverage we lack",
+        "cases": [2, 25, 38, 61, 62],
+        "note": "dampened market exposure / beta overlay, not alpha",
     },
     "Infeasible on venue / data": {
         "color": GREY,

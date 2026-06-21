@@ -1595,3 +1595,37 @@ capital, and the bar for "validated" is now explicitly out-of-universe + out-of-
   triage → honest battery → beta/regime decomposition automatically. (`alpca/research/`,
   `scripts/harvest_news.py`, `scripts/mine_strategies.py`, `scripts/validate_conference_drift.py`
   → `data/conference_drift_results.json`. Pipeline doc: `docs/RESEARCH_PIPELINE.md`.)
+
+## Case 62 — The harvest at scale: 176 published strategies → 3 validated overlays ❌❌⚠️
+
+- **The exhaustive sweep.** A 16-agent fan-out (146 sub-agents, ~6.7M tokens) harvested **176
+  published strategies** across every provider — Quantpedia, Alpha Architect, arXiv q-fin, SSRN,
+  QuantConnect, Reddit r/algotrading + r/quant, Perplexity, plus targeted families (volatility, ETF
+  RV, seasonality, earnings, positioning, sentiment, cross-asset, microstructure). After deduping
+  against our 61 prior cases: **65 novel + venue-feasible**, of which an adversarial pre-validation
+  pass flagged **7 test-now, 11 queued (data-gated), 47 dropped** (beta/infeasible/already-implied).
+  Full catalog: `data/research/harvest_catalog.json`. Three of the test-now set need no new data and
+  were validated immediately, each against the exact control its adversary predicted would kill it:
+- **A · Option-Expiration-Week SPY** (long SPY only during the 3rd-Friday week). ❌ **REJECT —
+  decisive.** On 2016-2026 the opex week actually returned *less* than other days (**+1.6 vs +7.6
+  bps/day**, effect **−6 bps/day**), and the strategy's Sharpe sat below 93% of random-week SPY
+  overlays (placebo percentile 0.07). The anomaly is inverted on our window.
+- **B · Bond-ETF duration rotation** (hold the median-momentum tier of 5 duration-laddered Treasury/
+  agg ETFs). ❌ **REJECT — decisive.** Rotation Sharpe **0.01** < equal-weight **0.15** < BND
+  **0.37**; beta-to-BND **1.05**, **alpha −2.0%/yr**. It's pure duration beta and *underperforms
+  simply holding the bonds*.
+- **C · Higher-moment tail hedge** (cut SPY 25% when 60d skew < −0.3 & kurt > 4). ⚠️
+  **REAL-BUT-NOT-FOR-US.** Unlike A/B this *survives* its control: **0.95 vs 0.89** exposure-matched
+  static, max-DD **−32% → −28%**, and the uplift is **robust** (+0.05 median, positive in **100% of
+  36 threshold configs**) and even edges out plain vol-targeting (0.95 vs 0.91 at matched exposure).
+  But it is **tiny** and a **beta overlay** (long-SPY drawdown insurance), *not* market-neutral
+  alpha — and we run a market-neutral book, so there is **no beta sleeve to apply it to**. Filed as a
+  genuine risk-management finding, not a deployable edge; revisit only if a long-equity sleeve is ever
+  run. (Consistent with the Case 11 / vol-managed-momentum conclusion: vol/tail timing is DD
+  insurance on beta, not alpha.)
+- **Verdict.** 2 decisive rejects + 1 real-but-not-deployable. The point is the **denominator at
+  scale**: 176 harvested → 65 novel/feasible → and the honest battery keeps the bar where it belongs.
+  The remaining test-now candidates (insider buying — long-only, *no borrow wall*) and the 11 queued
+  (analyst-revision drift, index reconstitution, guidance drift, etc.) are next.
+  (`scripts/validate_mined_overlays.py` → `data/mined_overlays_results.json`; catalog
+  `data/research/harvest_catalog.json`.)
