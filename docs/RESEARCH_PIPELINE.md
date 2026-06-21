@@ -65,7 +65,8 @@ intakes.
 | **Alpaca SIP bars** | account has it (config defaults to `iex`) | **10.5yr daily history (2016-)** — the out-of-regime backbone; `download_data.py --feed sip` |
 | **WebSearch / WebFetch** | agent tools | quant publishers: Quantpedia, Alpha Architect, SSRN, arXiv q-fin, QuantConnect |
 | **Reddit MCP** | connected | r/algotrading, r/quant practitioner ideas |
-| **Perplexity / knowledge MCP** | connected | synthesis + internal KB |
+| **Perplexity MCP** | connected | web synthesis |
+| **knowledge MCP** (`trading-knowledge`) | connected, **now ingested** | 60-doc private corpus (19 books + own forward-tested code-strategies) → 217 specs mapped, Case 64 (`TRADING_KNOWLEDGE_COVERAGE.md`) |
 | ~~RapidAPI~~ | subbed to tiktok/reddit scrapers only | **not** finance — unusable here |
 | ~~AlphaVantage `TIME_SERIES_DAILY` full~~ | now premium | deep daily history gated — use Alpaca SIP / Stooq / Tiingo |
 

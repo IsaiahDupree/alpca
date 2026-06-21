@@ -1662,3 +1662,33 @@ capital, and the bar for "validated" is now explicitly out-of-universe + out-of-
   flagged thin by the placebo, and was definitively killed by the survivorship control — the full
   machine working as designed. (`scripts/build_insider_signal.py`, `scripts/validate_insider_buying.py`,
   `scripts/validate_insider_deep.py` → `data/insider_deep_results.json` + `data/insider_deep_delisted.json`.)
+
+## Case 64 — Ingesting our own Trading-Knowledge corpus (217 strategies) ✅ coverage audit (zero new Alpaca alpha; cross-ecosystem confirmation)
+
+- **The provider we hadn't tapped.** Beyond the public literature (Case 62), the user maintains a
+  private **`trading-knowledge`** corpus (the `knowledge` MCP / github.com/IsaiahDupree/Trading-
+  Knowledge): strategies distilled from **19 algorithmic-trading books**, per-strategy aggregations,
+  and every edge **forward-tested in five of the user's own codebases** (prediction-markets, crypto
+  HFT, weather oracle, DeFi liquidation). A 32-agent ingestion workflow read all 50 reachable docs,
+  extracted **217 strategy specs**, and mapped each to Alpca's 63 cases + the venue.
+- **Result — the corpus is fully covered, no new edge.** **126** specs map to edges Alpca already
+  tested; **43** are structural/venue-specific (maker rebates, complete-set merge-maker, Dutch-book
+  arb, oracle-lag, options spreads, VWAP/TWAP, HFT-scalping — impossible on a price-taker equity
+  venue); **27** otherwise infeasible; the **19 "novel + feasible"** are all **plausibility ≤ 0.35**
+  and on inspection are backtest infra already built (queue-fill model), verification machinery
+  (Council v2), or relabels of momentum/fair-value/MR/LSTM/TD3 we've already rejected. **Zero new
+  Alpaca-deployable alpha.**
+- **The valuable part — two independent programs converge.** Built with the same anti-overfit
+  discipline, Alpca (equities) and the `code-strategies` stack (prediction-markets/crypto/DeFi) reach
+  the same conclusions: (1) directional retail strategies get debunked at honest fills (their
+  penny-sniper −77%/$ ↔ our single-asset = beta, Case 2); (2) **cross-sectional momentum survived in
+  HFT-work at OOS Sharpe ~0.68 — the *same* number Alpca found independently (Case 3)**; (3) the
+  edges that actually pay are **structural** (their weather oracle-lag +$0.1855/ct t=8.65;
+  reward-farming +$749/6d) and **venue-specific — not portable to Alpaca**; (4) the real transferable
+  asset is the verification discipline itself (= our `VERIFICATION_CONTROLS.md`).
+- **Verdict.** ✅ **Coverage confirmed; idea supply is exhausted, the venue is the bottleneck.** The
+  3rd-leg hunt is not idea-limited — we've now exhausted the public literature *and* the user's entire
+  private corpus. The one cross-program-confirmed directional edge — **cross-sectional momentum
+  (~0.68)** — is the highest-conviction remaining build: harden the HFT-work construction (z-scored,
+  trend-gated, market-neutral) on the 10.5yr SIP universe. (`docs/TRADING_KNOWLEDGE_COVERAGE.md`;
+  `data/research/trading_knowledge_coverage.json`.)

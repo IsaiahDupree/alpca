@@ -1,0 +1,646 @@
+{
+  "counts": {
+    "docs": 50,
+    "specs": 217,
+    "mapped_to_tested": 126,
+    "novel_feasible": 21,
+    "infeasible": 27,
+    "structural_venue_specific": 43,
+    "novel_feasible_deduped": 19
+  },
+  "novel_feasible": [
+    {
+      "name": "Queue-Position Fill Model",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/hft-work.md",
+      "their_verdict": "SURVIVED/DEBUNKED (mixed)",
+      "signal_rule": "Joins back of queue; cancels attributed pro-rata. Trade AT price consumes queue-ahead first. Trade THROUGH fills in full. 'Behind'/'ahead' modes bracket estimate",
+      "data_needs": [
+        "queue position",
+        "trade size",
+        "queue depth",
+        "trade direction"
+      ],
+      "plausibility": 0.35,
+      "tractable_now": true,
+      "predicted_kill": "No intra-bar tape on Alpaca daily bars. The queue model needs trade-by-trade prints (trade size + direction), displayed depth ahead at your price, and cancellation flow to advance/fill a FIFO position. Alpaca's venue here is top-of-book only (NO L2 depth) over 10.5yr SIP DAILY bars \u2014 one OHLCV row per symbol-day has zero of those inputs. The existing helper (open_orders.py::_queue_pos) already proves this: it falls back to front0 = volume * participation_cap whenever bid_size/ask_size are absent, which is every daily bar. So on the only data the venue gives at scale, the 'honest FIFO queue' degenerates EXACTLY into the optimistic volume-cap proxy it was built to replace, adding zero corrective information. It is a no-op realism layer for daily-bar equity backtests; it only bites on intraday minute bars with quote depth, which Alpca does not run its strategy backtests on.",
+      "test_plan": "CATEGORY CHECK FIRST: this is NOT a directional/market-neutral alpha \u2014 it is a backtest-realism / fill-accounting tool (its own KB verdict: 'corrective tool, G3 validation layer'). It emits no signal, position, or return stream, so the standard alpha battery (vs-B&H, beta-decomp, DSR, Sharpe-significance, survivorship) is N/A: there is nothing to decompose into alpha vs beta. It is also ALREADY BUILT in Alpca: alpca/execution/queue_prob.py (PROB_FUNCS power1/2/3+log+sqrt, QueuePosition.advance FIFO eat-then-fill) is a clean port of the same nkaz001/hftbacktest models as the TS queue-fill.ts; it is wired into alpca/execution/fills.py::fill_limit(queue_pos=) and alpca/execution/open_orders.py (use_queue_model flag), with 146 passing tests (test_queue_prob.py, test_queue_prob_deep.py, test_limit_fills.py \u2014 all green just now). So the real question is VALIDATION (does the model improve fill realism), not 'does it work.' The ONLY legitimate test on this venue is fill-count CALIBRATION against real recorded fills, not an alpha backtest:\n\n(1) DATA. Real paper fills are already logged: data/calibration_fills.jsonl (111 SPY fills) + data/calibration_orders.jsonl (857) carry intended_price, fill_price, bar_volume, bid/ask, bid_size/ask_size, quote_ts, slippage_bps, participation, latency. Expand the launchd live/swing sessions (donchian/SPY 09:50, swing/QQQ) to submit RESTING marketable-limit DAY orders (not market) across more symbols/sizes/days so the queue can actually bind, recording realized filled-vs-rested outcomes per order.\n\n(2) CONSTRUCTION. For each real resting limit, replay the same bar through OpenOrderBook in two modes: use_queue_model=False (volume-cap proxy = optimistic baseline) and use_queue_model=True across all 5 PROB_FUNCS, in 'behind' and 'ahead' bracket modes. Score = calibration error between PREDICTED fill (filled_qty / time-to-fill) and the REAL recorded outcome. Metric: Brier/MAE on fill-vs-no-fill and signed error on time-to-fill; the claim 'paper fill count is an optimistic upper bound' is the testable hypothesis \u2014 does queue=True pull predicted fills DOWN toward realized, and is realized <= proxy-predicted?\n\n(3) CONTROLS adapted to a fill model (not an alpha):\n  - BASELINE BRACKET: queue model must beat the volume-cap proxy on calibration MAE; if equal, it is a no-op on this data (the kill).\n  - OOS / OUT-OF-REGIME 2016-2026: irrelevant to PnL here, but DO test parameter stability \u2014 fit n (power exponent) on one symbol/year, check the same n minimizes calibration error on disjoint symbols/years (fresh-symbol + out-of-regime holdout, the lesson from PEAD/SI-tilt). A model whose best prob-func flips per window is overfit accounting.\n  - COST/IMPACT consistency: cross-check that queue-true fills, when fed back into a real strategy backtest (e.g. the pairs basket OOS 0.54 or a donchian limit variant), do NOT silently change Sharpe by >noise \u2014 if it does, that delta is the measurable value of the correction; if it is ~0, confirms no-op.\n  - SURVIVORSHIP: N/A (no symbol selection).\n  - SANITY: confirm degeneracy \u2014 assert that on a daily bar with no bid_size/ask_size, queue=True fill output == volume-cap proxy output (this is the kill, made into a unit assertion).\n\n(4) DECISION RULE. SHIP as infra only if queue=True reduces fill-calibration MAE vs proxy by a stable margin on a fresh-symbol + out-of-regime holdout AND meaningfully changes at least one strategy's net Sharpe. Otherwise classify as 'built, correct, but a no-op on Alpaca daily-bar data' \u2014 keep the code (it is harmless, well-tested) but do not credit it as improving any backtest. Run on MINUTE bars (1Min via fetch_alpaca_bars timeframe='1min') for the only regime where it can bind, to document the boundary where it starts to matter."
+    },
+    {
+      "name": "Gaussian Fair-Value Model",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/lastminute-maker.md",
+      "their_verdict": "SURVIVED/DEBUNKED (mixed)",
+      "signal_rule": "p_up = \u03a6((S+\u03bc\u03c4\u2212R)/(\u03c3\u221a\u03c4)) from live Binance spot; trade when |edge| > threshold + cost",
+      "data_needs": [
+        "spot price",
+        "volatility estimate",
+        "time-to-resolution",
+        "bid-ask spread"
+      ],
+      "plausibility": 0.12,
+      "tractable_now": true,
+      "predicted_kill": "It degenerates into vol-scaled directional momentum, which this repo has already tested and rejected (memory: \"TSMOM illusory per Kim2016: momentum < vol-scale < buy-hold\"; \"single-asset strategies are BETA NOT ALPHA\"). The original edge was a Polymarket token-vs-model LATENCY/lag arb (faster Binance pipe) plus favorite-longshot binary underpricing \u2014 both structural to a binary venue and explicitly on the KB DEAD list (\"linear FV-vs-price model DEAD\", \"live LAG edge unproven\"). On Alpaca there is no binary token to be mispriced against the model, so the lag mechanism cannot be ported; what remains is just Phi((S+mu*tau-R)/(sigma*sqrt(tau))), a deterministic monotone transform of a drift/vol z-score. In the single-asset form the long signal's alpha collapses to ~0 after beta-decomp (it IS beta) and loses to buy-and-hold; in the cross-sectional L/S form the most likely kill is that the long-short spread fails the beta-decomp + cost wall (the model offers no information the price already lacks \u2014 it is a relabeling of price, so net Sharpe lands near 0 after fees and especially fails the out-of-regime 2016-2026 SIP and fresh-symbol holdout the way EAR-PEAD and SI-tilt did).",
+      "test_plan": "DATA: 195-symbol SIP daily-bar cache at /Volumes/My Passport/AlpcaData/cache/*_1day_bars.jsonl (currently ~Jun2021-Jun2026, ~5yr); for the out-of-regime control re-fetch via scripts/download_data.py to extend to the full 10.5yr SIP back to ~2016. Benchmarks: SPY/IVV (mkt), RSP (equal-weight) already cached. No options, no binaries, no Binance \u2014 equity close prices only.\n\nTRANSLATION (make the kill honest, not strawman): The model p_up = Phi((S + mu*tau - R)/(sigma*sqrt(tau))) is a drift/vol z-score of expected move vs reference R. Two equity ports:\n  (A) SINGLE-ASSET directional: per symbol, R = current/anchor price, mu = trailing drift (e.g. 60d mean log-return), sigma = trailing realized vol (e.g. 20-60d), tau = forward holding horizon (5/10/20d). Signal z = (mu*tau)/(sigma*sqrt(tau)); long if Phi(z) > 0.5+thr, short/flat if < 0.5-thr. This is vol-scaled TSMOM by construction.\n  (B) CROSS-SECTIONAL market-neutral (the only port with a chance): each day compute z for all 195 names, rank, go long top decile / short bottom decile, dollar-neutral, vol-target. This is the only family in this repo that has ever shown real alpha (cointegrated-pairs basket OOS 0.54).\n\nCONSTRUCTION: Implement as a registry strategy (mirror existing momentum/donchian entries) so it runs through alpca/backtest/evaluation.py:evaluate(). Point-in-time only: mu/sigma/z computed strictly from bars up to t-1, traded at t open/close (no lookahead \u2014 the repo's standing rule). Parameter grid (thr, lookbacks for mu/sigma, tau) chosen on the IS split ONLY; count every grid point as a trial for DSR deflation.\n\nCONTROLS (use existing toolkit; mirror truth_table.py / test_pairs_out_of_regime.py / test_ear_pead_holdout.py):\n  1. vs Buy-and-Hold: evaluate() already reports strat vs buy_and_hold return+Sharpe; single-asset version must BEAT SPY B&H net, else it's beta (this is what killed every prior price-only single-asset family).\n  2. Beta-decomp: alpca.backtest.evaluation.beta_alpha(strat_eq, SPY_eq, ppy) -> require annualized alpha > 0 with beta near 0 for the L/S version; if alpha vanishes when beta is removed, REJECT (it's the index).\n  3. OOS: evaluate(oos_frac=0.3) IS vs OOS; require OOS Sharpe ~ IS Sharpe (no decay), the exact test that killed PCA stat-arb (IS 0.99 -> OOS -1.18).\n  4. Out-of-regime: refetch 2016-2020 SIP and run test_pairs_out_of_regime.py-style split \u2014 require positive in a regime never used for tuning (this killed SI-tilt: DSR0.98 1yr -> NET -0.31 multi-regime).\n  5. Cost wall: apply realistic per-trade cost (1-2 bps + half-spread from cached quotes for SPY/QQQ/AAPL; assume ~1bp ETF / ~3-5bp single-name) and measure turnover; re-Sharpe NET. Overnight/intraday reversal died here (-0.41 at 2bps). The z-signal turns over on every vol/drift shift -> expect a heavy cost hit on the L/S version.\n  6. DSR: deflated_sharpe_ratio(equity, n_trials=total grid points + 34 prior strategies, sharpe_variance) -> require DSR > 0.95 (the new bar). \n  7. Fresh-symbol holdout: tune on a TRAIN subset of symbols, evaluate on a DISJOINT held-out symbol set (the test that killed EAR-PEAD: TRAIN40 +0.68 vs HOLDOUT -0.52). Required because the cross-sectional version selects across the universe.\n  8. Survivorship: the 195-name cache is a survivor set; for the L/S version, note any selection bias and, if pursued, reconstruct a point-in-time-ish universe via build_representative_pit.py before trusting cross-sectional ranks.\n  9. Shuffle-placebo: shuffle the z-signal labels and confirm the edge disappears (caught lead-lag as fitted noise).\n\nADVOCATE check (per policy, pair skeptic with advocate): the one non-strawman survival path is if vol-NORMALIZATION (sigma in the denominator) adds risk-adjusted value the raw-momentum strategies in the registry lack -> compare the z-version head-to-head vs plain \"momentum\" registry entry on net Sharpe + DSR; if z meaningfully and robustly beats raw momentum out-of-regime AND survives beta-decomp in the L/S form, it earns a forward paper track. Otherwise REJECT and log as a case study (it's beta / a price relabeling), consistent with the Kim2016 TSMOM rejection already on file.\n\nDELIVERABLE: scripts/test_gaussian_fairvalue.py writing data/gaussian_fairvalue_results.json with both ports x all 9 controls, plus a one-line verdict per the evaluate() verdict bands; add to truth_table sweep."
+    },
+    {
+      "name": "Inventory Scalp-Exit Manager",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/lastminute-maker.md",
+      "their_verdict": "SURVIVED/DEBUNKED (mixed)",
+      "signal_rule": "STOP if bid\u2264entry\u2212stop; TAKE_PROFIT if bid\u2265entry+target; TRAIL if in-profit; priority STOP>TP>TRAIL>HOLD",
+      "data_needs": [
+        "entry price",
+        "live bid",
+        "volatility for target/stop sizing"
+      ],
+      "plausibility": 0.12,
+      "tractable_now": true,
+      "predicted_kill": "The exit overlay is a tail-symmetric whipsaw tax, not alpha. On daily/intraday equity bars, a STOP>TP>TRAIL>HOLD overlay clips the right tail (winners stopped on noise pullbacks) as much as the left, and intraday-path \"hit at bid\" exits add 1-2x extra round-trips of cost vs a single hold-to-signal-exit. Net of cost the overlaid equity will show LOWER Sharpe and LOWER terminal return than the same entry stream held to its native time/signal exit, with positive maxDD reduction but a worse Calmar/Sharpe \u2014 i.e. it reduces variance only by giving up more expectancy than variance, so it FAILS the \"beats the no-overlay baseline on risk-adjusted return net of cost\" bar. (Secondary kill if it somehow survives Sharpe: any apparent improvement is a free parameter fit \u2014 stop/target/trail grid over a handful of values inflates DSR; it dies on out-of-regime 2016-2026 and fresh-symbol holdout because the optimal bracket width is regime/vol-specific.)",
+      "test_plan": "FRAME: This is an EXIT primitive, not an entry alpha. Its KB origin (Polymarket maker) manages adverse-selection bleed on RESTING MAKER fills \u2014 a structural cost that does NOT exist for an Alpaca price-taker. So the only meaningful Alpca question is: \"Does bolting a vol-scaled STOP/TP/TRAIL exit overlay onto an already-defined entry stream beat holding that same entry to its native time/signal exit, risk-adjusted and net of cost?\" The overlay can only help by altering the EXIT distribution; it generates no entries.\n\nDATA: 10.5yr SIP daily bars (adjustment=\"all\") via alpaca.data.bars.fetch_bars for the entry stream and the daily exit path; 5Min/15Min SIP intraday bars (timeframe=\"5min\"/\"15min\", paged in <=30d chunks ending now-20min for IEX safety) for the intraday exit PATH (high/low order matters for stop-vs-target priority on the same bar \u2014 use conservative \"stop touched first\" assumption). Universe: SPY/QQQ/IWM + 60-80 liquid large/mid-cap single names already cached (reuse the pairs/EAR-PEAD symbol lists), all SIP-fetchable.\n\nCONSTRUCTION: (1) Pick 2-3 NEUTRAL entry streams so the test isolates the exit, not the entry: (a) random/coin-flip daily entries (placebo entry stream \u2014 overlay should add zero), (b) the repo's existing donchian-adx and rsi-mr signals as realistic entries, (c) a pure long-buy-and-hold leg. (2) Define exit variants per filled position, all sized by realized vol (ATR-multiple, computed PIT from trailing window \u2014 NO lookahead): HOLD-TO-SIGNAL baseline; STOP-only; TP-only; TRAIL-only; full STOP>TP>TRAIL>HOLD precedence (the KB rule). (3) Mark-to-bid using bar low/high (intraday path) and close (daily path); apply the precedence each bar. (4) Build the equity curve for each variant on identical entries.\n\nCONTROLS (every variant must clear vs the HOLD baseline, not vs cash):\n- vs-BASELINE not just vs-B&H: the benchmark is the SAME entry stream held to native exit. Beating B&H is irrelevant if it loses to no-overlay. Also report vs-B&H (SPY) for context.\n- beta-decomp: beta_alpha() vs SPY \u2014 confirm any \"improvement\" isn't just de-risking into lower beta (which you could get for free by holding less).\n- COST: alpca.execution.fees + fills at 1, 2, 5 bps/side. The overlay ADDS exits \u2192 count every extra round-trip. Report cost_2bps_sharpe (the repo's cost-wall gate). Turnover ratio overlay/baseline must be reported.\n- OOS: split 70/30 chronological; the bracket params (stop/target/trail ATR-mults) chosen ONLY on train, evaluated frozen on test.\n- OUT-OF-REGIME: per-segment Sharpe across 2016-2026 SIP (the harness's per_year/regime-stability) \u2014 bracket width is vol-regime-dependent, so test 2018-Q4, 2020 COVID, 2022 bear, 2021/2023 bull separately. A real exit edge must not flip sign across regimes.\n- DSR: deflated_sharpe_ratio with n_trials = (#bracket grid points x #entry streams x #variants) \u2014 the stop/target/trail grid is a free-parameter search; deflate honestly. Bar DSR>0.95.\n- SHUFFLE-PLACEBO: run the overlay on the RANDOM-entry stream \u2014 if it \"improves\" random entries, the improvement is an artifact of the exit clipping the noise distribution, not edge.\n- FRESH-SYMBOL HOLDOUT: tune bracket on TRAIN symbols, evaluate on a DISJOINT symbol set (the repo's standard out-of-universe test that killed EAR-PEAD/SI-tilt).\n- survivorship: use a point-in-time / delisting-inclusive symbol list if any selection is involved (here selection is low risk since entries are mechanical, but note it).\n\nDECISION RULE: overlay is \"validated as a useful primitive\" ONLY if, net of 2bps cost, it raises Sharpe AND Calmar vs the HOLD baseline on the SAME entries, holds sign across all regime segments, clears DSR>0.95 after deflating for the grid, AND survives the fresh-symbol holdout. Variance reduction alone (lower maxDD at the cost of Sharpe) is a REJECT for an alpha claim \u2014 log it instead as a risk-control knob (like the existing rsi-mr beta-reduction note), not an edge.\n\nIMPLEMENTATION: new scripts/test_exit_overlay.py reusing alpca.data.bars (daily+intraday), alpca.execution.fills/fees, and alpca.backtest.evaluation (evaluate(), deflated_sharpe_ratio, beta_alpha, per-segment). ~1 day of compute; all data is SIP-fetchable and partly already cached."
+    },
+    {
+      "name": "Continuation-EV Bracket",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/lastminute-maker.md",
+      "their_verdict": "SURVIVED/DEBUNKED (mixed)",
+      "signal_rule": "EV = q\u00b7(target\u2212entry) \u2212 (1\u2212q)\u00b7(entry\u2212stop) \u2212 costs; bracket simulated tick-by-tick, OOS eval on fresh data",
+      "data_needs": [
+        "entry price",
+        "probability q",
+        "target/stop levels",
+        "cost model"
+      ],
+      "plausibility": 0.12,
+      "tractable_now": true,
+      "predicted_kill": "Cost wall on intraday turnover \u2014 same death as Case 17 (overnight reversal) and the Polymarket maker family's \"honest fill\" collapse. The continuation edge is a thin first-30min-strength \u2192 close drift that exists gross (the bracket math is sound and EV-positive on paper), but the bracket forces ~1 full round-trip per name per day plus stop-outs that cross the spread at the worst moment; at Alpaca's ~1.2s taker fills + IEX top-of-book + ~2bps/leg the EV gate's break-even q is never cleared net. Equivalently the early-leader continuation is mostly priced/beta \u2014 a high open is high-beta, so once you index-hedge or decompose, the residual is ~0 and the gross looks like a market-timing illusion (Case 51 pattern), and the n is tiny per the source's own n=59.",
+      "test_plan": "DATA (tractable now): The strategy is INTRADAY-continuation, so it needs minute bars, not daily. Cache at /Volumes/My Passport/AlpcaData/cache has *_1min_bars.jsonl + *_quotes_fullsession.jsonl for only ~3 names (AAPL/SPY/QQQ). FIRST STEP = bulk-fetch Alpaca SIP 1-min bars + top-of-book quotes (for honest fill/spread) for a liquid universe (SPY/QQQ/IWM/DIA + the 195 large-caps + sector ETFs), 2016-2026 where the API allows (IEX free tier limits history; SIP via paid feed gives full span). Reuse scripts/download_data.py / sample_quotes_fullsession.py patterns. Out-of-regime span = 2016-2026 (must include 2018-Q4, 2020-COVID, 2022-bear, 2025-26).\n\nCONSTRUCTION (port lastminute/continuation_ev.py + entry_timing.py to alpca/backtest/continuation_ev.py): (1) Define a session \"window\" = each trading day per symbol. (2) Read the \"early leader\" at a fixed offset (e.g., first 30 or 60 min) as signed relative-to-index strength (the equity analog of |early_up-0.5|>=0.60: require the symbol's early move to exceed a threshold z vs its own ATR AND vs SPY's early move so it's not just market beta). (3) On a clear early leader, ENTER at the live ask (quotes, not mid) with an OCO bracket: target=entry+k_t*ATR, stop=entry-k_s*ATR, simulated TICK-BY-TICK on the minute bars with NO lookahead (stop checked on bar low, target on bar high, intrabar tie -> assume stop fills first = conservative), force-exit at the last bar (sell-late). (4) q = continuation probability calibrated ON TRAIN ONLY (P[target hit before stop | early-leader bucket], walk-forward), target/stop multipliers also fit on train. (5) EV gate: only take windows where EV = q*(target-entry) - (1-q)*(entry-stop) - 2*cost > 0; report realized EV + break-even q vs realized q.\n\nCONTROLS (the project's full rail; a candidate is \"validated\" ONLY if it clears fresh-symbol AND out-of-regime): (a) vs-B&H + vs hold-to-close: bracket must beat both buying-at-open-holding-to-close AND a no-signal random-entry placebo. (b) BETA-DECOMP: regress strategy daily PnL on SPY return; the early-leader is mechanically high-beta, so report alpha after hedging out index \u2014 kill if alpha~0 (this is the most likely outcome, mirrors Case 18/51). (c) MOMENTUM-vs-REVERSAL control (Case 17 pattern): run the same bracket on the early LAGGARD; if continuation is real, leader>>laggard. (d) SHUFFLE PLACEBO: shuffle the early-leader labels across symbols within each day; real edge must beat the placebo distribution (caught Case 19). (e) OOS chronological 70/30 split + per-year regime stability (positive in majority of 2016-2026 years). (f) FRESH-SYMBOL HOLDOUT: fit q + bracket params on a TRAIN subset of symbols, freeze, evaluate on a DISJOINT held-out symbol set \u2014 this killed EAR-PEAD/accruals/value-mom and is the canonical generalization test. (g) COST SWEEP {0,1,2,5}bps/leg crossing the REAL quoted spread on entry+stop+target+force-exit (binding test; turnover ~1-2 round-trips/day/name; the bracket's stop-out always crosses the spread at the worst tick \u2014 model fill at quoted ask/bid + 1.2s slippage, not mid). (h) DSR with n_trials reflecting the full search breadth (offset x threshold x target-mult x stop-mult x universe ~ deflate hard). (i) SURVIVORSHIP: universe is selection-based (liquid names today) -> rebuild on a point-in-time / representative-PIT universe incl. delisted names (reuse build_representative_pit.py) so the early-leader isn't a survivor-of-a-rally artifact.\n\nDELIVERABLE: scripts/test_continuation_ev.py emitting data/continuation_ev_results.json with the table {offset, threshold, gross Sharpe, net@2bps, beta-hedged alpha, leader-vs-laggard, shuffle-placebo gap, OOS, per-year, fresh-holdout, DSR, break-even-q vs realized-q}. Verdict gate = REJECT unless net>0 after cost AND beta-hedged alpha>0 AND fresh-holdout>0 AND out-of-regime majority-positive."
+    },
+    {
+      "name": "Sentiment-Driven Position Adjustment (MACD + sentiment)",
+      "path": "strategies/Sentiment Analysis.md",
+      "their_verdict": "",
+      "signal_rule": "Buy if sentiment score > 0.05 AND MACD bullish; sell if sentiment < -0.05 AND MACD bearish; adjust position based on sentiment volatility",
+      "data_needs": [
+        "real-time sentiment scores",
+        "MACD indicator",
+        "sentiment volatility measure"
+      ],
+      "plausibility": 0.12,
+      "tractable_now": true,
+      "predicted_kill": "Cost-wall + beta double-bind. The MACD leg is already proven beta (Case 3, no alpha), so the sentiment overlay must carry the whole edge \u2014 but the double-gate (sentiment flip AND MACD flip) churns the position, and any gross signal dies at realistic ~2-3bps next-open cost (the exact pattern that killed overnight-reversal Case 17: real gross Sharpe -> negative net). Secondary kill if it somehow survives cost: the fresh-symbol holdout (sentiment thresholds fit on 2022-26 mega-caps won't generalize to disjoint names), the same test that killed EAR-PEAD and SI-tilt. Net expectation: REJECT.",
+      "test_plan": "DATA. Sentiment leg: AlphaVantage NEWS_SENTIMENT (only fetchable sentiment source; harvester already exists at scripts/harvest_news.py; key in .env). CONFIRMED LIVE: free tier 25 req/day (currently rate-limited even on one call), and archive begins ~2022-04 \u2014 NOT 2016. So the requested out-of-regime 2016-2026 window is IMPOSSIBLE for the sentiment leg; usable window is ~2022-04..2026-06 (~4yr, 3 regimes: 2022 bear / 2023-24 bull / 2025-26). Alpaca's own news API is ~8d deep (already \u274c Case 13). Price/MACD leg: 10.5yr SIP daily bars (MACD already implemented, alpca/strategies/momentum.py:107, name='macd').\n\nCONSTRUCTION. (1) Harvest per-symbol daily sentiment: for a sector-diverse 20-30 liquid US ticker/ETF universe, page NEWS_SENTIMENT monthly over 2022-04..2026; budget ~60 days at 25/day (shared w/ the daily AV earnings job) \u2014 pre-fetch in background. Build daily series: avg overall_sentiment_score weighted by per-ticker relevance_score, plus rolling 20d sentiment-vol. (2) Signal per the rule: target_long if sentiment_z>+0.05 AND MACD(12/26/9) hist>0; exit/short if sentiment<-0.05 AND MACD hist<0; scale position inversely to sentiment-vol (half-Kelly cap). CRITICAL no-lookahead: a day's sentiment finalizes at article publish UTC; act only on the NEXT session open (T+1) so no same-day publish leaks. (3) Run via the existing harness evaluate() (alpca/backtest/evaluation.py:286) which already does vs-B&H + beta/alpha + OOS-split + Sharpe-significance + 4-seg regime-stability + deflated_sharpe_ratio().\n\nCONTROLS. vs-B&H (must beat risk-adjusted, not just track SPY). Beta-decomp: regress strategy returns on SPY \u2014 the kill check, since MACD/momentum family is already verdict'd BETA (Case 3) so isolate whether SENTIMENT adds alpha beyond beta+MACD (ablation: sentiment-only, MACD-only, combined). OOS: 70/30 chrono split within 2022-26. Out-of-regime: best available = the 3 sub-regimes inside 2022-26 (full 2016-2026 NOT possible \u2014 flag explicitly). Cost: charge ~2-3bps/side at realistic ~1.2s next-open fills, top-of-book only; report net Sharpe and turnover (sentiment+MACD double-gate flips churn position). DSR: deflate for #thresholds/params tried (>=30 trials). Shuffle-placebo: shuffle sentiment dates vs price \u2014 net edge must vanish. Fresh-symbol holdout: fit thresholds on TRAIN symbols, evaluate on DISJOINT held-out symbols (the test that killed EAR-PEAD and SI-tilt). Survivorship: universe selection from a point-in-time liquid list incl. delisted names, not today's survivors."
+    },
+    {
+      "name": "Floor/Ceiling Regime Discovery",
+      "path": "strategies/Short-Selling.md",
+      "their_verdict": "",
+      "signal_rule": "Identify price floor/ceiling bands using volatility measures. Enter long when price near calculated floor in bullish regime; enter short near ceiling in bearish regime. Exit when price breaches regime boundary or volatility measure signals regime shift",
+      "data_needs": [
+        "Daily OHLCV",
+        "Volatility measure (ATR or stddev)",
+        "Regime classifier (e.g., HMM on volatility)"
+      ],
+      "plausibility": 0.12,
+      "tractable_now": true,
+      "predicted_kill": "vs-Buy-and-Hold / beta decomposition. This is single-asset, regime-conditioned, volatility-band mean-reversion \u2014 the exact family the platform already exhaustively rejected as risk-reduced BETA not alpha (Case 2: rsi-mr Sharpe 1.18, z-score, supertrend \u2014 all statistically significant and stable, NONE beat buy-and-hold on return, none beat B&H out-of-sample). In a 2016-2026 SIP bull regime, a long-biased band-bounce strategy harvests dampened market exposure; beta_alpha() will show beta>0 carrying the return and alpha~0. The secondary kill is the regime classifier's degrees of freedom (HMM state count + ATR/stddev band multiples + regime-shift exit threshold = a large implicit n_trials): in-sample Sharpe inflates, then collapses on out-of-regime 2016-2020 (2018 vol-spike, 2020 COVID) and DSR/Bonferroni deflation, mirroring PCA stat-arb (IS 0.99 -> OOS -1.18) and the formulaic-alpha zoo (0/21 past Bonferroni). The short-near-ceiling-in-bear leg additionally faces the adverse-selection borrow wall on single names.",
+      "test_plan": "DATA: Reuse the 10.5yr SIP daily cache (2016-2026, adjustment=\"all\"), same source as scripts/download_data.py (--feed sip serves full history to 2016) and scripts/test_pairs_out_of_regime.py. Universe: a TUNE set of ~15 liquid large-caps + SPY/QQQ already cached (data/cache_conf/*_1day_bars.jsonl: SPY,AAPL,MSFT,GOOGL,IVV,RSP,TLT,IEF,...), plus a DISJOINT HOLDOUT set of ~15 fresh SIP-fetchable tickers (different sectors, e.g. healthcare/energy/industrial mid-large caps) for the out-of-universe test.\n\nCONSTRUCTION: Implement strategy as a registry strategy (alpca/strategies/, registered in registry.py so backtest_cached.py / runner_backtest.py drive it through the SAME no-look-ahead LiveRunner used everywhere \u2014 bar-i signal fills at bar i+1 open). (1) Volatility measure: ATR(n) and rolling stddev(n). (2) Floor/ceiling bands: rolling-mean +/- k*vol (k, n are params). (3) Regime classifier: 2-state HMM on the volatility series (or a simpler vol-tercile / trend-sign regime as a robustness variant \u2014 log BOTH to expose classifier sensitivity). (4) Rules per spec: long near floor in bull regime, short near ceiling in bear regime, exit on band breach or regime shift. Cost = AlpacaFeeModel + FillModel half-spread/impact, ~2 bps/leg (execution/fills.py, fees.py), require_regular_hours on; short legs additionally charged adverse-selection borrow (saturating base->special ramp + no-locate ceiling, per the Case 14/21 model).\n\nCONTROLS (apply ALL, in funnel order from docs/VERIFICATION_CONTROLS.md):\n1. vs Buy-and-Hold (PRIMARY gate): per-symbol total return AND Sharpe must beat B&H of the same symbol. Directional single-asset edges must clear this or they are beta. (Case 2 precedent.)\n2. Beta decomposition: alpca/backtest/evaluation.py beta_alpha(strat_eq, SPY_eq, ppy=252) \u2014 report alpha and beta; veto if return is explained by beta (alpha t-stat n.s.).\n3. OOS / walk-forward: select (k, n, HMM states, exit threshold) on in-sample first 60%, report ONLY on held-out 40%. Veto if OOS Sharpe << IS (PCA precedent IS0.99->OOS-1.18).\n4. Out-of-regime 2016-2020: tune on 2021-2026, run the FROZEN config on 2016-2020 (2018 vol-spike + 2020 COVID \u2014 regimes never seen). Reuse the exact pattern in scripts/test_pairs_out_of_regime.py (per-calendar-year Sharpe). Require positive in a MAJORITY of years; veto on lucky-window concentration (Case 21: 1yr 2.34 -> 6yr net -0.42).\n5. Fresh-symbol holdout (out-of-universe): freeze params on TUNE set, report on the DISJOINT 15-symbol set. Veto if holdout Sharpe goes negative (EAR-PEAD +0.68->-0.52, accruals +0.30->-0.47).\n6. Cost wall: report gross vs net at 0/2 bps; charge adverse-selection borrow on the short leg. (Mean-reversion band-bounce is moderate-turnover; check it survives 2 bps.)\n7. DSR / Bonferroni: audit_overfit.py deflated_sharpe_ratio with n_trials = honest count of (k x n x state-count x exit-threshold x regime-classifier-variant) combos searched; require DSR > 0.90. Pair an ADVOCATE pass (best honest config) with the SKEPTIC pass (deflated).\n8. Shuffle placebo: re-run the full pipeline with the regime labels / band-touch events shuffled in time; veto if real ~= shuffled (the regime structure is fitted noise \u2014 lead-lag precedent).\n9. Survivorship PIT: since the universe is selected, rebuild it point-in-time with delisted names restored (build_representative_pit.py) and re-run; veto if the edge depends on excluding losers (Case 43 flipped value->momentum).\n10. Forward paper-track: only if it clears 1-9, arm a tiny live Alpaca PAPER sleeve via the launchd pattern for independent forward resolution.\n\nDECISION: \"validated\" requires beat-B&H AND positive alpha AND OOS~IS AND positive-majority out-of-regime AND positive fresh-symbol holdout AND net-positive after cost/borrow AND DSR>0.90 AND real>>shuffle AND survives PIT. Predicted outcome: dies at gate 1/2 (beta) or gates 3-5 (OOS/out-of-regime/fresh-symbol)."
+    },
+    {
+      "name": "Anti-Martingale Strategy (Kelly-like Sizing)",
+      "path": "books/algorithmic-trading-systems-and-strategies-a-new-a-de56.md",
+      "their_verdict": "",
+      "signal_rule": "Increase position size after wins, decrease after losses. Preserve capital better than Martingale.",
+      "data_needs": [
+        "trade history",
+        "win/loss sequence",
+        "win rate"
+      ],
+      "plausibility": 0.12,
+      "tractable_now": true,
+      "test_plan": "WHAT THIS IS: A position-SIZING overlay, not an alpha. The KB notes flag it (\"Sizing framework, not an alpha signal... implementable if paired with a base strategy\"). So the honest validation question is NOT \"does anti-martingale make money\" (it can't generate edge from nothing) but \"does win-streak-responsive (anti-martingale) sizing beat the disciplined sizing baselines (fixed-fractional, vol-target, half-Kelly) on a fixed base signal, after costs and out-of-regime?\" The repo already half-answers this: Case 9 (A-S inventory-skew sizing, docs/EDGE_CASE_STUDIES.md:159) rejected a continuous-sizing overlay because it \"beats neither buy-and-hold nor the naive baseline\"; and the deployed combiner already has the *correct* sizing (alpca/backtest/combine.py:83 half_kelly_leverage \u2014 Kelly off realized Sharpe/vol, not off recent win/loss streak). VERIFICATION_CONTROLS.md:61 states the governing law: \"Profit/day = edge \u00d7 sizing, NOT trade frequency.\" Anti-martingale is a streak-chasing distortion of Kelly, so the prior is it underperforms proper Kelly.\n\nDATA: 10.5yr SIP daily bars for a liquid base universe already fetchable (SPY/QQQ + the ~195-symbol cached universe at /Volumes/My Passport/AlpcaData/cache). No new data feeds needed \u2014 this is sizing, not signal.\n\nCONSTRUCTION (sizing-overlay shootout on a FIXED base signal, so any difference is attributable to sizing alone):\n1. Pick base signals already in the repo whose trades have a clear win/loss sequence: (a) rsi-mr on SPY (the deployed beta sleeve), (b) donchian-adx (deployed live), (c) the cointegrated-pairs basket (alpca/backtest/pairs.py). Hold the entry/exit RULE constant across all sizing variants.\n2. Sizing variants applied to the SAME trade stream: (i) FIXED fractional (1x, control), (ii) VOL-TARGET (size = target_vol/realized_vol), (iii) HALF-KELLY off realized Sharpe (combine.half_kelly_leverage \u2014 the incumbent), (iv) ANTI-MARTINGALE: size_t = base \u00d7 f(streak), e.g. multiply by 1.5 after a win up to a cap, reset/halve after a loss (grid the up-multiplier, cap, and lookback), (v) MARTINGALE (the strict-loser control, to confirm the test can distinguish).\n3. Use the existing engine + evaluation.py (sharpe_of:31, max_drawdown_of:53, deflated_sharpe_ratio:151, evaluate:286). Run via a new scripts/test_anti_martingale.py mirroring scripts/test_combine.py.\n\nCONTROLS (all mandatory, all already in toolkit):\n- vs-B&H: anti-martingale-sized base must beat buy-and-hold of the same asset on Sharpe AND total return (Case 9's exact killer).\n- vs-BASELINE-SIZING (the real test): must beat fixed-fractional AND vol-target AND half-Kelly on the SAME signal. If it only beats fixed but loses to vol-target/Kelly, it is rejected (it's just leverage-on-a-winning-period).\n- beta-decomp: regress sized returns on SPY; confirm anti-martingale isn't just dialing up beta during bull runs (it structurally will \u2014 that's the trap).\n- OOS: select streak-multiplier/cap on IS (2016-2021), report on OOS (2022-2026). Streak-sizing params are notorious for IS overfit.\n- out-of-regime 2016-2026 SIP: per-year Sharpe; anti-martingale must be positive in >=4/6 years (the multi-regime test that killed Case 21 SI-tilt).\n- cost: 2bps/leg minimum; CRITICAL \u2014 anti-martingale INCREASES turnover/notional after wins (sizing up = larger fills = more spread + more market impact at 1.2s top-of-book), so cost scales with the up-multiplier. Report net at 2/5/10 bps.\n- DSR: deflated_sharpe_ratio with n_trials = full sizing-grid count (multiplier \u00d7 cap \u00d7 lookback), so the streak-param search is penalized; require DSR > 0.90.\n- survivorship: not selection-based per se, but the win/loss SEQUENCE is path-dependent, so add a BLOCK-BOOTSTRAP / trade-order-shuffle PLACEBO (the repo's shuffle-placebo control): if anti-martingale's edge over fixed-fractional survives reshuffling the trade order, the \"edge\" is just leverage timing artifact, not real streak-persistence \u2014 that kills it. Also a streak-autocorrelation test on the base signal's per-trade PnL: anti-martingale only helps if wins genuinely cluster (positive serial correlation in trade outcomes); test ACF of per-trade returns \u2014 if ~0, there is no streak structure to exploit.\n\nDECISION RULE: SHIP only if anti-martingale beats half-Kelly AND vol-target net of scaled costs, stays positive 4/6 OOS years, DSR>0.90, survives trade-order-shuffle, AND base-signal trade PnL shows significant positive serial correlation. Otherwise REJECT as a path-dependent leverage distortion (expected outcome, mirroring Case 9)."
+    },
+    {
+      "name": "Machine Learning & AI Trading",
+      "path": "strategies/Reinforcement Learning Neural Nets.md",
+      "their_verdict": "",
+      "signal_rule": "Train supervised ML models on historical OHLCV + features to predict next-period returns or price direction. Generate trading signals from model probability output (e.g., long if P(up)>0.55, short if P(down)>0.55, hold otherwise)",
+      "data_needs": [
+        "Historical OHLCV (10.5yr available)",
+        "Derived features (technical, fundamental, sentiment)",
+        "Target labels (next-day return direction)"
+      ],
+      "plausibility": 0.1,
+      "tractable_now": true,
+      "predicted_kill": "Fresh-symbol (out-of-universe) holdout. An ML model trained on a cross-section of features will, like every prior case, fit the SELECTION universe rather than the market. The platform has already run the two closest analogs and both died here: (1) Case 36 \u2014 the published formulaic-alpha zoo (Alpha101/158/GTJA191, 21 de-collinearized family reps = exactly the feature set ML would learn on) scored best DSR 0.596 vs a 0.90 gate, 0/21 cleared Bonferroni, and the strongest in-sample/OOS factors INVERTED sign on never-seen symbols (gap_reversal OOS +1.29 -> fresh -0.16; intraday +1.01 -> fresh -0.77). (2) Case 58 \u2014 meta-labeling (a secondary supervised classifier on the deployed pairs basket) had out-of-sample AUC 0.379 (below 0.5, anti-predictive, below its own shuffle placebo); its only good number was a count-reduction artifact. An ML model is a NONLINEAR combiner of those same features over those same symbols, so it has strictly more capacity to overfit and the same out-of-universe failure mode. Secondary kills if it somehow clears fresh-symbol: the cost wall (any directional/cross-sectional ML edge with daily reshuffling pays ~2bps/leg at its turnover, and the high-turnover bucket has been wiped every time \u2014 Cases 17/19/20), and beta-decomposition (a long-biased P(up)>0.55 long-only book is just dampened market beta and never beats buy-and-hold +245%/5yr, Case 2).",
+      "test_plan": "DATA (all already cached/fetchable, no new vendor): 10.5yr SIP daily OHLCV via alpca/data fetcher into data/cache; the SAME main large-cap universe (~194 syms) used by test_alpha101_libs.py PLUS the existing DISJOINT 30-sym fresh-symbol holdout cache (cache_fresh) that has never touched selection. Optional feature sources already wired: AV news-sentiment (harvest_news.py), EDGAR fundamentals (download_fundamentals_edgar.py), FINRA SI (download_short_interest_finra.py), Form-4 insider (build_insider_signal.py). Add sklearn/lightgbm to requirements (currently absent).\n\nCONSTRUCTION: Feature matrix = the de-collinearized Alpha101/158/GTJA191 family reps already in alpca/backtest/alpha101.py (rank-reversal, price-volume corr, decay-momentum, K-bar microstructure, returns-vol) + optional fundamental/sentiment/SI/insider columns, all built no-lookahead (feature known as of close t). Label = sign/decile of cross-sectional next-day return t->t+1. Models, ascending capacity: (a) L2-logistic, (b) random forest, (c) gradient-boosted trees (LightGBM). Signal rule per the strategy: long if P(up)>0.55, short if P(down)>0.55, else flat \u2014 built BOTH as a dollar-neutral cross-sectional L/S (top vs bottom probability decile, the honest market-neutral form) AND a long-only variant (to expose beta). Engine: reuse backtest_factor (strict 1-bar lag: trade on signal[t-1], earn ret[t], no same-bar close fill).\n\nCONTROLS (reuse existing machinery, pass the result dict to alpca.ai.strategy_gate.falsification_gate which already encodes the bar):\n1. vs Buy-and-hold + beta-decomp (regress book returns on SPY) \u2014 the long-only variant must be screened out as beta; only a near-zero-beta L/S can count as alpha (Case 2).\n2. OOS: SELECT-IS, REPORT-OOS via a 70/30 forward split AND a walk-forward (train 252 / test 63, roll) so model decay is exposed; CV must be PURGED + EMBARGOED (5-day embargo, AFML) \u2014 non-purged CV is the classic ML lookahead leak.\n3. Out-of-regime: per-year Sharpe over 2016-2026 SIP, require positive in a majority (>=60%) of years (the multi-regime test that killed SI-tilt 2.34 -> -0.42, Case 21).\n4. Out-of-universe: the DECISIVE bar \u2014 refit/threshold on the main universe, REPORT on the disjoint 30-sym fresh-symbol cache. Watch for sign inversion (the Case 36 signature).\n5. Cost: gross AND net at 2bps/leg at the model's realized turnover; for any short leg apply the adverse-selection borrow ramp (base->special + no-locate ceiling) from the toolkit.\n6. DSR / Bonferroni: n_trials = (#models x #thresholds x #feature-sets) searched; require DSR>=0.90 and explicit Bonferroni PSR>=1-0.05/K. This is the multiple-comparisons rail that an ML grid search blows past silently.\n7. Survivorship: rebuild the universe point-in-time (Alpaca inactive-assets + SIP, delisting_aware_walkforward) so the model can't be trained only on surviving winners \u2014 mandatory because feature-selected ML is selection-based (Cases 43/46).\n8. Shuffle placebo: refit on shuffled next-day-return labels; the real out-of-universe Sharpe and the model AUC must beat the shuffle distribution, else the learned structure is fitted noise (Case 19, and exactly how Case 58 meta-labeling was unmasked: AUC 0.379 < placebo 0.46).\n9. If any survivor: a forward Alpaca-paper shadow track (com.alpca.forwardtrack pattern) for independent live resolution.\n\nVERDICT GATE (a survivor must clear ALL): beta~0 AND beats B&H-equivalent / is genuinely market-neutral; fresh-symbol holdout Sharpe > 0.2 with NO sign inversion; net-of-cost (and net-of-adverse-borrow on shorts) positive; positive in >=60% of years 2016-2026; survives survivorship PIT; out-of-sample model AUC > 0.55 AND beats shuffle placebo; DSR>=0.90 AND passes Bonferroni. New scripts mirror scripts/test_alpha101_libs.py + scripts/test_meta_labeling.py; output to data/ml_directional_results.json.\n\nNOTE on prior art: this is not a new mechanism for this repo. The ML feature set (Case 36) and a secondary ML model (Case 58) have both already been run through this exact bar and rejected. An ML model is a nonlinear combiner of the same already-debunked features over the same symbols, so the strong Bayesian prior is rejection; the value is rejecting it cheaply and explicitly so it is never re-litigated. Bank it as a documented case study regardless of outcome."
+    },
+    {
+      "name": "Fair-Value Paper Bot + AI Regime Layer",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/lastminute-maker.md",
+      "their_verdict": "SURVIVED/DEBUNKED (mixed)",
+      "signal_rule": "Edge = p_up \u2212 token_price > threshold net of cost; apply regime classifier (logged, not live-traded)",
+      "data_needs": [
+        "fair-value model output",
+        "regime regime classification",
+        "live token price",
+        "historical calibration"
+      ],
+      "plausibility": 0.08,
+      "tractable_now": true,
+      "predicted_kill": "Fresh-symbol holdout + cost wall. The strategy's ONLY surviving residual is favorite-longshot/cheap-side underpricing \u2014 retail overpays for \"longshot\" payoffs, so you fade the longshot / buy the favorite. The faithful, directly-fetchable equity analog (MAX-effect / lottery-stock = long-low-MAX, short-high-MAX) is ALREADY implemented (alpca/backtest/factor.py:max_return_signal) and ALREADY run through this repo's full gauntlet on TWO universes. It is a clean REJECT every way: large-cap max_lottery Sharpe -0.83, OOS -1.61, fresh-holdout -0.12, positive only 1/6 years, 2bps-cost Sharpe -0.83, DSR 0.004; mid-cap max_lottery -0.61 / OOS -1.34 / fresh -0.56 / DSR 0.012; companion idio_vol same story (DSR 0.003). The Polymarket residual works because binary tokens have a CAPPED $1 payoff held to resolution (true favorite-longshot odds-bias structure); equities have unbounded upside and no resolution clock, so the lottery premium does not transfer \u2014 it fails the fresh-symbol holdout exactly as it did before. Net of the documented cost wall this is dead-on-arrival.",
+      "test_plan": "FAITHFUL MAPPING. The KB strategy's linear FV-vs-price is DEAD per its own README; the only surviving residual is cheap-side favorite-longshot underpricing (buy ~0.39 tokens, win ~47%, +15%/$1 OOS). No L2/options/prediction-market on Alpaca, so the faithful directional analog is the lottery-stock / MAX-effect anomaly (Bali-Cakici-Whitelaw): the crowd overpays for high-skew \"longshot\" stocks (high recent MAX daily return / high idiosyncratic vol) which then underperform => LONG low-MAX favorites, SHORT high-MAX longshots, dollar-neutral. This is the equity isomorph of fading the longshot.\n\nDATA: 195-symbol main universe of 10.5yr SIP daily bars already cached (/Volumes/My Passport/AlpcaData/cache, *_1day_bars.jsonl); disjoint fresh-symbol universe in cache_fresh; EDGAR fundamentals + SPY benchmark present. All Alpaca-SIP-fetchable, all already on disk.\n\nCONSTRUCTION: reuse alpca/backtest/factor.py::backtest_factor with max_return_signal(21) (MAX) and idiosyncratic_vol_signal(SPY,120) (IVOL), monthly cross-sectional rank, long bottom / short top quintile, dollar-neutral, turnover-cost charged. To honor the strategy's ONE-SIDED, NON-LINEAR cheap-side nature (the residual is buy-the-underpriced-longshot, not a symmetric L/S), also run a long-only-low-MAX variant and a non-linear decile-curve test (does realized fwd return per MAX-decile bow the way favorite-longshot predicts?), since a plain L/S decile may wash out a one-sided edge.\n\nCONTROLS (all built into scripts/test_factors.py):\n- vs B&H + beta-decomp: backtest/evaluation.py beta_alpha/IR vs SPY (is it alpha or just a low-beta tilt?).\n- OOS: oos_sharpe (held-out tail of 2016-2026).\n- out-of-regime: per_year Sharpe 2021-2026 (need >=60% positive years); extend split to cover 2016-2020 SIP for full 10.5yr regime coverage.\n- cost: cost_2bps_sharpe (the documented Alpaca taker cost wall).\n- DSR: deflated_sharpe_ratio with n_trials~45 (bar 0.9), correcting for the ~34+ strategies already tried.\n- fresh-symbol holdout: re-fit on cache_fresh disjoint universe (bar >0.2) \u2014 the test that has killed every overfit edge here.\n- survivorship: selection-based, so re-run including delisted names via build_representative_pit.py / representative_pit_delisted.json to confirm the lottery premium is not survivorship-inflated.\nRun: python scripts/test_factors.py --cache ... --cache-fresh ... --n-trials 45. Advocate check (anti-false-negative): also test the non-linear cheap-side decile curve and long-only-low-MAX before declaring dead, in case the symmetric L/S masks a one-sided residual.\n\nVERDICT GATE: ship only if it clears B&H risk-adjusted + significant + regime-stable + OOS + fresh-symbol holdout + cost wall + DSR>0.9 \u2014 i.e. the repo's \"out-of-universe AND out-of-regime\" bar.\n\nRelevant files: /Users/isaiahdupree/Documents/Software/Alpca/alpca/backtest/factor.py (max_return_signal, idiosyncratic_vol_signal, backtest_factor), /Users/isaiahdupree/Documents/Software/Alpca/scripts/test_factors.py (driver with all controls), /Users/isaiahdupree/Documents/Software/Alpca/alpca/backtest/evaluation.py (DSR/PSR/beta-alpha/segment-Sharpe), /Users/isaiahdupree/Documents/Software/Alpca/data/factors_results.json + data/midcap_factors_results.json (PRIOR REJECTS of this exact factor)."
+    },
+    {
+      "name": "DARP (Dive at a Record Price)",
+      "path": "strategies/Short-Selling.md",
+      "their_verdict": "",
+      "signal_rule": "Enter short on detection of extraordinary valuations (unsustainable multiples, fundamental deterioration); exit when thesis loses confidence or fundamental strength signs emerge",
+      "data_needs": [
+        "P/E multiples",
+        "Price-to-book",
+        "Price-to-sales",
+        "Fundamental quality metrics",
+        "Valuation anomalies"
+      ],
+      "plausibility": 0.08,
+      "tractable_now": true,
+      "predicted_kill": "Adverse-selection borrow on the short leg, compounded by survivorship/short-squeeze on \"record-price\" names. The standalone short leg of every valuation/record-price signal already tested on this platform is a loser at zero cost (value with delisted: Sharpe 0.04 -> -0.45; high-52w \"near-high\" short: -0.58 to -0.66; PEAD short leg -0.47), and the names you most want to short (richest multiples / fresh all-time highs in well-capitalized momentum darlings) are precisely the ones whose borrow goes special/no-locate and that keep grinding higher (short squeeze). The model.adverse_borrow stress (base->special->no_locate ramp keyed to richness/momentum) plus delisting-aware PIT and a fresh-symbol holdout will collapse any in-sample short-leg edge below the DSR 0.90 bar, exactly as it killed Cases 14, 21, and value.",
+      "test_plan": "DATA (all on disk / Alpaca-SIP fetchable): 10.5yr SIP daily bars (cache); EDGAR PIT fundamentals keyed off `filed` (filing date, NOT fy_end) already cached at /Volumes/My Passport/AlpcaData/fundamentals_edgar{,_fresh,_midcap,_midcap_delisted} with NetIncomeLoss, Assets, StockholdersEquity (book), Revenues \u2014 so P/E, P/B, P/S are constructible PIT. AV news-sentiment for catalyst overlay (optional). The _midcap_delisted fundamentals + cache_midcap_pit_delisted bars give a delisting-aware PIT universe (304 survivors + 75 delistings) \u2014 required to avoid survivorship inflation.\n\nSIGNAL CONSTRUCTION: DARP = short the cross-sectional richest decile by a composite z(P/E)+z(P/B)+z(P/S) AND/OR names at a new N-month price high (the \"record price\" leg \u2014 reuse alpca/backtest/high_52w.py backtest_high_52w with reverse=False, which IS the DARP near-high short). Two variants: (A) pure record-price short (high_52w near-high, hold 10/20/60/120, already partly run); (B) valuation-rich short with fundamental-deterioration filter (rising accruals / falling revenue YoY). Multiples lag fundamentals by the `filed` date \u2014 no lookahead. Judge market-neutral: pair the rich-short decile against either (i) a cheap-long decile (full value L/S, reuses test_midcap_value machinery) or (ii) a SPY/index hedge (cheap GC short, the EAR-PEAD fix) to isolate whether any edge is short-leg alpha vs long beta.\n\nCONTROLS (the bar = clears out-of-universe + out-of-regime, per platform standard):\n1. vs Buy-and-Hold: SPY B&H Sharpe + total return; a short book that doesn't beat its own dollar-neutral Sharpe is rejected.\n2. Beta-decomposition: regress daily returns on SPY; report alpha and beta. A \"short rich\" book that is just negative beta (dampened market exposure, like BAB Case 38/56) = reject_beta.\n3. Short-leg-in-isolation: report the rich-short decile Sharpe ALONE at zero cost. Prior art says this is the killer \u2014 if it is <0 standalone (as value/high-52w/PEAD shorts all were), the combo is carried by the long/beta leg and DARP is not a real edge.\n4. OOS split (70/30 chronological) + per-calendar-year regime stability 2016-2026 SIP; require positive in >=5/6 years (value failed: negative 2026, mixed elsewhere).\n5. Survivorship: run survivor-only vs survivor+delisted using the _midcap_delisted PIT caches (reuse test_survivorship_value.py pattern). DARP is short, so delisted value-traps that went to zero would HELP the short \u2014 but the dangerous symmetric case is squeezed shorts that delisted via acquisition/buyout at a premium; the with-delisted run must include both. Report sharpe_delta.\n6. Cost + adverse-selection borrow: cost sweep 0/1/2/5 bps on turnover, THEN the decisive stress \u2014 alpca/backtest/pead.py adverse_borrow model on the short leg ({base 0.01, special 0.30, sat, no_locate}), with the ramp keyed to richness/momentum (richest/highest-flying names get special->no_locate). This is the same wall that collapsed PEAD DSR 0.92->0.58 and SI-tilt 0.92->-0.31.\n7. DSR with honest n_trials (count every multiple/hold/decile config tried, ~40+) and sharpe-variance across trials; bar DSR > 0.90.\n8. Fresh-symbol holdout: fit decile thresholds on a disjoint TRAIN symbol set, evaluate on a held-out disjoint symbol set (md5-parity split, reuse _gauntlet_pairs_midcap_disjoint pattern). This caught EAR-PEAD and is the final gate.\n9. Short-squeeze placebo: cross-check the rich-short names against FINRA short-interest / days-to-cover (download_short_interest_finra.py) \u2014 flag and stress the high-DTC subset where squeezes concentrate.\n\nVerdict logic: PASS only if the short leg has standalone positive Sharpe AND survives adverse_borrow at full breadth AND clears DSR>0.90 + OOS>0.3 + >=5/6 positive years + fresh-symbol holdout. Given prior identical kills, expected outcome is REJECT at control 3 or 6.\n\nREUSE / EFFORT: ~80% reuses existing code \u2014 high_52w.py (variant A is essentially already coded/run), test_midcap_value.py + survivorship_value.py (variant B + survivorship), pead.py adverse_borrow (the borrow stress), the disjoint-gauntlet (fresh holdout). New code is small: a valuation-z compositor over the cached EDGAR PIT facts and a richness-keyed adverse_borrow ramp. 1-2 sessions. Relevant files: /Users/isaiahdupree/Documents/Software/Alpca/scripts/test_high_52w.py, /scripts/test_midcap_value.py, /scripts/test_survivorship_value.py, /scripts/download_fundamentals_edgar.py, /scripts/download_short_interest_finra.py, /alpca/backtest/high_52w.py, /alpca/backtest/pead.py (adverse_borrow), /alpca/backtest/pairs.py (delisting_aware_walkforward), /data/high_52w_results.json, /data/survivorship_value.json, /data/midcap_value_results.json."
+    },
+    {
+      "name": "Neural Networks in Trading (LSTM)",
+      "path": "strategies/Reinforcement Learning Neural Nets.md",
+      "their_verdict": "",
+      "signal_rule": "Train LSTM sequence model on rolling windows of past N-day returns/prices to predict next-day price direction or return. Generate trade signals from LSTM output probability (e.g., long if P(up)>threshold)",
+      "data_needs": [
+        "Daily OHLCV",
+        "Price sequences (lookback window, e.g., 20-60 days)",
+        "Target: next-day return direction or magnitude"
+      ],
+      "plausibility": 0.08,
+      "tractable_now": true,
+      "predicted_kill": "Fresh-symbol holdout + DSR/Bonferroni deflation (out-of-universe generalization). The LSTM will post a strong in-sample/CV directional accuracy and Sharpe, but it is a high-capacity learner searched over a huge hyperparameter space (window length, layers, units, threshold, retrain cadence) \u2014 the exact multiple-comparisons + learned-structure failure mode that killed Case 36 (the Alpha101/158/GTJA191 zoo: 0/21 past Bonferroni, in-sample/OOS winners INVERTED on fresh symbols). The model fits the price-history idiosyncrasy of the training tickers; on a disjoint symbol set and out-of-regime years (2022 bear) directional accuracy collapses to ~50% and net-of-cost daily-rebalance Sharpe goes negative. The shuffle-placebo (train LSTM on time-shuffled / sign-shuffled next-day labels) will likely match the \"real\" result, confirming fitted noise. Secondary kill if the above somehow survives: the daily long/short rebalance turnover meets the ~2bps/leg cost wall (Cases 17/19/20) and the short leg meets adverse-selection borrow (Cases 14/21).",
+      "test_plan": "DATA (all Alpaca-SIP-fetchable, no new data class needed):\n- scripts/download_data.py --timeframe 1day --years 10 on a fixed, point-in-time universe. TRAIN universe = ~40 liquid large-caps + sector ETFs; HOLDOUT universe = a DISJOINT ~20 symbols never touched in any tuning (mirror scripts/test_ear_pead_holdout.py). Use scripts/build_representative_pit.py to include delisted/bankrupt names so selection is survivorship-safe.\n- Features: rolling N-day (sweep 20/40/60) log-return sequences only (price-only first pass), z-scored using ONLY the trailing in-window stats (no full-sample normalization \u2014 that is the #1 LSTM leakage trap the strategy note flags). Target: next-day return sign / magnitude.\n\nCONSTRUCTION (torch 2.9.1 + sklearn 1.8.0 confirmed installed):\n- LSTM (1-2 layers, 16-64 units) -> P(up); signal long if P>thr, short if P<1-thr; daily rebalance, dollar-neutral cross-sectionally so the result is alpha not beta.\n- Strictly causal pipeline: at each rebalance date t, the model may use ONLY data <= t-1. WALK-FORWARD retraining (e.g. annual refit on expanding/rolling window), report ONLY on the forward out-of-sample slice \u2014 never a single random CV split (random shuffling of time-series rows is the canonical LSTM backtest-leakage bug).\n\nCONTROLS (run via existing alpca/backtest/evaluation.py which already computes all of these):\n1. vs Buy-and-Hold + BETA DECOMP \u2014 regress strategy returns on SPY; require alpha>0 and IR>0, not just positive return (Case 2). Cross-sectional dollar-neutral form removes the beta confound directly.\n2. OOS / WALK-FORWARD \u2014 only forward slices count (Case 10).\n3. OUT-OF-REGIME \u2014 per-calendar-year Sharpe 2016-2026 on 10.5yr SIP; require positive in a MAJORITY of years incl. 2022 bear (Case 21 killed a 2.34 1yr artifact this way).\n4. OUT-OF-UNIVERSE \u2014 fresh-symbol holdout: select EVERY hyperparameter on TRAIN universe, report on the disjoint HOLDOUT universe with ZERO re-tuning (the control that killed Cases 18/23/35).\n5. SHUFFLE PLACEBO \u2014 retrain the identical pipeline on time-shuffled / sign-shuffled labels; if real Sharpe ~= shuffle Sharpe, it is fitted noise (Case 19). Mandatory for any learned-structure model.\n6. DSR / BONFERRONI \u2014 deflated_sharpe_ratio() with n_trials = HONEST count of every architecture+hyperparameter+threshold combination tried (will be hundreds; the project's true search breadth must not be undercounted). Gate DSR>0.95 and a Bonferroni-corrected PSR, exactly as Case 36.\n7. COST \u2014 charge ~2bps/leg spread+impact at the daily-rebalance turnover; charge adverse-selection saturating-ramp borrow on the short leg (Cases 14/17/21). Report NET.\n8. SURVIVORSHIP \u2014 PIT universe with delisted names restored (Case 43); confirm the edge is not an artifact of training only on today's survivors.\n9. FORWARD PAPER-TRACK \u2014 only if it clears 1-8: deploy ~1-share dollar-neutral on Alpaca paper (run_live_session.py pattern) for independent resolution.\n\nPASS BAR (non-negotiable, per docs/VERIFICATION_CONTROLS.md): clears out-of-universe AND out-of-regime, NET of costs, not a survivorship artifact, real >> shuffle, and DSR survives the honest trial count. In-sample CV accuracy and a high in-sample Sharpe count for NOTHING."
+    },
+    {
+      "name": "Model-Based Statistical Directional Trading",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/strategies/Quantitative Trading.md",
+      "their_verdict": "",
+      "signal_rule": "Generate entry/exit signals from statistical and mathematical models; exact rule depends on model choice (e.g., regression, time-series, ML)",
+      "data_needs": [
+        "historical price data",
+        "volatility",
+        "correlations",
+        "any fundamentals depending on model"
+      ],
+      "plausibility": 0.08,
+      "tractable_now": true,
+      "predicted_kill": "Beta-decomposition + fresh-symbol/out-of-regime holdout. Every concrete instantiation of this framework collapses onto an already-rejected Alpca case: single-asset regression/time-series trend = beta (Cases 1-2, never beat B&H); cross-sectional momentum = beta (Case 3); pairs cointegration = the ONE validated edge, and its state-space refinement (ADF+Kalman) made it WORSE (Case 5, 0.43 -> -0.26); ML-on-signals (meta-labeling, Lopez de Prado) = Case 58 OOS AUC 0.379 (anti-predictive, below its shuffle placebo); the 'model zoo' (Alpha101/158/GTJA191) = Case 56 (best DSR 0.596, winners INVERT out-of-universe); 176 harvested model strategies = Case 62 (all beta/weak). The single untested instantiation is a pure supervised ML direction-predictor (classifier on engineered features, NOT a filter). The dominant kill is that any flexible learner trained on liquid US equities will (a) learn the market beta factor and score 'well' only because it is long-biased in an up-regime, and (b) what residual nonlinear structure it finds is universe-/regime-specific and inverts on the fresh-symbol + out-of-2016-2020-regime holdout (the bar that has now caught ~7 fake-but-strong edges). Secondary kill if it survives beta-decomp: a shuffled-label placebo matches its OOS AUC, proving zero learned skill (same null that killed Case 58).",
+      "test_plan": "FRAMING: This KB entry is explicitly a 'framework strategy, not implementable as-stated.' Its three named concrete forms (single-asset trend, cross-sectional momentum, pairs cointegration) are ALL already adjudicated in Alpca (Cases 1-3, 5; pairs is the deployed edge). The ML form (meta-labeling filter) is rejected (Case 58). So the ONLY non-redundant test is the one untested instantiation: a SUPERVISED ML DIRECTION-PREDICTOR (a learner that emits the directional signal itself, not one that filters an existing signal as Case 58 did). Goal = close the framework class definitively, expecting REJECT.\n\nDATA (all Alpaca-SIP-fetchable, already cached or trivially fetchable): 10.5yr SIP daily bars on a liquid US universe (the existing 195-name large-cap PIT set + S&P400 mid-caps, both already cached with delistings via Alpaca inactive-assets API for survivorship honesty). Features per (symbol, day), all PIT/no-lookahead via trailing windows: returns at 1/5/21/63/126/252d, realized vol, RSI/z-score, 52w-position, dollar-volume, FINRA short-interest (cached), EDGAR fundamentals (cached: asset-growth, ROA, gross-profit, issuance), AV news-sentiment (cached harvest), SEC Form-4 insider net-buy (build_insider_signal.py exists). Label = sign of next-1d (and robustness: next-5d) excess-over-SPY return (excess so we are not just relabeling beta).\n\nCONSTRUCTION: Train a gradient-boosted classifier (and a linear/logistic baseline to detect overfit-by-capacity) to predict P(up) cross-sectionally each day; trade top-decile long / bottom-decile short, dollar-neutral and beta-neutralized to SPY, daily rebalance, low turnover decile construction. Reuse alpca/backtest/evaluation.py evaluate() (vs-B&H, beta/alpha decomp, Sharpe t-stat significance, 4-segment regime stability, OOS split) plus the banked controls.\n\nCONTROLS (the full gauntlet, in this order; cheapest kills first):\n1. vs Buy-and-Hold + BETA-DECOMP (evaluate(): alpha, beta, info-ratio). PRIMARY GATE: if alpha~0 / beta high, it is the market factor in disguise -> REJECT. (kills the single-asset/momentum forms historically.)\n2. SHUFFLE-LABEL PLACEBO: retrain on permuted labels; if real OOS AUC <= shuffled AUC, zero learned skill -> REJECT (the exact control that killed Case 58 at AUC 0.379).\n3. PURGED + EMBARGOED walk-forward CV (Lopez de Prado) to kill leakage from overlapping label windows; refit-trade-roll, train=252/test~42-63 cadence (the validated Alpca cadence; note cadence is knife-edge per Case 54).\n4. OUT-OF-SAMPLE chronological split (oos_frac=0.3) + per-year REGIME STABILITY (positive in majority of years incl. 2022 bear).\n5. OUT-OF-REGIME holdout: train on 2021-2026, test FROZEN on never-seen 2016-2020 SIP (10.5yr cache; this is Case 60's bar that validated pairs).\n6. FRESH-SYMBOL (out-of-universe) holdout: train params/model on a 40-name train set, evaluate frozen on a DISJOINT 19-name holdout. This is THE decisive bar (caught ~7 fake-but-strong edges incl. EAR-PEAD, the formulaic-alpha zoo which INVERTED out-of-universe). Require holdout OOS > 0.\n7. SURVIVORSHIP / point-in-time: run on the full outcome-blind PIT universe (delistings included via delisting_aware_walkforward) so the learner is not secretly trained to buy soon-to-be-acquired names (this control flipped value->momentum in Case 43 and killed insider-buying in Case 63).\n8. COST: 2bps taker + realistic decile-rebalance turnover; report NET. Short leg under ADVERSE-SELECTION borrow (saturating base->special + no-locate ceiling) since an ML short leg concentrates in hard-to-borrow names (the wall that killed PEAD x4 and SI-tilt).\n9. DEFLATED SHARPE accounting for the number of model/feature/hyperparameter trials (high trial count = high DSR hurdle; the zoo got DSR 0.596 / 0/21 Bonferroni).\nA candidate is 'validated' ONLY if it clears beta-decomp AND shuffle-placebo AND fresh-symbol AND out-of-regime simultaneously, with NET-of-cost positive and DSR meaningful.\n\nDELIVERABLE: a single gated script (pattern of scripts/test_ear_pead_holdout.py / leg_gate.py) printing the EvalReport plus the 9 controls, landing a new EDGE_CASE_STUDIES.md case. Expected outcome: REJECT at gate 1 (beta) or gate 2/6 (shuffle/fresh-symbol). If by surprise it clears all, it must additionally LIFT the deployed pairs basket (rho-corr gate + partial-year combiner check, per Cases 47/57 'real-but-too-weak / dilutes') before any size.\n\nTRACTABLE NOW: yes -- 100% Alpaca-SIP-fetchable US tickers/ETFs, all feature data already cached, harness + every control already banked. No new venue capability, no paid data, no Finnhub key needed."
+    },
+    {
+      "name": "Day Trading (Intraday Volatility Capture)",
+      "path": "books/high-performance-algorithmic-trading-using-ai-stra-525f.md",
+      "their_verdict": "",
+      "signal_rule": "Time-sensitive trades based on market volatility and technical indicators; enter/exit intraday positions before market close.",
+      "data_needs": [
+        "intraday bars (5m-1h)",
+        "volatility measures"
+      ],
+      "plausibility": 0.06,
+      "tractable_now": true,
+      "predicted_kill": "Either (a) the cost wall: any genuine intraday vol-capture signal on Alpaca's price-taker venue (~1.2s fills, IEX/SIP top-of-book, no rebates, ~1-3bps spread+impact per leg) turns positive-gross into negative-net because vol-capture requires high turnover \u2014 this is the exact Case 17 (overnight-reversal, gross 0.93/DSR 0.90 -> -0.41 at 2bps, ~2x/day) and Case 3/4 (1-min cross-sectional momentum = -98.9%) result; OR (b) for a low-turnover daily/4h RSI/MACD version, the beta verdict: it reproduces Case 2 exactly \u2014 rsi-mr Sharpe 1.18 looks great but is risk-reduced BETA (never beats buy-and-hold on return, fails OOS-beats-B&H). The \"alpha source unclear, likely beta overlay\" note is correct. There is no third outcome; the only open question is which wall it hits first.",
+      "test_plan": "VERDICT UP FRONT: this is a near-duplicate of already-settled Alpca cases, not a new edge. It still maps cleanly to the existing harness, so the test is cheap to run as a confirmation, but the prior is overwhelmingly negative.\n\nWHAT IS ALREADY SETTLED (do not re-litigate from scratch):\n- Case 2 (docs/EDGE_CASE_STUDIES.md:104) \u2014 whole 34-strategy registry (RSI-MR, MACD/EMA-momentum, supertrend, donchian-ADX, ensemble) on SPY daily through evaluate(). GENUINE market-beaters = NONE. rsi-mr Sharpe 1.18 > market 0.86 but never beats buy-and-hold on RETURN and fails OOS. Verdict: risk-reduced BETA. This IS the deployable live swing job, traded honestly as beta.\n- Case 17 (overnight->intraday reversal) \u2014 REAL gross intraday anomaly (Sharpe 0.93, DSR 0.90) that goes to -0.41 at 2bps due to ~2x/day turnover. Canonical cost-wall.\n- Case 3/4 \u2014 cross-sectional momentum at 1-min frequency = -98.9% (26k rebalances x leg cost). Intraday/HF does NOT escape the cost wall.\n- Intraday strategies ALREADY EXIST and are wired: alpca/strategies/intraday.py (VWAPReclaim, SessionMomentum, session-anchored daily reset), plus breakout.py/mean_reversion.py/momentum.py in the registry.\n\nDATA: alpca/data/bars.py fetch_alpaca_bars() supports 1min/5min/15min/1hour/1day, adjustment=all, raw for fill parity. CAVEAT: 10.5yr deep history is only clean at 1day; intraday (esp. 1-5min) is shallow/sparse on IEX free feed (note the 15-min delay safety in bars.py) \u2014 so a true out-of-regime 2016-2026 intraday test is NOT possible at fine granularity. Honest framing: test the 4h/daily RSI+MACD+ATR-vol version on full 10.5yr SIP daily (out-of-regime achievable), and the genuine intraday version only on the shallow recent intraday window (cannot prove regime stability there).\n\nCONSTRUCTION (re-use, do not rebuild):\n1. Universe: liquid SIP-fetchable tickers/ETFs \u2014 SPY, QQQ, IWM + ~20 large caps (the existing 195-symbol universe). 2. Signal: the registry's RSI-MR, MACD/EMA-momentum, ATR/vol-scaled sizing, VWAPReclaim, SessionMomentum \u2014 run via scripts/truth_table.py and run_leg_gate.py. 3. Run through alpca/backtest/evaluation.py evaluate(): it already returns return/Sharpe/Sortino/Calmar/maxDD/exposure, the B&H benchmark, beta/alpha/IR vs B&H, Sharpe t-stat + p-value, segment_sharpes (regime stability), IS-vs-OOS split (oos_frac=0.3), and a verdict that REQUIRES beats-B&H + significant + stable + OOS-beats-B&H.\n\nCONTROLS (all already in the harness or prior toolkit):\n- vs-B&H: built into evaluate() (oos_beats_bh is a hard gate). This is the killer for the daily version.\n- beta-decomp: beta_alpha() \u2014 expect beta near 1, alpha near 0 (the Case 2 result). Run UNLEVERED dollar-neutral to strip beta; if Sharpe collapses, it was beta.\n- OOS: evaluate() oos_frac split.\n- out-of-regime: run segment_sharpes across 2016-2026 SIP DAILY (achievable for 4h/daily; NOT for fine intraday \u2014 state this limit honestly).\n- cost: pass a fill_model to evaluate() at 1bps/2bps/5bps per leg and measure turnover (trades/day). For any intraday/vol-capture variant expect the Case 17 collapse; report net Sharpe at 2bps as the decisive number.\n- DSR: deflated_sharpe_ratio(equity, n_trials, sharpe_variance) with n_trials = the number of indicator/param configs swept (RSI period, MACD fast/slow, ATR window, thresholds) \u2014 this penalizes the multiple-testing that makes day-trading backtests look good. Gate 0.90+ (Case 56 showed the Alpha101/158/191 zoo maxes at DSR 0.596 here).\n- survivorship: universe is point-in-time-ish liquid names; if any selection/ranking step is added, use the existing fresh-symbol holdout (TRAIN subset vs disjoint HOLDOUT symbols) \u2014 the control that killed EAR-PEAD and SI-tilt. Pair skeptic (shuffle-placebo on bar order) with advocate (sweep params honestly, report best AFTER Bonferroni/DSR).\n\nDECISIVE NUMBERS TO REPORT: (1) net Sharpe at 2bps/leg with trades/day; (2) alpha vs B&H after beta strip; (3) OOS-beats-B&H boolean; (4) DSR with n_trials = full param-sweep count. If gross>0 but net<0 -> cost wall (Case 17). If net>0 but doesn't beat B&H on return and beta~1 -> beta (Case 2). Both are REJECT.\n\nEFFORT: ~1 day, mostly re-running existing scripts (truth_table.py, run_leg_gate.py) with a fill_model and DSR n_trials set. Low marginal value given the settled prior \u2014 run only as a fast confirmation, not as a fresh hunt."
+    },
+    {
+      "name": "Council v2 \u2014 5-Stage Gauntlet Pipeline",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/lastminute-copy-discovery.md",
+      "their_verdict": "DEBUNKED",
+      "signal_rule": "Rule decomposition \u2192 blind-parallel advocates \u2192 surface disagreement \u2192 synthesis. Automatic decompose \u2192 council batch over sub-rules \u2192 per-rule verdict",
+      "data_needs": [
+        "strategy rules",
+        "historical outcome data",
+        "sample size",
+        "holdout OOS"
+      ],
+      "plausibility": 0.05,
+      "tractable_now": true,
+      "predicted_kill": "It has no directional/market-neutral position to validate \u2014 it is a verdict ENGINE, not an edge. A meta-validation (does it beat the existing single-pass falsification_gate at classifying known-truth strategies?) will show the deterministic rail (fresh-symbol holdout + out-of-regime + cost + DSR) already does the discriminating work; the LLM advocate/skeptic council adds verbal framing, not new separating power. Its own authors already ran their corpus through it and got 0 edges (their verdict: DEBUNKED). It produces no incremental tradeable PnL on Alpaca \u2014 by construction it cannot be a strategy, so there is nothing for a B&H / beta-decomp / OOS PnL test to act on.",
+      "test_plan": "CRITICAL FRAMING: Council v2 is NOT a directional or market-neutral strategy \u2014 it is verification infrastructure (a 5-stage decompose -> blind-parallel-advocate -> surface-disagreement -> synthesize verdict engine). There is no signal_rule that emits an order, no direction, no holding period, so the requested controls (vs-B&H, beta-decomp, OOS-PnL, cost) have NOTHING to act on. The only honest Alpca validation is a META-validation of the classifier itself. Alpca already implements the directional twin of this exact thing in alpca/ai/strategy_gate.py (deterministic falsification_gate WITH veto: fresh_symbol_holdout>0.2, regime_robust>=60% of >=3 yrs, survives_cost@2bps>0.2, dsr>=0.9; plus Haiku advocate verdict; plus leg_gate diversification check) and the session toolkit (shuffle-placebo, multi-regime FINRA, fresh-symbol holdout, DSR/PSR).\\n\\nDATA: Reuse Alpca's 10.5yr SIP daily bars + already-adjudicated case corpus as the LABELED TRUTH SET \u2014 every case study in docs/EDGE_CASE_STUDIES.md already has a hard-won ground-truth label from out-of-universe + out-of-regime holdouts (POSITIVE: cointegrated-pairs basket OOS~0.5, rsi-mr beta-reducer; NEGATIVE/overfit: single-name surprise-PEAD borrow-wall, EAR-PEAD fresh-symbol-holdout collapse 0.68->-0.52, SI-tilt 1yr-Nasdaq DSR0.98 killed by multi-regime FINRA, overnight-reversal cost-wall, lead-lag shuffle-placebo fail, gap-reversion, TSMOM, PCA residual decay 0.99->-1.18). That gives ~20-30 real labeled strategies.\\n\\nCONSTRUCTION: (1) Build a held-out labeled bench: each strategy = its full test-battery dict (per_year sharpes, fresh_holdout_sharpe, cost_2bps_sharpe, dsr, top-K concentration, NW/HAC-adjusted t). Hand-label CONFIRMED vs FALSIFIED from the documented holdout verdicts. (2) ADD SYNTHETIC CONTROLS with KNOWN ground truth (this is the only way to get clean labels and beat survivorship): inject N planted-edge strategies (a real mean-reversion overlay on a cointegrated SIP pair where you KNOW the edge is real) and M pure-noise strategies (shuffled-label / random-entry on the same tickers, where you KNOW there is NO edge) \u2014 Alpca's shuffle-placebo machinery generates these. (3) Run BOTH the existing single-pass strategy_gate.gate() AND a faithful Council v2 port (decompose multi-rule strategies into sub-rules, run blind-parallel advocate/skeptic, surface disagreement) over the identical bench. (4) Score each as a CLASSIFIER: confusion matrix, precision/recall, and especially FALSE-POSITIVE RATE on the noise controls and FALSE-NEGATIVE RATE on the planted-edge controls.\\n\\nCONTROLS (re-cast for a classifier, not a PnL series):\\n- vs-baseline (the B&H analog): the baseline is the EXISTING single-pass falsification_gate. Council v2 only 'wins' if it strictly dominates it on the labeled bench (fewer false-positives at equal recall, or vice versa). This is the load-bearing control.\\n- beta-decomp analog: ablate the pipeline \u2014 does the LLM advocate/skeptic council add ANY separating power once the deterministic rail (holdout+regime+cost+DSR) is in place? Run rail-only vs rail+council. If rail-only matches rail+council on the truth set, the council is decorative (the 'beta' here = the deterministic checks; the council is the claimed 'alpha').\\n- OOS: split the labeled corpus chronologically \u2014 calibrate any council thresholds on cases adjudicated before 2024, test on cases after. No peeking at the post-2024 holdout labels.\\n- out-of-regime 2016-2026 SIP: the noise/planted synthetic controls must be generated across all regimes (2016-2026) so the classifier is judged on bull/bear/chop/high_vol-derived test batteries, not one window.\\n- cost: N/A as PnL, BUT the bench MUST include the cost-wall cases (overnight-reversal, the gross-0.93/net--0.41 mirage) \u2014 Council v2 must reject these for the RIGHT reason (the cost sub-rule), not by luck.\\n- DSR: the bench already carries dsr per strategy; the planted DSR0.98-but-overfit case (SI-tilt 1yr Nasdaq) is the single sharpest stress \u2014 Council v2 must FALSIFY it (only the multi-regime sub-rule catches it).\\n- survivorship/selection: this is the dominant bias here because the labeled set is selection-based (only strategies someone bothered to adjudicate). MITIGATION: the synthetic noise+planted controls are NOT selection-biased (generated, not survived) and carry the clean labels; treat the real case studies as a secondary, bias-acknowledged check only. Also apply Bonferroni/BH across the multi-rule decomposition (decomposing into K sub-rules is K extra comparisons \u2014 the pipeline must correct for its own multiplicity or it manufactures false CONFIRMs).\\n\\nGO BAR: Council v2 ships ONLY if, on the synthetic-control set with known ground truth, it strictly beats the existing single-pass gate (lower false-positive rate at >= equal recall) AND that lift survives the OOS chronological split. Anything less = adopt nothing new; keep the existing rail."
+    },
+    {
+      "name": "Binary Fair-Value Model (CEX-priced digital)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/hft-work.md",
+      "their_verdict": "SURVIVED/DEBUNKED (mixed)",
+      "signal_rule": "P(S_\u03c4>K) = \u03a6(...) from driftless GBM; vol-drag OFF; \u03bc=0; collapses to step at K as \u03c4\u21920",
+      "data_needs": [
+        "spot price",
+        "volatility",
+        "time-to-expiry",
+        "strike"
+      ],
+      "plausibility": 0.05,
+      "tractable_now": true,
+      "predicted_kill": "VENUE MISMATCH compounded by NO-MID. The model is a binary/digital pricer; Alpaca has no binary, options, or prediction-market instrument, so there is no {0,1} payoff to harvest and \u2014 fatally \u2014 no market mid to out-forecast, which was the entire edge claim (\"must beat the mid's Brier\"). On its native venue it was ALREADY demoted because the mid out-forecasts it. Forced onto equities as a directional forecaster, the driftless-GBM (\u03bc=0, vol-drag off) sign reduces to a pure level/trend tilt that beta-decomposition will show is dampened market beta with ~0 alpha (Case 2 family), and the daily near-ATM sign-flipping makes it die on the cost wall (Case 17 family). It is a sound calibration primitive, not a tradeable edge \u2014 exactly the KB's own \"safety cap, not alpha\" verdict, only worse here because the venue deletes the instrument and the baseline it was meant to beat.",
+      "test_plan": "GOAL: Falsify whether driftless-GBM binary fair value P(S_\u03c4>K)=\u03a6((ln(S/K))/(\u03c3\u221a\u03c4)) can be turned into a TRADEABLE directional edge on the Alpaca equity venue, given that on its native crypto-binary venue it was already DEMOTED (market mid beats its Brier; \"safety cap, not alpha\").\n\nWHY IT IS A SQUARE-PEG: This is a pricing primitive for a BINARY/DIGITAL contract that settles {0,1} at strike K. Alpaca has NO options, NO prediction markets, NO binary instrument, and NO option-implied/binary mid. So there is (a) nothing to price, (b) no mid to out-forecast (the whole edge claim was \"beat the mid's Brier\"), and (c) no {0,1} payoff to harvest. The only honest residue is to test the model as a probability FORECASTER and ask if its directional sign can be monetized as a vanilla long/flat or long/short equity bet.\n\nDATA: 10.5yr SIP daily bars (2016-2026) for SPY, QQQ, IWM, sector SPDRs (XLK/XLF/XLE/...), and ~100 large-cap single names (Alpaca-SIP-fetchable). \u03c3 = realized vol from a trailing window (test 20d/60d EWMA, sensitivity-checked); \u03c4 = horizon in trading-days/252; K = a grid of relative strikes {S*(1\u00b1x), x in 0,1,2,3%} and the canonical Up/Down case K=S_open. NO crypto (already exhaustively rejected per memory). NO lookahead: \u03c3 computed only from bars strictly before t; outcomes resolved from bars strictly after.\n\nCONSTRUCTION:\n1. Each day t, for each (symbol,horizon N in {1,5,10,21}d,strike K) compute p_hat=P(S_{t+N}>K) under driftless GBM (\u03bc=0, vol-drag off, ATM=0.5).\n2. Realized binary outcome y = 1[S_{t+N}>K].\n3. Two evaluation tracks:\n   (A) CALIBRATION track (model-soundness only): Brier(p_hat,y), reliability diagram, log-loss vs the ONLY available baselines on this venue \u2014 (i) climatology/base-rate, (ii) pure random-walk p=0.5 ATM, (iii) a fitted-isotonic recalibration of p_hat. This tests \"is the model calibrated,\" NOT \"does it have edge.\"\n   (B) TRADEABILITY track (the real question): convert sign(p_hat-0.5) and |p_hat-0.5| (confidence) into a long/flat (directional) and long/short (market-neutral, dollar-balanced cross-sectional) equity position; size by confidence (half-Kelly cap). Compute strategy returns.\n\nCONTROLS (full battery, mirroring docs/VERIFICATION_CONTROLS.md):\n- vs Buy-and-Hold: directional sleeve MUST beat SPY/QQQ B&H total return AND Sharpe; if it only dampens beta it is rejected (Case 2 precedent).\n- Beta decomposition: regress sleeve returns on SPY; report alpha, beta, alpha t-stat. A driftless-GBM long-tilt will almost certainly load beta\u22481 with ~0 alpha \u2014 that is the predicted failure.\n- OOS / walk-forward: pick \u03c3-window and confidence-threshold on 2016-2021, report ONLY on 2022-2026 held-out.\n- Out-of-regime: per-calendar-year Sharpe 2016..2026; must be positive in a majority of years (kills lucky-window artifacts, Case 21).\n- Out-of-universe (fresh-symbol holdout): tune on a train symbol set, report on a DISJOINT set (the control that killed EAR-PEAD/accruals; non-negotiable bar).\n- Cost: charge realistic spread+impact (use data/calibration.json fill model) on every rebalance; the binary sign flips daily near ATM so turnover is high \u2014 apply the same cost wall that killed overnight reversal (gross 0.93 -> -0.41 at 2bps, Case 17).\n- DSR / Bonferroni: deflate Sharpe for the strike\u00d7horizon\u00d7\u03c3-window\u00d7symbol grid searched (large multiple-comparison count).\n- Survivorship PIT: if any single-name selection is involved, rebuild universe with delisted names (Case 43) \u2014 though ETF-only version sidesteps this.\n- Brier-vs-mid (the native kill, recorded as N/A-on-venue): document that the original demotion reason \u2014 market mid out-forecasts the model \u2014 CANNOT even be reproduced on Alpaca because there is no binary mid; the venue removes the only thing the model was supposed to beat.\n- Forward paper-track: only if (B) somehow survives all above, run an independent Alpaca-paper directional sleeve.\n\nPASS BAR (must clear ALL): OOS + out-of-regime + out-of-universe Sharpe positive AND beats B&H AND alpha t-stat>2 after beta-decomp AND net-of-cost positive AND DSR>0.9. Predicted result: fails at beta-decomp and/or cost wall.\n\nEFFORT: ~1 day. Reuse existing harness \u2014 backtest_cached.py for bars, evaluation.py for vs-B&H/beta/OOS/DSR, the cost model in data/calibration.json, and the per-year/fresh-symbol holdout scaffolding already used by test_pead_gauntlet.py / test_pairs_out_of_regime.py. Net-new code is only the GBM p_hat computer + Brier/reliability (a single test_binary_fairvalue.py). NOTE: a 0/1-vol-drag GBM with \u03bc=0 reduces the directional sleeve to a near-pure trend/level tilt, so it largely re-tests the already-rejected single-asset momentum/beta family."
+    },
+    {
+      "name": "Order-Book Imbalance Signal",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/hft-work.md",
+      "their_verdict": "SURVIVED/DEBUNKED (mixed)",
+      "signal_rule": "Top-3 bid depth >> ask depth \u2192 detect buying pressure; \u22653\u00d7 skew entry signal",
+      "data_needs": [
+        "order book bid levels",
+        "order book ask levels",
+        "depth at each level"
+      ],
+      "plausibility": 0.05,
+      "tractable_now": false,
+      "predicted_kill": "TWO independent kills, either fatal. (1) DATA-MISSING (literal strategy): the signal requires top-3 L2 depth; Alpaca gives only L1 NBBO top-of-book (confirmed probe_alpaca.py / SYSTEM_MAP.md:131 \"no L2\"). There is no top-3 depth in the 10.5yr SIP feed or live quotes, so the as-specified strategy cannot be constructed, ever. (2) COST WALL (the salvageable L1-OFI reduction): this is the project's canonical failure mode. The directly analogous Case 17 (overnight->intraday reversal) was a REAL anomaly (gross Sharpe 0.93 / DSR 0.90, control-confirmed) that collapsed to -0.41 net at 2bps because of ~2x/day turnover \u2014 and the repo ALREADY built the L1OFI version. A top-of-book imbalance entry is high-turnover intraday; on a price-taker venue with ~1.2s fills, no L2, no maker rebates, spread+impact eats any micro-edge. Compounded by no multi-regime intraday quote history to even OOS-test it. Net edge ~0 or negative.",
+      "test_plan": "LITERAL STRATEGY IS NOT TESTABLE ON THIS VENUE: it needs top-3 (L2) bid/ask depth, and Alpaca provides only L1 NBBO top-of-book (single bid/ask + bid_size/ask_size). Confirmed in scripts/probe_alpaca.py (prints only `bid x bid_size, ask x ask_size`), alpca/data/bars.py, and docs/SYSTEM_MAP.md:131 (\"no L2\"). There is no level-2/3 depth in the 10.5yr SIP feed or live quotes. So the only thing one can validate is the ALREADY-BUILT L1 reduction (top-of-book imbalance), and re-running it is mostly redundant with existing work.\n\nDATA: Top-of-book NBBO is the substrate. Repo already caches dense tick quotes (scripts/sample_quotes_fullsession.py / sample_quotes_multiday.py) and 1-min quote-enriched bars for SPY/QQQ/AAPL, plus tools to fit deadbands. The literal \"top-3 depth at each level\" data need: UNAVAILABLE \u2014 drop it.\n\nCONSTRUCTION (the salvageable L1 version): use the existing alpca/strategies/order_flow.py L1OFI (Cont-Kukanov-Stoikov normalized OFI over a rolling window of top-of-book snapshots). The proposed \"bid_size >> ask_size >= 3x skew\" is the cruder static analog of L1OFI's signed flow; map \"skew >= 3x\" to the calibrated normOFI entry band (entry~0.19/exit~0.08 from scripts/analyze_ofi_bars.py), or test the static instantaneous size-ratio as a second variant. Cross-section: long the top-decile imbalance names, short the bottom decile (dollar-neutral) to strip beta, OR long/flat single-name. Run through the standard harness.\n\nCONTROLS (run all, the project's bar):\n- vs Buy-and-Hold: must beat B&H net (every single-asset price-only family has failed this; MN strips it).\n- beta-decomp: regress returns on SPY; require alpha after hedge (dollar-neutral construction handles most).\n- OOS split + out-of-regime: but NOTE the deep history is DAILY only (10.5yr SIP) \u2014 top-of-book imbalance is an INTRADAY signal, so out-of-regime 2016-2026 cannot be run at the signal's native frequency; only the few cached quote-days exist. This is itself a near-fatal limitation: no multi-regime intraday quote history.\n- COST SWEEP (THE decisive control): 0/1/2/5 bps per leg, exactly as Case 17. Top-of-book imbalance entries are high-turnover (multiple round-trips/day); Alpaca fills are ~1.2s with slippery opens, so 2bps is optimistic.\n- DSR-deflate for number of trials (window/entry/exit grid).\n- shuffle-placebo: re-run with quote-event order shuffled; real signal must beat placebo.\n- survivorship: universe is liquid large-caps already in cache (selection by liquidity, not return) \u2014 low survivorship risk but note it.\n\nTRACTABLE SUBSET: only the L1OFI top-of-book version on SPY/QQQ/AAPL over the handful of cached full-session quote-days. The literal top-3-depth strategy is not tractable at all."
+    },
+    {
+      "name": "TD3 Continuous Trading Position Adjustment",
+      "path": "strategies/Reinforcement Learning Neural Nets.md",
+      "their_verdict": "",
+      "signal_rule": "RL actor-critic (TD3) learns continuous action policy: Long (buy), Short (sell), Hold. Actions output position size (0.0-1.0 scale). Open position at SOD, close at EOD. Actor explores with noise; critic evaluates value function",
+      "data_needs": [
+        "Daily OHLCV",
+        "Reward signal (daily PnL or returns)",
+        "State space: price, returns, volatility, indicators",
+        "Action space: continuous position size"
+      ],
+      "plausibility": 0.05,
+      "tractable_now": true,
+      "predicted_kill": "Beta-decomposition + vs-buy-and-hold on the out-of-universe / out-of-regime holdout. A TD3 actor mapping (price, returns, vol, indicators) -> continuous position size on a single asset's daily bar is a learned SIZING OVERLAY on close-to-close beta. Its only profitable policy on a long-biased equity is \"stay long,\" which the harness scores as risk-reduced beta that NEVER beats buy-and-hold's total return (the Case-2 result that holds for every single-asset directional family). Any apparent alpha is the highest-capacity overfit the program has ever tested: with far more free parameters than the formulaic-alpha zoo (0/21 Bonferroni) or PCA stat-arb (IS 0.99 -> OOS -1.18), in-sample Sharpe will look great and then collapse on (a) the fresh-symbol holdout, (b) out-of-regime years (train pre-2022, the agent overfits the bull tape and dies in the 2022 bear), and (c) the shuffle-placebo (policy trained on shuffled returns scores ~the same). The daily flip turnover then eats whatever survives at ~2 bps/leg taker cost. Single most likely single kill: out-of-regime per-year Sharpe goes negative AND it fails vs-B&H \u2014 beta wearing a neural net.",
+      "test_plan": "DATA (all already on-venue, nothing new to fetch): ~210 cached SIP daily-bar symbols at /Volumes/My Passport/AlpcaData/cache/*_1day_bars.jsonl, ~10.5yr (2016-2026). Use AAPL/SPY-style liquid names plus a disjoint fresh-symbol set for the holdout. State = [normalized price, lagged returns (1/5/21d), realized vol (21d), RSI/ADX/MACD as in existing strategies]; action = continuous position in [-1,1] (short..long); reward = next-day position-weighted return minus per-trade cost. Open-SOD/close-EOD reduces to acting on daily close-to-close (the only return the daily bar exposes); model spread+impact on the daily rebalance.\n\nCONSTRUCTION: implement TD3 (actor + twin critics, target nets, delayed policy update, exploration noise) in numpy/torch as alpca/backtest/td3_sizing.py producing a daily position series -> equity curve, then feed that equity curve straight into alpca/backtest/evaluation.py (EvalReport already gives vs-B&H, beta/alpha, IR, t-stat/p, segment Sharpes, OOS split, DSR). Fix a-priori hyperparameters BEFORE seeing the test set; report mean +/- std over >=10 random seeds (RL variance is huge) -- a single lucky seed is the cardinal RL self-deception and must not be cherry-picked.\n\nCONTROLS (must clear the documented 'validated' bar):\n1. vs Buy-and-Hold: strat total return must exceed B&H total return, not just Sharpe (catches risk-reduced beta).\n2. Beta-decomposition (beta_alpha): regress equity on SPY; require alpha>0 with beta near 0 -- if profit is beta*market, reject.\n3. OOS / walk-forward: train agent on in-sample window, evaluate ONLY on held-out forward bars (evaluate(oos_frac=0.3)); expanding-window walk-forward retrain.\n4. Out-of-regime: train pre-2022, test on the 2022 bear + 2023-2026 separately; per-year Sharpe must be positive in a majority of years (kills bull-tape overfit).\n5. Out-of-universe / fresh-symbol holdout: select all hyperparameters on a train symbol set, report on a DISJOINT symbol set (the single most valuable control -- killed EAR-PEAD +0.68 -> -0.52).\n6. Shuffle placebo: retrain the identical TD3 pipeline on shuffled/blockwise-permuted returns; if real Sharpe ~= shuffled Sharpe, the policy learned fitted noise.\n7. Cost wall: charge realistic taker spread+impact (~2 bps/leg, escalate) on every daily position change; daily flips make this decisive.\n8. DSR / Bonferroni: deflate Sharpe by the true trial count (seeds x hyperparam grid x architectures searched) -- RL's effective search breadth is large.\n9. Survivorship: since the train/test universe is selection-based (today's liquid survivors), rerun on a point-in-time / delisted-inclusive name set to confirm the edge is not a survivor artifact.\n10. Forward paper-track: if (and only if) it somehow clears 1-9, deploy ~1 share on Alpaca paper for independent live resolution.\n\nPASS BAR (non-negotiable): beats B&H total return, positive net-of-cost alpha with low beta, OOS+walk-forward positive, positive in a majority of calendar years out-of-regime, beats its own shuffle placebo, survives DSR at honest trial count and the fresh-symbol holdout, and is not a survivorship artifact -- across seeds, not one lucky run."
+    },
+    {
+      "name": "Pivot Bands Scalping Strategy",
+      "path": "books/high-win-rate-day-trading-setups-high-win-rate-day-4f3b.md",
+      "their_verdict": "",
+      "signal_rule": "Long if ADX < 25, candles close at bottom green band, Williams %R > MA; exit at top red band or %R below MA",
+      "data_needs": [
+        "OHLC data",
+        "ADX",
+        "Williams %R",
+        "Pivot bands"
+      ],
+      "plausibility": 0.05,
+      "tractable_now": true,
+      "predicted_kill": "COST WALL (turnover x spread/impact). This is a per-candle intraday scalp: long when an in-chop candle (ADX<25) closes on the bottom band with Williams %R above its MA, exit at the top band. That fires multiple round-trips per day. Alpca already has the canonical precedent: Case 17 (overnight->intraday reversal, docs/EDGE_CASE_STUDIES.md:41) was a control-CONFIRMED REAL anomaly (gross Sharpe 0.93, DSR 0.90) that collapsed to -0.41 at 2bps/leg purely from ~2x/day turnover -- and 2bps is optimistic given measured ~1.2s Alpaca fills with slippery prints. A band-scalp turns the book over far MORE than 2x/day, so its breakeven cost is well below 1bp/leg; it will be negative at any realistic IEX/SIP top-of-book cost. Whatever gross edge a single-band-touch pivot scalp shows on SPY/QQQ will not survive the spread, and there are no maker rebates / no L2 to improve fills on this venue.",
+      "test_plan": "DATA (and its hard ceiling): The strategy is intraday by construction (candles closing on bands, %R vs MA, exit at opposite band => minute/5-min grain). Alpca's deep 10.5yr/195-symbol history is DAILY bars only -- useless for a scalp. Verified intraday store = ONLY 3 symbols with 1-min bars: /Volumes/My Passport/AlpcaData/cache/{SPY,QQQ,AAPL}_1min_bars.jsonl, ~291k bars each, spanning 750 trading days 2023-06-02 to 2026-06-01 (~3yr). So every test below is confined to SPY/QQQ/AAPL on 2023-2026 minute bars (resample to 1-min and 5-min candles; regular-hours only).\n\nCONSTRUCTION: New module alpca/backtest/pivot_bands.py. Pivot bands = classic floor-trader pivot from prior session's H/L/C (P, R1/R2/R3, S1/S2/S3) recomputed each session via on_session_start (pattern already in alpca/strategies/intraday.py); \"bottom green band\" = price touching S1/S2, \"top red band\" = R1/R2. ADX(14) via existing compute_adx (alpca/strategies/momentum.py:367). Williams %R(14) + its SMA computed in-module. Entry: ADX<25 AND candle closes at/below lower band AND %R > %R-MA -> long; exit at upper band OR %R < %R-MA. Add the symmetric short. NO LOOKAHEAD: pivots from PRIOR session, all indicators causal, entry on candle CLOSE filled at next bar open. Per-leg cost applied on every fill.\n\nCONTROLS (the full gauntlet, mirroring audit_overfit.py + Case 17):\n1. vs Buy&Hold: net equity must beat B&H of the same symbol over 2023-2026 (per docs/BASELINE.md the standing bar -- single-asset price strategies have all been beta, not alpha).\n2. Beta-decomp: beta_alpha() (evaluation.py:160) vs SPY -- a long-biased scalp on SPY/QQQ is almost pure beta; require alpha t-stat>0 after hedging.\n3. COST SWEEP (the decisive test): sharpe at 0 / 0.5 / 1 / 2 / 5 bps per leg. Report turnover/day and the breakeven cost. Realistic floor = >=2bps given ~1.2s Alpaca fills (REALISM.md). This is the gate the strategy will fail.\n4. OOS split: fit any params (band choice, ADX thr, %R window) on 2023-2024, test untouched 2025-2026.\n5. Out-of-regime: ATTEMPTED but BLOCKED -- no intraday before 2023, so no 2016-2022 / no vol-spike regime. Flag explicitly: cannot clear the out-of-regime bar that the memory says is now REQUIRED for \"validated\".\n6. DSR: deflated_sharpe_ratio() at honest trial count (every band/ADX/%R combo swept + the project's prior search breadth, n>=100) -- net DSR must stay >0.9.\n7. Survivorship/breadth: only 3 highly-correlated mega-liquid names; cannot demonstrate out-of-universe generalization (the exact test that killed EAR-PEAD Case 18). Treat 3-symbol agreement as one effective bet, not breadth.\n8. Shuffle placebo + momentum/mean-reversion sign control (Case 17/19 pattern): a real band-reversion edge must beat a returns-shuffled placebo and flip sign vs a same-turnover momentum control.\n\nDECISION RULE: ship ONLY if net Sharpe (>=2bps) > B&H, alpha t-stat>0, net DSR>0.9 OOS, beats shuffle placebo. Predicted: passes gross, dies at <=1bp like Case 17 -> REJECT, archive as another cost-wall case. Run: .venv/bin/python scripts/backtest_cached.py-style driver loading the 3 intraday files."
+    },
+    {
+      "name": "LSTM Neural Network Price Prediction",
+      "path": "books/neural-network-mastering-the-art-of-algorithmic-tr-c640.md",
+      "their_verdict": "",
+      "signal_rule": "Employ LSTM networks trained on historical price data; generate buy/sell signals based on next-period price predictions (if predicted_price > current_price, buy; else sell)",
+      "data_needs": [
+        "historical daily close",
+        "OHLCV data",
+        "feature engineering outputs"
+      ],
+      "plausibility": 0.05,
+      "tractable_now": true,
+      "predicted_kill": "Beta + fresh-symbol holdout. The \"if predicted_price > current then buy\" rule on a single liquid asset is, mechanically, a learned long-biased trend-follower. In a 10.5yr bull tape it will post a positive return and a decent Sharpe, but it will NOT beat buy-and-hold on return (it under-exposes), so beta_alpha will show beta~0.6-0.9 and alpha~0 \u2014 exactly Case 2 (rsi-mr/ema-momentum/supertrend all \"GENUINE-looking\" yet all just risk-reduced beta, none beat B&H OOS). The cross-sectional/L-S variant dies one rung later on the fresh-symbol + out-of-regime holdout, the same gate that has now killed ~7 candidates (factor zoo, Alpha101/158/GTJA191 zoo Case 56 best-DSR 0.596 with OOS winners INVERTING out-of-universe, EAR-PEAD x3). An LSTM with 50 units / 100 epochs / free feature engineering has a vastly larger overfitting surface than any of those, so train-set Sharpe will be high and disjoint-symbol/held-out-year Sharpe will be <=0. Single most likely kill: it is beta, not alpha \u2014 fails \"beats B&H OOS\" before the holdout even runs.",
+      "test_plan": "DATA (all Alpaca-SIP-fetchable, already in repo via scripts/download_data.py): 10.5yr SIP daily OHLCV. Two test surfaces. (A) Single-asset directional, the strategy as literally specified: SPY, plus 20-30 liquid large-caps + sector ETFs (XLK, XLF, XLE, ...). (B) Cross-sectional L-S variant (rank assets by predicted next-day return, long top decile / short bottom decile, dollar-neutral) on the same 80-symbol universe used by the pairs/factor work, to give it the only fair shot at being market-neutral alpha rather than beta.\n\nCONSTRUCTION: Features = price-only, no-lookahead, point-in-time: trailing log-returns (1,5,10,21d), realized vol, RSI, distance-to-MA, normalized by a rolling window whose stats are computed ONLY on data up to t (critical \u2014 scaler fit on full series is the classic lookahead bug). Target = next-day return sign/magnitude. Model = LSTM(50), lr=1e-3, 32 batch, early-stop on a validation fold (cap epochs, do NOT run full 100 to convergence on train). Walk-forward only: fit on a rolling train window (e.g. 756d), predict the next 63d held-out block, roll. NEVER a single static train/test split. Position: long if pred>0 (variant A) or top/bottom decile (variant B). Wrap the equity curve through the existing alpca/backtest/evaluation.py evaluate() so it gets the identical scoreboard as all 57 prior cases.\n\nCONTROLS (the repo's standard battery, must clear ALL):\n1. vs Buy-and-Hold \u2014 the primary gate. Must beat B&H on RETURN, not just Sharpe (Case 2 lesson: better-Sharpe-but-not-return = beta).\n2. Beta decomposition \u2014 beta_alpha() vs B&H; require alpha>0 with beta near 0. Trend-follower will show beta>0.5, alpha~0.\n3. OOS / walk-forward \u2014 already structural above; report IS vs OOS Sharpe, must not collapse.\n4. Out-of-regime (2016-2026 SIP) \u2014 segment_sharpes across 4 slices incl. 2018-Q4, 2020 crash, 2022 bear; require positive in a majority and specifically survive 2022 (every overfit candidate dies there).\n5. Out-of-universe / fresh-symbol holdout \u2014 THE decisive gate. Train architecture+features on symbol-set TRAIN; report on a DISJOINT symbol-set HOLDOUT. Edge must hold on names it never saw (Case 18/55/56 killer).\n6. Cost \u2014 re-run net of 2 bps/leg equity. Daily next-period repredicting = high turnover; apply the Case-17 cost-wall test (real anomalies died \u22120.41 at 2bps from ~2x/day turnover). Variant B's daily decile churn is especially exposed.\n7. DSR / Bonferroni \u2014 deflate for trials. Count every architecture/feature/hyperparam tried as a trial (n_trials large because NN search space is huge); require DSR>0.90 like Case 56's gate (zoo got 0.596).\n8. Shuffle placebo \u2014 re-fit on shuffled labels; if real Sharpe ~ shuffled Sharpe, the \"learning\" was fitted noise (Case 19 killer; an over-parameterized LSTM is the highest-risk candidate for this).\n9. Survivorship PIT \u2014 only if variant B uses any selection/screen; rebuild universe with delisted names (Case 43/46). Pure price-prediction on a fixed liquid set is not selection-based, so this is secondary for variant A.\n\nACCEPTANCE BAR (repo standard): \"validated\" = clears out-of-universe (fresh symbols) AND out-of-regime (held-out years), net of 2bps, DSR>0.90, beats B&H OOS, NOT explained by beta, NOT indistinguishable from shuffle. Predicted outcome: fails control 1 or 2 (beta) for variant A; passes IS then fails control 5 (fresh-symbol) and/or 6 (cost) for variant B.\n\nEFFORT: tractable now but heaviest of recent candidates \u2014 needs a NN dependency (tensorflow/keras or torch, not currently in requirements.txt; the harness is deliberately numpy-free) and walk-forward refit is compute-heavy. Recommend a 1-2 day spike: build the no-lookahead WF LSTM driver, run variant A on SPY + 20 names FIRST (cheap, will almost certainly show beta and can kill it before investing in variant B)."
+    }
+  ],
+  "structural_edges": [
+    {
+      "name": "Complete-Set Merge Maker",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/lastminute-maker.md",
+      "their_verdict": "SURVIVED/DEBUNKED (mixed)"
+    },
+    {
+      "name": "Reward-Farming Net Yield",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/lastminute-maker.md",
+      "their_verdict": "SURVIVED/DEBUNKED (mixed)"
+    },
+    {
+      "name": "Merge-Maker (binary pair maker)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/hft-work.md",
+      "their_verdict": "SURVIVED/DEBUNKED (mixed)"
+    },
+    {
+      "name": "Complement-Sum Arbitrage",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/hft-work.md",
+      "their_verdict": "SURVIVED/DEBUNKED (mixed)"
+    },
+    {
+      "name": "Forecast-Informed Reward-Maker (tail-managed rebate farming)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/weather-liquidation.md",
+      "their_verdict": "CONFIRMED/PnL"
+    },
+    {
+      "name": "Intra-Market Arbitrage / Dutch Book (weather buckets)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/weather-liquidation.md",
+      "their_verdict": "CONFIRMED/PnL"
+    },
+    {
+      "name": "Regime / Confidence Gate",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/weather-liquidation.md",
+      "their_verdict": "CONFIRMED/PnL"
+    },
+    {
+      "name": "Cross-Venue Station Basis Arb (Kalshi vs Polymarket)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/weather-liquidation.md",
+      "their_verdict": "CONFIRMED/PnL"
+    },
+    {
+      "name": "Sui / NAVI Keeper (on-chain liquidation harvesting)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/weather-liquidation.md",
+      "their_verdict": "CONFIRMED/PnL"
+    },
+    {
+      "name": "Morpho Blue / Base Keeper (on-chain liquidation via callback)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/weather-liquidation.md",
+      "their_verdict": "CONFIRMED/PnL"
+    },
+    {
+      "name": "Shared Profit Gate / Toxic-Collateral Abort (DeFi keepers)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/weather-liquidation.md",
+      "their_verdict": "CONFIRMED/PnL"
+    },
+    {
+      "name": "Kalshi Crypto Shares-Dataset Collector",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "their_verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "name": "Kalshi Recon / Fee + Lane Probe",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "their_verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "name": "RiskEngine (pre-trade order gate)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "their_verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "name": "RiskLimits (per-account thresholds)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "their_verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "name": "KillSwitch (file-backed hard stop)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "their_verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "name": "Arb Scanner (Dutch-book / complete-set arb)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "their_verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "name": "Fill-Risk Microstructure Model",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "their_verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "name": "Mirror Targets (copy winners' reward markets)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "their_verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "name": "Mirror Daemon (paper reward-farm)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "their_verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "name": "Mirror Realized (true adverse via maker markout)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "their_verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "name": "Strategy Registry (world model of tested strategies)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "their_verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "name": "AI Select (meta deploy-selector via Claude Haiku)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "their_verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "name": "Complete-set / Dutch-book arbitrage",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/README.md",
+      "their_verdict": "CONFIRMED/DEBUNKED/PnL"
+    },
+    {
+      "name": "Maker rebate / reward farming",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/README.md",
+      "their_verdict": "CONFIRMED/DEBUNKED/PnL"
+    },
+    {
+      "name": "Adverse-selection / toxic-flow defense (fill-risk model)",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/README.md",
+      "their_verdict": "CONFIRMED/DEBUNKED/PnL"
+    },
+    {
+      "name": "Avellaneda-Stoikov optimal market-making",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/README.md",
+      "their_verdict": "CONFIRMED/DEBUNKED/PnL"
+    },
+    {
+      "name": "Iron Condor",
+      "path": "strategies/Options Spreads & Structures.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Butterfly Spread",
+      "path": "strategies/Options Spreads & Structures.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Long Straddle",
+      "path": "strategies/Options Spreads & Structures.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Long Strangle",
+      "path": "strategies/Options Spreads & Structures.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Covered Call",
+      "path": "strategies/Options Spreads & Structures.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Protective Put",
+      "path": "strategies/Options Spreads & Structures.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Bull Call Spread",
+      "path": "strategies/Options Spreads & Structures.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Bear Put Spread",
+      "path": "strategies/Options Spreads & Structures.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Bid-Ask Spread Scalping",
+      "path": "strategies/Scalping.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "High-Volume Short-Holding Scalping",
+      "path": "strategies/Scalping.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "HFT Scalping (micro-spread capture)",
+      "path": "strategies/High-Frequency Trading.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Hide and Light Orders (visibility switching)",
+      "path": "strategies/High-Frequency Trading.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Electronic Liquidity Strategy (ELS) / Merge Maker",
+      "path": "strategies/High-Frequency Trading.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "VWAP Execution Algorithm",
+      "path": "strategies/VWAP TWAP Execution.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "TWAP Execution Algorithm",
+      "path": "strategies/VWAP TWAP Execution.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Bid-Ask Spread Market Making",
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/strategies/Market Making.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Index Fund Rebalancing",
+      "path": "books/algorithmic-essentials-trading-with-python-your-co-386f.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Beta Hedging",
+      "path": "books/python-for-algorithmic-trading-cookbook-recipes-fo-5a2f.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Covered Calls",
+      "path": "books/coding-black-scholes-mastering-algorithmic-options-4a6b.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Protective Puts",
+      "path": "books/coding-black-scholes-mastering-algorithmic-options-4a6b.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Iron Condor",
+      "path": "books/coding-black-scholes-mastering-algorithmic-options-4a6b.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Scalping",
+      "path": "books/high-performance-algorithmic-trading-using-ai-stra-525f.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "High-Frequency Trading (HFT)",
+      "path": "books/high-performance-algorithmic-trading-using-ai-stra-525f.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Market Making",
+      "path": "books/high-performance-algorithmic-trading-using-ai-stra-525f.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Iron Condor (Options Strategy)",
+      "path": "books/algo-s-unleashed-a-beginner-s-guide-to-conquering-1357.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Butterfly Spread (Options Strategy)",
+      "path": "books/algo-s-unleashed-a-beginner-s-guide-to-conquering-1357.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Straddle (Options Strategy)",
+      "path": "books/algo-s-unleashed-a-beginner-s-guide-to-conquering-1357.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Strangle (Options Strategy)",
+      "path": "books/algo-s-unleashed-a-beginner-s-guide-to-conquering-1357.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Covered Call (Options Strategy)",
+      "path": "books/algo-s-unleashed-a-beginner-s-guide-to-conquering-1357.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Protective Put (Options Strategy)",
+      "path": "books/algo-s-unleashed-a-beginner-s-guide-to-conquering-1357.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "High-Frequency Trading (HFT) - Arbitrage",
+      "path": "books/next-gen-algorithmic-trading-strategies-tools-and-4907.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "TWAP (Time-Weighted Average Price) Execution",
+      "path": "books/next-gen-algorithmic-trading-strategies-tools-and-4907.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "VWAP (Volume-Weighted Average Price) Execution",
+      "path": "books/next-gen-algorithmic-trading-strategies-tools-and-4907.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "High-Frequency Trading (HFT)",
+      "path": "books/neural-network-mastering-the-art-of-algorithmic-tr-c640.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Volume-Weighted Average Price (VWAP)",
+      "path": "books/super-stock-trading-pro-algorithmic-trading-with-p-1fd9.md",
+      "their_verdict": ""
+    },
+    {
+      "name": "Time-Weighted Average Price (TWAP)",
+      "path": "books/super-stock-trading-pro-algorithmic-trading-with-p-1fd9.md",
+      "their_verdict": ""
+    }
+  ],
+  "their_survivors": [
+    {
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/lastminute-maker.md",
+      "verdict": "SURVIVED/DEBUNKED (mixed)"
+    },
+    {
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/hft-work.md",
+      "verdict": "SURVIVED/DEBUNKED (mixed)"
+    },
+    {
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/weather-liquidation.md",
+      "verdict": "CONFIRMED/PnL"
+    },
+    {
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/kalshi-rails-walletfirst.md",
+      "verdict": "CONFIRMED-PAPER/PnL"
+    },
+    {
+      "path": "/Users/isaiahdupree/Documents/Software/Trading Knowledge/code-strategies/README.md",
+      "verdict": "CONFIRMED/DEBUNKED/PnL"
+    }
+  ]
+}
