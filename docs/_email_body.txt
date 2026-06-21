@@ -1,0 +1,46 @@
+Hi Brett,
+
+Sharing "Alpca" — a runnable Alpaca paper-trading system that's really an honest
+strategy-evaluation platform. The whole point is a rigorous harness that judges every
+strategy against buy-and-hold, for statistical significance, regime stability, and
+out-of-sample / walk-forward performance — built specifically to NOT fool itself with a
+pretty backtest.
+
+Code (public, MIT-style layout, 3,300+ offline tests):
+  https://github.com/IsaiahDupree/alpca
+
+Start here — it's built to be driven by an AI coding agent:
+  1. Clone it, then open the folder in Claude Code, Codex, Cursor, Windsurf, or any AI IDE.
+     The repo ships a CLAUDE.md (agent context) and TRADING_POLICY.md (the anti-overfit
+     stance the agent follows) that those tools auto-load.
+  2. Full setup + per-IDE connect steps are in the attached "Getting Started with AI" doc
+     (and docs/GETTING_STARTED_WITH_AI.md in the repo).
+  3. Everything runs offline + paper by default — no API keys needed to run the backtests,
+     the harness, or the tests.
+
+The honest results (this is the interesting part):
+  - Across 34 price-only strategies on 5 years of daily data, NONE beat buy-and-hold. The
+    good-looking ones are risk-reduced beta, not alpha.
+  - The only thing that survived out-of-sample + walk-forward + realistic costs is
+    MARKET-NEUTRAL: a cointegrated-pairs basket (in-sample Sharpe 1.78 -> honest
+    walk-forward ~0.54, -5% max drawdown).
+  - A 6-leg combiner runs at Sharpe ~0.99, ~9.7%/yr, with near-zero cross-leg correlation
+    (avg |corr| 0.038) — modest, real, uncorrelated to the market.
+  - Lots of candidates that looked great in-sample (EAR-PEAD, short-interest tilt, overnight
+    reversal) got KILLED by out-of-universe / out-of-regime holdouts. The case studies
+    document exactly how, so you can trust the survivors.
+
+Attached:
+  - STATE_OF_THE_PROGRAM.docx  — the one-page honest summary (read first)
+  - GETTING_STARTED_WITH_AI.docx — connect it to your AI IDE + 60-second orientation
+  - EDGE_CASE_STUDIES.docx     — every edge tested and why it passed/failed (57 case studies)
+  - strategy_landscape.png     — the overfit catch (in-sample vs out-of-sample)
+  - deployed_results.png       — what actually ships (per-year Sharpe + leg correlations)
+
+More docs (FINDINGS, SYSTEM_MAP, RESEARCH_CANDIDATES, AI_RESEARCH_LOOP, the discovery/HFT
+assessment) are in the repo's docs/ folder.
+
+Happy to walk you through any of it.
+
+Best,
+Isaiah
