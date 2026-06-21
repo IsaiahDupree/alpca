@@ -52,7 +52,7 @@ BUCKETS = {
     },
     "Survivorship / PIT artifact": {
         "color": PURPLE,
-        "cases": [43, 45, 53],
+        "cases": [43, 45, 53, 63],
         "note": "edge was an artifact of excluding delisted/bankrupt names",
     },
     "Signal failure / did not replicate": {

@@ -1629,3 +1629,36 @@ capital, and the bar for "validated" is now explicitly out-of-universe + out-of-
   (analyst-revision drift, index reconstitution, guidance drift, etc.) are next.
   (`scripts/validate_mined_overlays.py` → `data/mined_overlays_results.json`; catalog
   `data/research/harvest_catalog.json`.)
+
+## Case 63 — Insider buying (long-only), the standout mined candidate ❌ (the survivorship control kills it — exactly as the adversary predicted)
+
+- **Why this one mattered.** Of the 65 novel/feasible mined strategies, insider buying was the
+  best shot: **long-only → NO borrow wall** (the friction that killed PEAD, SI-tilt, and every
+  short-leg event edge), the most-cited insider anomaly, and a fundamentally different signal from
+  our price-based pairs. Built the data ourselves from the **free SEC bulk Form-4 datasets** (no AV
+  quota): `scripts/build_insider_signal.py` → **111,526 open-market-purchase aggregates, 2016-2026**,
+  keyed on FILING_DATE (no lookahead). Signal = names with net insider buys filed in the trailing 90
+  days; monthly rebalance; long-only equal-weight.
+- **Stage 1 — large-cap (195-name SIP), looked promising.** Insider-buy subset Sharpe **1.06** vs
+  universe-EW **1.04** vs SPY 0.89; **+1.4%/yr alpha vs universe-EW**, +9/11 years, fresh-symbol
+  holdout positive on both halves, **uncorrelated to the deployed pairs book (ρ +0.07)**. It *passed*
+  the first battery — the only mined edge to do so.
+- **Stage 2 — the skeptic checks (the decisive ones).** The first hint of trouble: the long-short
+  spread (insider-subset − universe-EW) had Sharpe only **0.375, t-stat 1.21** (below the t>2 bar),
+  and beat the **random-same-size-subset placebo** at the **94th percentile** — suggestive but short
+  of 95%. Thin, like value (Case 24).
+- **Stage 3 — the survivorship-aware universe kills it.** Re-ran on the **1,702-symbol
+  delisted-inclusive universe** (`cache_delisted_sip`, 708 with insider data) — 4.5× the breadth AND
+  survivorship-honest. The edge **inverts**: spread Sharpe **−0.61**, t **−1.36**, only +2/6 years,
+  and the random-subset placebo percentile collapses to **0.48 — statistically indistinguishable from
+  random selection.** The large-cap +1.4% was a **survivorship artifact**: once you include the
+  failed small-caps where insiders bought on the way to zero (a desperation/dilution signal, not a
+  bullish one), the apparent alpha vanishes. This is precisely the adversary's #1 objection, and the
+  same control (survivorship-PIT, Case 43) that flipped mid-cap value to momentum.
+- **Verdict.** ❌ **REJECT — survivorship artifact.** Insider buying carries no robust forward alpha
+  once delisted names are honestly included; on the survivorship-clean universe it is no better than
+  owning a random same-size slice. The long-only/no-borrow advantage is real but moot without an edge.
+  *This is the cleanest pipeline result yet:* a candidate that passed the in-universe battery, was
+  flagged thin by the placebo, and was definitively killed by the survivorship control — the full
+  machine working as designed. (`scripts/build_insider_signal.py`, `scripts/validate_insider_buying.py`,
+  `scripts/validate_insider_deep.py` → `data/insider_deep_results.json` + `data/insider_deep_delisted.json`.)

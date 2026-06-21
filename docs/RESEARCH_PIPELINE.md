@@ -92,7 +92,7 @@ intakes.
 | Option-expiration-week SPY | mined (calendar) | ❌ Case 62A — anomaly inverted (opex days +1.6 vs +7.6 bps/day); below 93% of random-week placebos |
 | Bond-ETF duration rotation (median tier) | mined (ETF RV) | ❌ Case 62B — duration beta; rotation 0.01 < equal-weight 0.15 < BND 0.37; alpha −2%/yr |
 | Higher-moment tail hedge (SPY skew/kurt) | mined (vol) | ⚠️ Case 62C — REAL+robust (+0.05 Sharpe, 100% of configs) but a beta DD-overlay, not market-neutral alpha; no beta sleeve to deploy on |
-| Insider buying (small-cap, long-only) | Quantpedia/SSRN | ⏳ test-now — long-only = NO borrow wall (real advantage); blocked on AV quota today → build a free **SEC EDGAR Form 4** fetcher next |
+| Insider buying (long-only) | Quantpedia/SSRN | ❌ Case 63 — passed large-cap battery (+1.4% vs EW, ρ+0.07 to pairs) but **survivorship control kills it**: on the 1,702-name delisted-aware universe the spread inverts to −0.61 (placebo pctile 0.48 = random). Built free SEC bulk Form-4 pipeline (111k buys). |
 | 11-factor Lasso market-neutral (NYSE) | arXiv 2412.12350 | ⏳ queued — 40-name shorting + adverse borrow; revisit the long-only / index-hedged form |
 
 ### The big harvest (Case 62 run)
