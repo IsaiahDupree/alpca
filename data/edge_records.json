@@ -1,0 +1,22 @@
+{
+  "_comment": "Curated headline(in-sample/lucky-window) vs honest(OOS / fresh-symbol / multi-regime / post-cost) Sharpe for the major documented edges. Numbers are the committed results in docs/EDGE_CASE_STUDIES.md (the Scoreboard). Used by plot_holdout_collapse.py and plot_strategy_landscape.py so both graphics stay consistent and auditable. 'kill' buckets match plot_edge_funnel.py.",
+  "as_of": "2026-06-21",
+  "records": [
+    {"name": "Cointegrated-pairs basket", "case": 1, "klass": "market-neutral", "is_sharpe": 1.78, "oos_sharpe": 0.83, "headline": "IS 1.78", "honest": "walk-fwd 0.83", "kill": "deployed", "survives": true},
+    {"name": "Short-vol / VRP", "case": 49, "klass": "carry", "is_sharpe": 1.08, "oos_sharpe": 0.74, "headline": "combined 1.08", "honest": "tail-stress + per-yr", "kill": "deployed", "survives": true},
+    {"name": "Value composite (EDGAR)", "case": 24, "klass": "fundamental MN", "is_sharpe": 0.14, "oos_sharpe": 0.30, "headline": "main 0.14", "honest": "fresh +0.11..0.54", "kill": "too_weak", "survives": true},
+    {"name": "Mid-cap pairs", "case": 39, "klass": "market-neutral", "is_sharpe": 0.28, "oos_sharpe": 0.06, "headline": "PIT 0.28", "honest": "DSR 0.06, knife-edge", "kill": "too_weak", "survives": false},
+    {"name": "EAR-PEAD (beta-hedged)", "case": 18, "klass": "event MN", "is_sharpe": 0.68, "oos_sharpe": -0.52, "headline": "train-40 0.68", "honest": "fresh-19 holdout", "kill": "fresh_holdout", "survives": false},
+    {"name": "Accruals (Sloan)", "case": 23, "klass": "fundamental MN", "is_sharpe": 0.30, "oos_sharpe": -0.47, "headline": "train 0.30", "honest": "fresh-16 holdout", "kill": "fresh_holdout", "survives": false},
+    {"name": "Fin-excluded accruals", "case": 35, "klass": "fundamental MN", "is_sharpe": 0.70, "oos_sharpe": -0.51, "headline": "in-sample 0.70", "honest": "fresh holdout", "kill": "fresh_holdout", "survives": false},
+    {"name": "Short-interest tilt", "case": 21, "klass": "positioning MN", "is_sharpe": 2.34, "oos_sharpe": -0.42, "headline": "1yr Nasdaq 2.34", "honest": "6yr FINRA net", "kill": "cost_wall", "survives": false},
+    {"name": "Overnight reversal", "case": 17, "klass": "event MN", "is_sharpe": 0.93, "oos_sharpe": -0.41, "headline": "gross 0.93", "honest": "net @2bps", "kill": "cost_wall", "survives": false},
+    {"name": "Mid-cap momentum", "case": 44, "klass": "cross-sectional", "is_sharpe": 1.35, "oos_sharpe": 0.40, "headline": "with delistings 1.35", "honest": "representative PIT", "kill": "survivorship", "survives": false},
+    {"name": "PCA / eigenportfolio stat-arb", "case": 10, "klass": "market-neutral", "is_sharpe": 0.99, "oos_sharpe": -1.18, "headline": "IS 0.99", "honest": "out-of-sample", "kill": "overfit", "survives": false},
+    {"name": "Lead-lag cross-predict", "case": 19, "klass": "learned MN", "is_sharpe": 0.27, "oos_sharpe": -1.02, "headline": "gross 0.27", "honest": "walk-fwd ≈ shuffle", "kill": "placebo", "survives": false},
+    {"name": "Formulaic alpha (gap-reversal)", "case": 36, "klass": "microstructure MN", "is_sharpe": 1.29, "oos_sharpe": -0.16, "headline": "IS 1.29", "honest": "fresh-symbol", "kill": "stat", "survives": false},
+    {"name": "Formulaic alpha (intraday)", "case": 36, "klass": "microstructure MN", "is_sharpe": 1.01, "oos_sharpe": -0.77, "headline": "IS 1.01", "honest": "fresh-symbol", "kill": "stat", "survives": false},
+    {"name": "Gross profitability (Novy-Marx)", "case": 34, "klass": "fundamental MN", "is_sharpe": 0.20, "oos_sharpe": -1.72, "headline": "best-yr +", "honest": "OOS -1.72", "kill": "signal_fail", "survives": false},
+    {"name": "Defensive low-beta / BAB", "case": 38, "klass": "factor", "is_sharpe": 1.05, "oos_sharpe": -1.06, "headline": "reverse-BAB 1.05 (beta)", "honest": "defensive -1.06", "kill": "beta", "survives": false}
+  ]
+}
