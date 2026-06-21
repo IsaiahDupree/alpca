@@ -42,7 +42,7 @@ BUCKETS = {
     },
     "Fresh-symbol holdout (out-of-universe)": {
         "color": RED,
-        "cases": [18, 23, 35, 55],
+        "cases": [18, 23, 35, 55, 59],
         "note": "passed in-universe, collapsed on disjoint new symbols",
     },
     "Cost / borrow wall": {

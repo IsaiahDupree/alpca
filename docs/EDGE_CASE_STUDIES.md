@@ -1497,3 +1497,36 @@ capital, and the bar for "validated" is now explicitly out-of-universe + out-of-
   and the one number that looked good (τ=0.60) was unmasked as a count-reduction artifact by the
   AUC. The pairs basket stays deployed **as-is** — there is no conviction-filter to bolt on.
   (`scripts/test_meta_labeling.py` → `data/meta_labeling_results.json`.)
+
+## Case 59 — PEAD with REAL SUE (standardized unexpected earnings) ❌ (SUE *is* the better signal — and PEAD still fails the fresh-symbol holdout a 4th time)
+
+- **The standing question (from Cases 14/18).** PEAD's long leg is beta and its single-name short
+  leg dies to adverse-selection borrow; it was held open on one explicit lever: *try **real SUE**
+  vs raw `surprise_pct` at full breadth.* Raw surprise_pct = (eps−consensus)/|consensus| is wildly
+  fat-tailed (a near-zero consensus explodes it); the academically-correct PEAD signal is
+  **SUE = (eps − consensus) / std(the firm's own past unexpected earnings)** — a clean, comparable
+  z-score. The AlphaVantage earnings cache has since grown to **63 symbols × ~30 years (6,604 events
+  with computable SUE)**, broad enough to test it.
+- **Method.** Added an additive `signal_field`/`borrow_field` switch to `backtest_pead` (default
+  behaviour bit-identical — verified the prior surprise_pct numbers reproduce exactly). Computed SUE
+  per event with a **no-lookahead expanding std** (≥4 priors). Ran long/short/dollar-neutral under
+  **flat and adverse-selection borrow**, IS/OOS split, and — decisively — the **fresh-symbol holdout**
+  on the **19 disjoint names** that killed EAR-PEAD in Case 18.
+- **Result — SUE genuinely beats raw, but it isn't enough.**
+  - **SUE is the better signal (question answered).** Dollar-neutral, flat-borrow: raw OOS **−0.17**
+    → **SUE OOS +0.28**. Under adverse borrow: raw both **0.22 / OOS −0.59** → SUE both **0.28 /
+    OOS +0.03**. Standardizing the surprise cleans up the fat tails and modestly survives borrow
+    where raw collapses. This closes the open lever: **use SUE, not raw surprise_pct.**
+  - **But the short leg is still a standalone loser** (−0.24 under adverse borrow, 28 no-locate
+    drops) and the dollar-neutral "both" leg is carried by the **long (beta)** leg (long 0.60–1.03).
+    The SUE-adverse headline **DSR deflates to 0.0** once you account for the threshold search.
+  - **The fresh-symbol holdout kills it.** Same fixed SUE rule, adverse borrow: **TRAIN-63 both 0.28
+    / OOS +0.03 → HOLDOUT-19 both 0.19 / OOS −0.71**, short −0.71. The edge **does not generalize to
+    disjoint symbols** — the identical failure mode as EAR-PEAD (Case 18) and accruals (Case 23).
+- **Verdict.** ❌ **REJECT — the SUE lever is now closed.** Real SUE is a real improvement over raw
+  surprise_pct (worth keeping in the code), but PEAD's dollar-neutral edge remains **thin,
+  long-beta-carried, short-leg-fragile under adverse borrow, and non-generalizing across symbols.**
+  This is the **4th independent rejection** of the PEAD family (raw Case 14, EAR-hedged Case 18,
+  3rd-leg re-test Case 55, SUE Case 59). PEAD is not the uncorrelated third leg; the deployed book
+  (pairs + short-vol) stands. (`scripts/test_pead_sue.py` → `data/pead_sue_results.json`; additive
+  `signal_field`/`borrow_field` in `alpca/backtest/pead.py`.)

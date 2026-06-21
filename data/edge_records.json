@@ -17,6 +17,7 @@
     {"name": "Formulaic alpha (gap-reversal)", "case": 36, "klass": "microstructure MN", "is_sharpe": 1.29, "oos_sharpe": -0.16, "headline": "IS 1.29", "honest": "fresh-symbol", "kill": "stat", "survives": false},
     {"name": "Formulaic alpha (intraday)", "case": 36, "klass": "microstructure MN", "is_sharpe": 1.01, "oos_sharpe": -0.77, "headline": "IS 1.01", "honest": "fresh-symbol", "kill": "stat", "survives": false},
     {"name": "Gross profitability (Novy-Marx)", "case": 34, "klass": "fundamental MN", "is_sharpe": 0.20, "oos_sharpe": -1.72, "headline": "best-yr +", "honest": "OOS -1.72", "kill": "signal_fail", "survives": false},
-    {"name": "Defensive low-beta / BAB", "case": 38, "klass": "factor", "is_sharpe": 1.05, "oos_sharpe": -1.06, "headline": "reverse-BAB 1.05 (beta)", "honest": "defensive -1.06", "kill": "beta", "survives": false}
+    {"name": "Defensive low-beta / BAB", "case": 38, "klass": "factor", "is_sharpe": 1.05, "oos_sharpe": -1.06, "headline": "reverse-BAB 1.05 (beta)", "honest": "defensive -1.06", "kill": "beta", "survives": false},
+    {"name": "SUE-PEAD (dollar-neutral)", "case": 59, "klass": "event MN", "is_sharpe": 0.28, "oos_sharpe": -0.71, "headline": "train 0.28", "honest": "fresh-19 OOS -0.71", "kill": "fresh_holdout", "survives": false}
   ]
 }

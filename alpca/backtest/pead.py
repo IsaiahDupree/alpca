@@ -50,6 +50,8 @@ def backtest_pead(
     borrow_apr=0.0,
     no_borrow=None,
     adverse_borrow=None,
+    signal_field: str = "surprise_pct",
+    borrow_field: Optional[str] = None,
     starting_equity: float = 100_000.0,
     periods_per_year: float = 252.0,
 ) -> PEADResult:
@@ -111,13 +113,20 @@ def backtest_pead(
                 ret[idx[ts[k]], j] = (cl[k] - cl[k - 1]) / cl[k - 1]
         # place each event's drift position
         for ev in events_by_sym[s]:
-            surp = ev.get("surprise_pct")
-            if surp is None or abs(surp) < entry_thr:
+            # SIGNAL: rank/threshold/direction off `signal_field` (default raw surprise_pct;
+            # set to "sue" for standardized unexpected earnings). BORROW magnitude stays in
+            # surprise_pct units (the adverse model's sat/no_locate are calibrated in %), via
+            # `borrow_field` (defaults to surprise_pct) so the SUE signal doesn't rescale it.
+            sig = ev.get(signal_field)
+            if sig is None or abs(sig) < entry_thr:
                 continue
-            sign = 1.0 if surp > 0 else -1.0
+            sign = 1.0 if sig > 0 else -1.0
+            bmag = ev.get(borrow_field or "surprise_pct", sig)
+            if bmag is None:
+                bmag = sig
             if sign < 0 and s in no_borrow:
                 continue                       # no locate available -> can't short this name
-            if sign < 0 and ab is not None and abs(surp) >= ab["no_locate"]:
+            if sign < 0 and ab is not None and abs(bmag) >= ab["no_locate"]:
                 n_no_locate += 1               # adverse selection: this crowded short went no-locate
                 continue
             # require the report to fall INSIDE this symbol's price window — else there's no
@@ -132,7 +141,7 @@ def backtest_pead(
             if entry_k >= len(ts):
                 continue
             n_used += 1
-            ev_rate = _adverse_rate(abs(surp)) if (sign < 0 and ab is not None) else 0.0
+            ev_rate = _adverse_rate(abs(bmag)) if (sign < 0 and ab is not None) else 0.0
             for k in range(entry_k, min(entry_k + hold, len(ts))):
                 pos[idx[ts[k]], j] = sign
                 if ev_rate:
