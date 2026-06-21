@@ -36,10 +36,14 @@ cross-sectional crypto long-short basket is infeasible here regardless of publis
    are now closed.
 
 2. **Seasonality overlay basket** = pre-FOMC drift + turn-of-month (+ optional overnight).
-   *Why it might survive:* our prior failures all died to **overtrading costs** — these die
-   the opposite way (~20 trades/yr total), so cost is a non-issue. Honest framing: a
-   **risk-reduced beta overlay** (cash-parked most days), cheap and fast to falsify; test the
-   "disappearing post-2011" claim head-on (pre-2011 IS vs post-2011 OOS).
+   ⚠️ **The decisive test is DATA-GATED (2026-06).** The "disappearing post-2011" claim needs
+   deep daily history, but **every daily cache we have is the same 5yr SIP window (2021-06→2026-06)**
+   and **AlphaVantage free tier no longer serves `outputsize=full`** (now a premium feature; free =
+   last 100 bars only). On the available 2021-2026 window the overlays are **weak and OOS-negative**
+   (SPY turn-of-month IS 0.73 / **OOS −0.74**, exposure 34%; pre-FOMC IS 0.61 / **OOS −0.99**;
+   QQQ similar; all t-stats insignificant, p 0.2–0.66) — consistent with the decay thesis, but one
+   regime can't adjudicate it. **Status: marginal overlay, not a third leg.** To actually test the
+   decay split, source deep daily history (Stooq/Tiingo free, or a paid AV/Polygon tier).
 
 3. **Meta-labeling (mlfinlab triple-barrier) on the surviving 84-symbol basket.**
    *Why it might survive:* doesn't need a new edge — it **amplifies** the one we've proven
@@ -67,3 +71,9 @@ cross-sectional crypto long-short basket is infeasible here regardless of publis
 - **Finnhub free tier** `/calendar/earnings`: EPS estimate + actual + surprise %, US-accessible
   — the free substitute for WRDS/IBES that makes PEAD buildable.
 - **CBOE / Yahoo `^VIX`, `^VIX3M`**: free term-structure proxy for VIX-curve signals.
+- **AlphaVantage `TIME_SERIES_DAILY` (2026-06):** `outputsize=full` is now a **PREMIUM** feature —
+  the free tier returns only the last ~100 bars (compact). This blocks any deep-history (pre-2011)
+  daily backtest on the free key. All local daily caches are the 5yr SIP window (2021-06→2026-06).
+  For deep daily history use **Stooq** or **Tiingo** (free, deep) instead.
+- **AlphaVantage earnings cache** now at **63 train + 19 holdout symbols** (~30yr each); the daily
+  launchd job (18:15) trickles ~23/day under the ~25/day free cap. Full 195-universe still filling.
