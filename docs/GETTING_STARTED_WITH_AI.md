@@ -79,7 +79,7 @@ pytest -q
 | You want…                              | Look at…                                            |
 |----------------------------------------|-----------------------------------------------------|
 | The honest one-page summary            | `docs/STATE_OF_THE_PROGRAM.md`                      |
-| Every edge we tested + why it passed/failed | `docs/EDGE_CASE_STUDIES.md` (60 case studies)  |
+| Every edge we tested + why it passed/failed | `docs/EDGE_CASE_STUDIES.md` (61 case studies)  |
 | The evaluation harness (the point)     | `alpca/backtest/evaluation.py`                      |
 | The 34 strategies                      | `alpca/strategies/`                                 |
 | Market-neutral pairs / cross-sectional | `alpca/backtest/pairs.py`, `cross_sectional.py`     |

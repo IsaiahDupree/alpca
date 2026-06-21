@@ -1567,3 +1567,31 @@ capital, and the bar for "validated" is now explicitly out-of-universe + out-of-
   honest read. **Going forward, research downloads should use `--feed sip` for the full 10.5yr depth**
   so every prior 5yr-window result can be re-tested out-of-regime. (`scripts/test_pairs_out_of_regime.py`
   → `data/pairs_out_of_regime.json`; `scripts/download_data.py --feed sip`.)
+
+## Case 61 — Conference-driven return drift, MINED by the research pipeline ❌ (beta dressed as alpha; the harness caught what the source headline hid)
+
+- **First edge from the new research pipeline.** Built `alpca/research/` — a harvester + LLM
+  strategy-extractor that pulls articles from every provider we have (AlphaVantage NEWS_SENTIMENT,
+  Alpaca/Benzinga news, and quant-research publishers via web/Reddit/Perplexity), normalizes them
+  into one corpus, extracts **structured testable specs**, dedups against our 60 prior cases, and
+  queues the **novel + venue-feasible** ones for validation. The first surfaced candidate:
+  **conference-driven return drift** (Quantpedia) — *long AAPL/GOOGL/MSFT from D-2 before to D+2
+  after their flagship conferences (WWDC / Google I/O / MS Build); claimed Sharpe 0.97, 2011-2025.*
+- **Validated on 2016-2026 SIP data** (4 tickers pulled fresh from Alpaca SIP — no external drive
+  needed; conference dates are publicly scheduled → no lookahead), long-only and beta-hedged, with
+  the decisive **is-it-beta?** control.
+- **Result — beta, not alpha.**
+  - **Long-only: Sharpe 0.63** (below the claimed 0.97 on our window) — but **buy-and-hold the 3
+    names *always* = Sharpe 1.06.** The conference timing is *worse than just owning the stocks*:
+    it's compressed mega-cap tech beta, parked in cash 93% of the time (7% exposure).
+  - **Beta-hedged (long stock − short SPY) = the alpha test: 0.54 full-period — but
+    recency-concentrated**: negative in 2016/2017/2018/2020, positive only 2019 + 2021-2024. Not
+    regime-stable, and the whole thing rests on **29 events** (≈3/yr × 3 names) — far too few
+    independent bets to trust.
+- **Verdict.** ❌ **REJECT — beta dressed as alpha.** The long-only "edge" underperforms simply
+  holding the three stocks; the hedged alpha is a small-sample recency artifact (the mega-cap
+  dominance window), exactly what the source's headline Sharpe (0.97, long-only, 2011-2025) obscured.
+  *The value here is the pipeline:* it took a published strategy from harvest → spec → venue-feasible
+  triage → honest battery → beta/regime decomposition automatically. (`alpca/research/`,
+  `scripts/harvest_news.py`, `scripts/mine_strategies.py`, `scripts/validate_conference_drift.py`
+  → `data/conference_drift_results.json`. Pipeline doc: `docs/RESEARCH_PIPELINE.md`.)
