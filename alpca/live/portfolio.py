@@ -42,6 +42,9 @@ DEPLOYED: List[Sleeve] = [
            "First leg that lifts the book (Case 49); ρ=0.04; tail-capped + stress-validated (Case 50)."),
     Sleeve("momentum", "PROBATION", 0.0, None,
            "Dilutes over the OOS window (Case 47); tracked only, zero trading capital."),
+    Sleeve("revision", "PROBATION", 0.0, None,
+           "Analyst-revision drift (Case 66); long-only, no-borrow; FORWARD-ONLY (no backtest possible "
+           "from AV snapshot data) — zero capital, clock just started."),
 ]
 
 

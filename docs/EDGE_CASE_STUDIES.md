@@ -1719,3 +1719,31 @@ capital, and the bar for "validated" is now explicitly out-of-universe + out-of-
   the two funded sleeves (pairs + short-vol) remain it. The forward track + accumulating overlap will
   adjudicate the combiner-lift over time. (`scripts/test_xsec_momentum_hardened.py` →
   `data/xsec_momentum_hardened.json`.)
+
+## Case 66 — Analyst-revision drift (the top queued candidate) 🟡 (signal available, forward-only — clock started)
+
+- **The candidate.** Post-revision drift / analyst-EPS-momentum: stocks whose consensus EPS estimates
+  are being revised UP tend to drift up. It was the strongest of the 11 queued candidates because it's
+  **long-only (no borrow wall** — the friction that killed PEAD/SI-tilt/insider) and orthogonal to
+  price-based pairs.
+- **Data feasibility (the gating question, resolved).** AlphaVantage **`EARNINGS_ESTIMATES`** (free
+  tier) *does* serve the revision signal directly: current consensus EPS + `_7/30/60/90_days_ago` +
+  `revision_up/down_trailing_7/30_days`. So the signal exists — **est-momentum** (90-day consensus
+  drift) + **revision-breadth** (net up/down revisions ÷ analyst count). Confirmed live (AAPL:
+  +3.3%/90d, breadth +0.64; ABT falling −2.9%/−0.08).
+- **The hard limit (honest).** The endpoint is a **CURRENT SNAPSHOT** — no point-in-time history of
+  past estimates. **So there is NO way to backtest it on free data.** It can only be **forward-tracked**
+  from the moment we start snapshotting. There is no Sharpe to report; this case *starts the clock*.
+- **What was built.** `alpca/data/estimates.py` (fetch+parse), `scripts/build_revision_signal.py`
+  (quota-aware daily collector → `data/revision_signal.jsonl`; AV free ~25/day shared with the earnings
+  job, so it trickles ~8–12 names/day and fills the 63-name universe over a few days), and
+  `scripts/deploy_revision_paper.py` (long-only top-third-by-signal forward sleeve → realized OOS curve
+  in `data/revision_forward_track.jsonl`). Wired as a **PROBATION sleeve (weight 0)** in
+  `alpca/live/portfolio.py`, into the daily `forward_track.sh`, and into the **paper-edge DB** so it
+  self-documents. First run: 4 signals collected (quota-limited), sleeve "accumulating" (needs ≥8
+  positive-signal names before it forms a book).
+- **Verdict.** 🟡 **LAUNCHED ON PROBATION — no verdict possible yet.** Unlike every prior case, this
+  can't be adjudicated by a backtest (snapshot-only data); the honest path is the forward track, which
+  the paper-edge DB now accumulates. Zero capital until the live curve earns it. This is the
+  data-honest way to test the one remaining long-only candidate. (`alpca/data/estimates.py`,
+  `scripts/build_revision_signal.py`, `scripts/deploy_revision_paper.py`.)

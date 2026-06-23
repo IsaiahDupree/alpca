@@ -25,7 +25,8 @@ from alpca.backtest.evaluation import sharpe_of, max_drawdown_of  # noqa: E402
 PPY = 252.0
 TRACKS = {"pairs": "data/pairs_forward_track.jsonl",
           "short_vol": "data/shortvol_forward_track.jsonl",
-          "momentum": "data/momentum_forward_track.jsonl"}
+          "momentum": "data/momentum_forward_track.jsonl",
+          "revision": "data/revision_forward_track.jsonl"}
 
 
 def _read_track(path: str):

@@ -87,7 +87,7 @@ BUCKETS = {
     },
     "Method / audit (not an edge test)": {
         "color": "#bbbbbb",
-        "cases": [16, 41, 42, 52, 54, 64],
+        "cases": [16, 41, 42, 52, 54, 64, 66],
         "note": "combiner math, scaffolding, self-audit, corpus-coverage audit",
     },
 }
