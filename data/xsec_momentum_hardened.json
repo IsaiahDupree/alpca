@@ -1,0 +1,109 @@
+{
+  "case": 65,
+  "name": "Hardened cross-sectional momentum",
+  "basic (top/bottom 20%, no gate)": {
+    "sharpe": 0.184,
+    "cum_pct": 14.44,
+    "maxdd_pct": -19.38,
+    "oor_2016_2020": 0.231,
+    "inr_2021_2026": 0.141,
+    "pos_years": "6/11",
+    "per_year": {
+      "2016": 0.0,
+      "2017": 1.03,
+      "2018": 0.44,
+      "2019": -0.65,
+      "2020": 0.35,
+      "2021": -0.29,
+      "2022": 1.16,
+      "2023": -1.21,
+      "2024": 0.32,
+      "2025": -0.15,
+      "2026": 1.5
+    },
+    "beta_vs_spy": 0.035,
+    "alpha_vs_spy_ann": 0.012,
+    "tstat": 0.59,
+    "avg_turnover": 0.46
+  },
+  "z-weighted, no gate": {
+    "sharpe": 0.397,
+    "cum_pct": 43.7,
+    "maxdd_pct": -13.96,
+    "oor_2016_2020": 0.52,
+    "inr_2021_2026": 0.29,
+    "pos_years": "6/11",
+    "per_year": {
+      "2016": 0.0,
+      "2017": 0.74,
+      "2018": 0.48,
+      "2019": -0.18,
+      "2020": 0.96,
+      "2021": -0.42,
+      "2022": 0.71,
+      "2023": -1.09,
+      "2024": 0.47,
+      "2025": -0.24,
+      "2026": 2.64
+    },
+    "beta_vs_spy": 0.067,
+    "alpha_vs_spy_ann": 0.0292,
+    "tstat": 1.28,
+    "avg_turnover": 0.414
+  },
+  "z-weighted + TREND GATE": {
+    "sharpe": 0.503,
+    "cum_pct": 15.94,
+    "maxdd_pct": -4.07,
+    "oor_2016_2020": 0.466,
+    "inr_2021_2026": 0.537,
+    "pos_years": "6/11",
+    "per_year": {
+      "2016": 0.0,
+      "2017": 0.13,
+      "2018": 1.9,
+      "2019": -0.07,
+      "2020": 1.61,
+      "2021": 0.17,
+      "2022": 0.0,
+      "2023": 0.0,
+      "2024": 1.28,
+      "2025": -0.05,
+      "2026": 0.73
+    },
+    "beta_vs_spy": 0.011,
+    "alpha_vs_spy_ann": 0.0128,
+    "tstat": 1.62,
+    "avg_turnover": 0.153
+  },
+  "survivorship_hardened_gate": {
+    "sharpe": 0.231,
+    "cum_pct": 7.06,
+    "maxdd_pct": -16.94,
+    "oor_2016_2020": null,
+    "inr_2021_2026": 0.231,
+    "pos_years": "1/6",
+    "per_year": {
+      "2021": 0.0,
+      "2022": 0.0,
+      "2023": 0.72,
+      "2024": 0.0,
+      "2025": -0.28,
+      "2026": 0.0
+    },
+    "beta_vs_spy": 0.019,
+    "alpha_vs_spy_ann": 0.0135,
+    "tstat": 0.52,
+    "n_syms": 691,
+    "avg_turnover": 0.188
+  },
+  "verdict": {
+    "beats_basic": true,
+    "survives_survivorship": true,
+    "out_of_regime_stable": true,
+    "market_neutral": true,
+    "significant_post_cost": false,
+    "candidate_3rd_leg": false,
+    "summary": "NOT YET a deployable leg \u2014 fails one+ gate (see flags); keep on forward-track probation"
+  }
+}

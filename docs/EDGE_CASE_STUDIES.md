@@ -1692,3 +1692,30 @@ capital, and the bar for "validated" is now explicitly out-of-universe + out-of-
   (~0.68)** — is the highest-conviction remaining build: harden the HFT-work construction (z-scored,
   trend-gated, market-neutral) on the 10.5yr SIP universe. (`docs/TRADING_KNOWLEDGE_COVERAGE.md`;
   `data/research/trading_knowledge_coverage.json`.)
+
+## Case 65 — Hardened cross-sectional momentum (the cross-program-confirmed edge, made smarter) ⚠️ (real improvement, not yet fundable)
+
+- **The build.** Cross-sectional momentum is the one directional edge confirmed in *both* programs
+  (Alpca Case 3 ~0.68; HFT-work OOS ~0.68). Took the HFT-work construction + every control we've since
+  built and re-tested on the 10.5yr SIP universe: **12-1 momentum** (skip the recent month),
+  **z-scored full cross-section** weighted ∝ z (demeaned → market-neutral, gross-normalized to a $1
+  book), and a **trend gate** (trade only when the market efficiency ratio ≥ 0.30, flat in chop).
+- **The hardening genuinely works (ablation).** On `cache_sip_10y`: basic top/bottom-20% = **0.18**
+  → z-weighted = **0.40** → z-weighted + **trend gate = 0.50**, and the gate **cuts max-DD from −14%
+  to −4%**, keeps it market-neutral (β **0.01**), and makes it **out-of-regime stable** (2016-2020
+  **0.47** / 2021-2026 **0.54**). Uncorrelated to the deployed pairs book (ρ **−0.05**). The
+  z-weighting + trend-gate are validated, reusable improvements over the Case-3 construction.
+- **But it fails the fundable-leg bar.** t-stat **1.62 < 2** (not significant post-cost), and on the
+  **survivorship-aware** universe (`cache_delisted_sip`, 691 names) it weakens to **0.23** (1/6
+  positive years, t 0.52) — the same "momentum is partly a survivorship/small-cap tilt" pattern as
+  Case 43. The combiner-lift question (does an uncorrelated 0.5 sleeve lift the book, the short-vol
+  precedent) can't be answered yet: only **86 days** overlap with the cached pairs WF returns — far
+  too thin to trust (the lucky-window 2.5 Sharpe there is noise).
+- **Verdict.** ⚠️ **Real improvement, NOT yet a fundable leg — keep momentum on PROBATION.** The
+  hardened construction is strictly better than both the basic x-sec (0.18) and the current mid-cap
+  vol-managed momentum sleeve (~0.23), so it's the right *forward-track* form; but at ~0.5 /
+  insignificant / survivorship-weak it doesn't clear the bar to fund. Consistent with the program's
+  standing conclusion: on a price-taker equity venue the honest ceiling is ~0.5 market-neutral, and
+  the two funded sleeves (pairs + short-vol) remain it. The forward track + accumulating overlap will
+  adjudicate the combiner-lift over time. (`scripts/test_xsec_momentum_hardened.py` →
+  `data/xsec_momentum_hardened.json`.)

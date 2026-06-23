@@ -123,4 +123,4 @@ Per-day profit targeting is noise-mining; the edge compounds slowly and only bec
 
 *Companion artifacts: `docs/edge_funnel.png` (this catalog, visualized), `docs/strategy_landscape.png`
 (the overfit catch), `docs/deployed_results.png` (the live book), `docs/EDGE_CASE_STUDIES.md`
-(all 64 cases in full).*
+(all 65 cases in full).*
