@@ -1,0 +1,91 @@
+{
+  "case": 67,
+  "name": "Deployed book real tail-stress (pairs + short-vol, 2016-2026)",
+  "weights": {
+    "pairs": 0.92,
+    "short_vol": 0.08
+  },
+  "full": {
+    "sharpe": 0.628,
+    "maxdd_pct": -13.27,
+    "cum_pct": 43.51,
+    "n_days": 2630
+  },
+  "per_year": {
+    "2016": 1.34,
+    "2017": 2.0,
+    "2018": -1.3,
+    "2019": 1.69,
+    "2020": 0.28,
+    "2021": 0.57,
+    "2022": 1.21,
+    "2023": 1.5,
+    "2024": 0.93,
+    "2025": 0.95,
+    "2026": -1.06
+  },
+  "worst_8_days": [
+    {
+      "date": "2018-02-06",
+      "book_ret_pct": -6.68,
+      "svxy_ret_pct": -83.0,
+      "pairs_ret_pct": -0.04
+    },
+    {
+      "date": "2025-09-10",
+      "book_ret_pct": -4.14,
+      "svxy_ret_pct": 0.14,
+      "pairs_ret_pct": -4.51
+    },
+    {
+      "date": "2018-02-05",
+      "book_ret_pct": -2.51,
+      "svxy_ret_pct": -31.87,
+      "pairs_ret_pct": 0.04
+    },
+    {
+      "date": "2020-03-18",
+      "book_ret_pct": -2.22,
+      "svxy_ret_pct": -9.07,
+      "pairs_ret_pct": -1.62
+    },
+    {
+      "date": "2016-06-24",
+      "book_ret_pct": -2.12,
+      "svxy_ret_pct": -26.45,
+      "pairs_ret_pct": 0.0
+    },
+    {
+      "date": "2025-09-08",
+      "book_ret_pct": -1.78,
+      "svxy_ret_pct": 0.91,
+      "pairs_ret_pct": -2.01
+    },
+    {
+      "date": "2020-03-09",
+      "book_ret_pct": -1.67,
+      "svxy_ret_pct": -16.82,
+      "pairs_ret_pct": -0.35
+    },
+    {
+      "date": "2025-07-15",
+      "book_ret_pct": -1.59,
+      "svxy_ret_pct": 0.32,
+      "pairs_ret_pct": -1.76
+    }
+  ],
+  "feb_2018_volmageddon": {
+    "window": "2018-01-25..2018-02-28",
+    "book_dd_pct": -12.24,
+    "worst_day_pct": -6.68,
+    "svxy_worst_pct": -83.0
+  },
+  "mar_2020_covid": {
+    "window": "2020-02-20..2020-04-30",
+    "book_dd_pct": -8.23,
+    "worst_day_pct": -2.22,
+    "svxy_worst_pct": -19.5
+  },
+  "note": "pre-2018-02-27 SVXY is -1x (2x deployed -0.5x) => Feb-2018 is a CONSERVATIVE overstatement",
+  "verdict": "DEPLOYED BOOK SURVIVES THE REAL TAIL \u2014 the 8% short-vol cap contains Feb-2018 + Mar-2020; worst book day -6.7%, +9/11 yrs"
+}

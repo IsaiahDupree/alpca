@@ -121,7 +121,7 @@ def panel_c(ax):
 def panel_d(ax):
     ax.axis("off")
     ax.set_title("D · What actually defines a high-profit-per-day algo", fontsize=9.3, loc="left")
-    n_total = 66
+    n_total = 67
     n_surv = sum(1 for r in REC if r["survives"] and r["kill"] == "deployed")
     lines = [
         ("1. A REAL edge that GENERALIZES.", "Must clear out-of-universe (new symbols) AND"),
@@ -151,7 +151,7 @@ def panel_d(ax):
 def main():
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     panel_a(axes[0, 0]); panel_b(axes[0, 1]); panel_c(axes[1, 0]); panel_d(axes[1, 1])
-    fig.suptitle("Alpca — Strategy Landscape & the Profit-Per-Day Reality  (66 cases, honest eval, data-driven)",
+    fig.suptitle("Alpca — Strategy Landscape & the Profit-Per-Day Reality  (67 cases, honest eval, data-driven)",
                  fontsize=12.5, fontweight="bold")
     fig.tight_layout(rect=[0, 0, 1, 0.97])
     out = ROOT / "docs" / "strategy_landscape.png"

@@ -37,7 +37,7 @@ AMBER, PURPLE, TEAL = "#e6a817", "#7b3294", "#3690c0"
 BUCKETS = {
     "Deployed (survived every control)": {
         "color": GREEN,
-        "cases": [1, 46, 49, 50, 60],   # pairs (1, PIT 46, out-of-regime 60) + short-vol (49, tail-stress 50)
+        "cases": [1, 46, 49, 50, 60, 67],   # pairs (1, PIT 46, out-of-regime 60) + short-vol (49, tail-stress 50)
         "note": "2 sleeves: pairs (survivorship-PIT + 2016-2020 out-of-regime) + short-vol/VRP",
     },
     "Fresh-symbol holdout (out-of-universe)": {

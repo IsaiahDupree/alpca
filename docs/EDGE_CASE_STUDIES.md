@@ -1747,3 +1747,25 @@ capital, and the bar for "validated" is now explicitly out-of-universe + out-of-
   the paper-edge DB now accumulates. Zero capital until the live curve earns it. This is the
   data-honest way to test the one remaining long-only candidate. (`alpca/data/estimates.py`,
   `scripts/build_revision_signal.py`, `scripts/deploy_revision_paper.py`.)
+
+## Case 67 — Deployed book vs the REAL tail (Feb-2018 + Mar-2020) ✅ (the 8% cap survives the actual worst-case)
+
+- **What it upgrades.** Case 50 stress-tested short-vol against a *simulated* volmageddon. SVXY now has
+  SIP history back to 2016-01, so the **actual deployed book** — pairs (92%, delisting-aware WF) +
+  short-vol (long SVXY, hard-capped 8%) — can be marked through the **real Feb-2018 volmageddon** and
+  the **March-2020 COVID crash**, the exact tail the cap exists to contain.
+- **The cap works — on the real event.** On **2018-02-06, SVXY fell −83% in a single day** (the real
+  −1× instrument), yet because it's capped at 8% the **book lost only −6.7%** that day (−12.2% over the
+  Feb-2018 window). March-2020: book DD −8.2% (SVXY −19.5%). An 83% sleeve collapse contained to a
+  single-digit book hit — the hard cap doing exactly its job against the worst short-vol day in history.
+- **Conservative by construction.** ProShares cut SVXY from −1× to −0.5× on 2018-02-27; our pre-2018
+  bars are the 2×-more-violent −1× instrument, so the Feb-2018 figure *overstates* the deployed tail —
+  the actual −0.5× book would have taken ~half (~−3.4%). It survives the harder test.
+- **Full out-of-regime read.** 2016-2026: **Sharpe 0.63, maxDD −13.3%, cum +43.5%, +9/11 years**
+  (2018 −1.3 the volmageddon year, 2026 −1.06 partial; all other years positive). Short-vol lifts
+  pairs-alone (0.51 → 0.63) and the book holds across both the 2018 and 2020 stress regimes.
+- **Verdict.** ✅ **Deployed book + its risk management validated on the real worst-case.** The 8%
+  short-vol cap is confirmed — not by simulation but by the actual −83% SVXY day — and the combined
+  book's tail (−13% maxDD over a decade incl. two crises) is acceptable for a market-neutral book. The
+  strongest possible validation of the funded capital. (`scripts/test_deployed_book_tail.py` →
+  `data/deployed_book_tail.json`; SVXY 2016- from `cache_vol_10y`.)
