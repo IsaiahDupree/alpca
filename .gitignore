@@ -34,3 +34,4 @@ data/cache/
 # derived caches (recomputable)
 data/pairs_wf_returns.json
 data/deployed_portfolio_backtest.json
+!data/paper_edge_summary.json

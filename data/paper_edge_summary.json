@@ -1,0 +1,46 @@
+{
+  "updated": "2026-06-23 00:25:51 UTC",
+  "funded_weights": {
+    "pairs": 0.92,
+    "short_vol": 0.08
+  },
+  "snapshots_logged": 4,
+  "edge": {
+    "pairs": {
+      "n_marks": 8,
+      "n_realized": 3,
+      "cum_pct": -0.3689,
+      "sharpe": -11.225,
+      "maxdd_pct": -0.3689,
+      "last_date": "2026-06-22",
+      "funded": true
+    },
+    "short_vol": {
+      "n_marks": 7,
+      "n_realized": 5,
+      "cum_pct": 0.109,
+      "sharpe": 2.3572,
+      "maxdd_pct": -0.186,
+      "last_date": "2026-06-22",
+      "funded": true
+    },
+    "momentum": {
+      "n_marks": 7,
+      "n_realized": 5,
+      "cum_pct": -0.2529,
+      "sharpe": -1.7375,
+      "maxdd_pct": -1.0324,
+      "last_date": "2026-06-22",
+      "funded": false
+    },
+    "_combined": {
+      "n_marks": 5,
+      "n_realized": 5,
+      "cum_pct": -0.3307,
+      "sharpe": -7.6267,
+      "maxdd_pct": -0.3542,
+      "last_date": "2026-06-22",
+      "funded": true
+    }
+  }
+}
