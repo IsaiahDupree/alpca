@@ -62,8 +62,8 @@ BUCKETS = {
     },
     "Too weak / dilutes / inert": {
         "color": AMBER,
-        "cases": [3, 9, 12, 15, 24, 37, 39, 40, 47, 48, 57, 58, 65],
-        "note": "real but sub-rail / no OOS skill; adds no lift to the book",
+        "cases": [3, 9, 12, 15, 24, 37, 39, 40, 47, 48, 57, 58, 65, 68],
+        "note": "real but not fundable: sub-rail, no OOS skill, or survivorship-untestable",
     },
     "Overfit (in-sample -> OOS decay)": {
         "color": "#762a83",

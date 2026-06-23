@@ -39,7 +39,7 @@ half-Kelly. See `docs/STATE_OF_THE_PROGRAM.docx` and `docs/VERIFICATION_CONTROLS
 
 ## Results at a glance
 
-The denominator is the point: **67 documented case studies → 2 deployed sleeves.** Four graphics
+The denominator is the point: **68 documented case studies → 2 deployed sleeves.** Four graphics
 tell the whole story (regenerate any with `.venv/bin/python scripts/plot_*.py`):
 
 | Graphic | What it shows |
@@ -50,7 +50,7 @@ tell the whole story (regenerate any with `.venv/bin/python scripts/plot_*.py`):
 | ![deployed](docs/deployed_results.png) | **`docs/deployed_results.png`** — the live book: per-year Sharpe + near-zero leg correlations |
 
 Full write-ups: `docs/VERIFICATION_CONTROLS.md` (the anti-overfit machinery) and
-`docs/EDGE_CASE_STUDIES.md` (all 67 cases) · `docs/Alpca_Discovery_and_HFT_Assessment.docx`.
+`docs/EDGE_CASE_STUDIES.md` (all 68 cases) · `docs/Alpca_Discovery_and_HFT_Assessment.docx`.
 
 ## What's in the box
 

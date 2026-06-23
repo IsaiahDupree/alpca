@@ -1,0 +1,105 @@
+{
+  "case": 68,
+  "name": "Multi-signal cross-sectional composite (momentum+value+short-interest)",
+  "universe": 166,
+  "survivorship_caveat": "166 survivors only; fundamentals+SI have 0 delisted coverage",
+  "momentum": {
+    "sharpe": 0.232,
+    "maxdd_pct": -20.35,
+    "tstat": 0.75,
+    "beta": 0.038,
+    "alpha_ann": 0.0168,
+    "oor_2016_2020": 0.32,
+    "pos_years": "6/11",
+    "per_year": {
+      "2016": 0.0,
+      "2017": 1.27,
+      "2018": 0.64,
+      "2019": -0.69,
+      "2020": 0.41,
+      "2021": -0.33,
+      "2022": 1.02,
+      "2023": -1.11,
+      "2024": 0.31,
+      "2025": -0.41,
+      "2026": 2.13
+    }
+  },
+  "value_BP": {
+    "sharpe": 0.441,
+    "maxdd_pct": -16.86,
+    "tstat": 1.43,
+    "beta": 0.042,
+    "alpha_ann": 0.0194,
+    "oor_2016_2020": 0.02,
+    "pos_years": "8/11",
+    "per_year": {
+      "2016": 2.19,
+      "2017": -0.46,
+      "2018": -1.67,
+      "2019": 0.17,
+      "2020": -0.11,
+      "2021": 0.86,
+      "2022": 1.38,
+      "2023": 0.14,
+      "2024": 0.39,
+      "2025": 1.79,
+      "2026": 0.63
+    }
+  },
+  "short_interest": {
+    "sharpe": 0.236,
+    "maxdd_pct": -14.37,
+    "tstat": 0.76,
+    "beta": 0.118,
+    "alpha_ann": -0.0084,
+    "oor_2016_2020": 0.08,
+    "pos_years": "4/11",
+    "per_year": {
+      "2016": 0.0,
+      "2017": 0.0,
+      "2018": -1.4,
+      "2019": -0.51,
+      "2020": 1.19,
+      "2021": -0.24,
+      "2022": -1.06,
+      "2023": 1.89,
+      "2024": 0.74,
+      "2025": 1.49,
+      "2026": -0.47
+    }
+  },
+  "COMPOSITE": {
+    "sharpe": 0.635,
+    "maxdd_pct": -11.98,
+    "tstat": 2.05,
+    "beta": 0.082,
+    "alpha_ann": 0.0255,
+    "oor_2016_2020": 0.6,
+    "pos_years": "8/11",
+    "per_year": {
+      "2016": 2.19,
+      "2017": 0.58,
+      "2018": -0.09,
+      "2019": -1.04,
+      "2020": 1.3,
+      "2021": 1.08,
+      "2022": 0.7,
+      "2023": -0.62,
+      "2024": 0.69,
+      "2025": 1.18,
+      "2026": 1.14
+    }
+  },
+  "holdout": {
+    "train": 0.902,
+    "holdout": 0.275
+  },
+  "verdict": {
+    "beats_best_single": true,
+    "significant": true,
+    "generalizes_fresh": true,
+    "best_single_sharpe": 0.441,
+    "summary": "CANDIDATE \u2014 the composite beats its best single signal, is significant, and generalizes to fresh symbols (but survivorship-limited \u2014 see caveat)"
+  }
+}

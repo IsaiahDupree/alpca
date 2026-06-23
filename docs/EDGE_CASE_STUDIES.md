@@ -1769,3 +1769,35 @@ capital, and the bar for "validated" is now explicitly out-of-universe + out-of-
   book's tail (−13% maxDD over a decade incl. two crises) is acceptable for a market-neutral book. The
   strongest possible validation of the funded capital. (`scripts/test_deployed_book_tail.py` →
   `data/deployed_book_tail.json`; SVXY 2016- from `cache_vol_10y`.)
+
+## Case 68 — Multi-signal cross-sectional composite 🟡 (the diversification thesis WORKS — but survivorship is un-runnable)
+
+- **The idea (the last tractable systematic hunt).** The individual signals are all weak, but if
+  they're uncorrelated, a composite should have better breadth than any one (the AQR
+  "factors-everywhere" thesis). Combined the three signals with point-in-time history — **momentum**
+  (12-1), **value** (B/P, EDGAR, filed-date-lagged), **short-interest** (low days-to-cover, FINRA,
+  publication-lagged) — into one z-scored cross-sectional rank, monthly L/S, on the 166 large-cap
+  names that have all three (price ∩ fundamentals ∩ SI). (Revision excluded — snapshot-only, on its
+  own forward track, Case 66.)
+- **The composite beats its parts — and is significant.** Ablation (monthly L/S top-quintile):
+  momentum **0.23** (t 0.75), value **0.44** (t 1.43), short-interest **0.24** (t 0.76) — each
+  insignificant alone. **Composite: Sharpe 0.64, t-stat 2.05 (the first significant cross-sectional
+  result), β 0.08 (market-neutral), out-of-regime 0.60, +8/11 years, maxDD −12%.** It clears the
+  beats-best-single + significance + out-of-regime + market-neutral bars, and the fresh-symbol
+  holdout stays **positive (train 0.90 → holdout +0.28)**. Genuine diversification: three weak,
+  weakly-correlated signals compound into a real edge.
+- **The decisive caveat — survivorship is UN-RUNNABLE here.** This runs on **166 survivors only**:
+  EDGAR fundamentals + FINRA SI have **zero coverage of delisted names**, so unlike momentum (which we
+  *could* re-test on `cache_delisted_sip`, and it halved 0.50→0.23, Case 65) the composite **cannot be
+  survivorship-corrected on free data.** And survivorship is exactly the control that killed value
+  (Case 43, value→momentum flip) and insider (Case 63, +1.4%→−0.6%). The holdout decay (0.90→0.28)
+  also hints the survivor-only 0.64 is flattered. Honest expectation under survivorship correction:
+  materially lower, plausibly ~0.3–0.4.
+- **Verdict.** 🟡 **Strongest non-deployed candidate — PROBATION, not fundable.** It clears every
+  control we *can* run (significant, out-of-regime, generalizes, market-neutral, beats its parts), but
+  the one control that has killed the most similar cases is **structurally un-runnable** (no delisted
+  fundamental/SI on free data). The honest resolution is a **forward track** (survivorship-honest by
+  construction — it trades names as they exist, including future delistings); zero capital until the
+  live curve confirms it survives out-of-survivor. This is the most promising thing in the queue and
+  the right candidate to forward-track next. (`scripts/test_composite_signal.py` →
+  `data/composite_signal.json`.)
