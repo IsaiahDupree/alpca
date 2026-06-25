@@ -34,7 +34,8 @@ PPY = 252.0
 TRACKS = {"pairs": "data/pairs_forward_track.jsonl",
           "short_vol": "data/shortvol_forward_track.jsonl",
           "momentum": "data/momentum_forward_track.jsonl",
-          "revision": "data/revision_forward_track.jsonl"}
+          "revision": "data/revision_forward_track.jsonl",
+          "composite": "data/composite_forward_track.jsonl"}
 
 
 def read_track(path: str):

@@ -1801,3 +1801,7 @@ capital, and the bar for "validated" is now explicitly out-of-universe + out-of-
   live curve confirms it survives out-of-survivor. This is the most promising thing in the queue and
   the right candidate to forward-track next. (`scripts/test_composite_signal.py` →
   `data/composite_signal.json`.)
+  **UPDATE (2026-06-24): forward sleeve LAUNCHED.** `scripts/deploy_composite_paper.py` (long-only
+  top-quintile, monthly rebalance, 163-name universe) is now a PROBATION sleeve (weight 0) in
+  `portfolio.py`, wired into the daily `forward_track.sh` + paper-edge DB — its survivorship-honest
+  forward clock is running.

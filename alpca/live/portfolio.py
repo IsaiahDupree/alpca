@@ -45,6 +45,9 @@ DEPLOYED: List[Sleeve] = [
     Sleeve("revision", "PROBATION", 0.0, None,
            "Analyst-revision drift (Case 66); long-only, no-borrow; FORWARD-ONLY (no backtest possible "
            "from AV snapshot data) — zero capital, clock just started."),
+    Sleeve("composite", "PROBATION", 0.0, None,
+           "Multi-signal composite mom+value+SI (Case 68); strongest candidate (0.64, t=2.05) but "
+           "survivorship un-runnable on free data — forward track resolves it; long-only, zero capital."),
 ]
 
 
