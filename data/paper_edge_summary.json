@@ -1,45 +1,54 @@
 {
-  "updated": "2026-06-23 00:40:34 UTC",
+  "updated": "2026-06-24 21:17:38 UTC",
   "funded_weights": {
     "pairs": 0.92,
     "short_vol": 0.08
   },
-  "snapshots_logged": 8,
+  "snapshots_logged": 23,
   "edge": {
     "pairs": {
-      "n_marks": 9,
-      "n_realized": 3,
-      "cum_pct": -0.3689,
-      "sharpe": -11.225,
-      "maxdd_pct": -0.3689,
-      "last_date": "2026-06-22",
+      "n_marks": 11,
+      "n_realized": 5,
+      "cum_pct": -0.2905,
+      "sharpe": -5.6919,
+      "maxdd_pct": -0.3954,
+      "last_date": "2026-06-24",
       "funded": true
     },
     "short_vol": {
-      "n_marks": 8,
-      "n_realized": 5,
-      "cum_pct": 0.0976,
-      "sharpe": 2.1097,
-      "maxdd_pct": -0.186,
-      "last_date": "2026-06-22",
+      "n_marks": 10,
+      "n_realized": 7,
+      "cum_pct": -0.0945,
+      "sharpe": -1.4217,
+      "maxdd_pct": -0.4007,
+      "last_date": "2026-06-24",
       "funded": true
     },
     "momentum": {
-      "n_marks": 8,
-      "n_realized": 5,
-      "cum_pct": -1.0324,
-      "sharpe": -16.2581,
-      "maxdd_pct": -1.0324,
-      "last_date": "2026-06-22",
+      "n_marks": 10,
+      "n_realized": 7,
+      "cum_pct": -1.4517,
+      "sharpe": -16.7795,
+      "maxdd_pct": -1.4517,
+      "last_date": "2026-06-24",
+      "funded": false
+    },
+    "revision": {
+      "n_marks": 3,
+      "n_realized": 0,
+      "cum_pct": null,
+      "sharpe": null,
+      "maxdd_pct": null,
+      "last_date": null,
       "funded": false
     },
     "_combined": {
-      "n_marks": 5,
-      "n_realized": 5,
-      "cum_pct": -0.3316,
-      "sharpe": -7.6525,
-      "maxdd_pct": -0.3542,
-      "last_date": "2026-06-22",
+      "n_marks": 7,
+      "n_realized": 7,
+      "cum_pct": -0.2748,
+      "sharpe": -4.809,
+      "maxdd_pct": -0.3958,
+      "last_date": "2026-06-24",
       "funded": true
     }
   }
