@@ -1,13 +1,13 @@
 {
-  "updated": "2026-07-17 21:17:51 UTC",
+  "updated": "2026-07-21 21:18:57 UTC",
   "funded_weights": {
     "pairs": 0.92,
     "short_vol": 0.08
   },
-  "snapshots_logged": 125,
+  "snapshots_logged": 137,
   "edge": {
     "pairs": {
-      "n_marks": 27,
+      "n_marks": 29,
       "n_realized": 13,
       "cum_pct": -0.7079,
       "sharpe": -2.3508,
@@ -16,25 +16,25 @@
       "funded": true
     },
     "short_vol": {
-      "n_marks": 26,
-      "n_realized": 22,
-      "cum_pct": 0.0895,
-      "sharpe": 0.5565,
+      "n_marks": 28,
+      "n_realized": 24,
+      "cum_pct": 0.3061,
+      "sharpe": 1.7385,
       "maxdd_pct": -0.4007,
-      "last_date": "2026-07-17",
+      "last_date": "2026-07-21",
       "funded": true
     },
     "momentum": {
-      "n_marks": 26,
-      "n_realized": 22,
-      "cum_pct": -2.2517,
-      "sharpe": -5.0453,
+      "n_marks": 28,
+      "n_realized": 24,
+      "cum_pct": -1.0979,
+      "sharpe": -1.8432,
       "maxdd_pct": -2.6631,
-      "last_date": "2026-07-17",
+      "last_date": "2026-07-21",
       "funded": false
     },
     "revision": {
-      "n_marks": 19,
+      "n_marks": 21,
       "n_realized": 0,
       "cum_pct": null,
       "sharpe": null,
@@ -43,21 +43,21 @@
       "funded": false
     },
     "composite": {
-      "n_marks": 17,
-      "n_realized": 16,
+      "n_marks": 19,
+      "n_realized": 18,
       "cum_pct": 0.0,
       "sharpe": 0.0,
       "maxdd_pct": 0.0,
-      "last_date": "2026-07-17",
+      "last_date": "2026-07-21",
       "funded": false
     },
     "_combined": {
-      "n_marks": 22,
-      "n_realized": 22,
-      "cum_pct": -0.6436,
-      "sharpe": -1.7811,
+      "n_marks": 24,
+      "n_realized": 24,
+      "cum_pct": -0.6264,
+      "sharpe": -1.6575,
       "maxdd_pct": -1.4721,
-      "last_date": "2026-07-17",
+      "last_date": "2026-07-21",
       "funded": true
     }
   }
