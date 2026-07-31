@@ -47,14 +47,19 @@ cross-sectional crypto long-short basket is infeasible here regardless of publis
    are now closed.
 
 2. **Seasonality overlay basket** = pre-FOMC drift + turn-of-month (+ optional overnight).
-   ⚠️ **The decisive test is DATA-GATED (2026-06).** The "disappearing post-2011" claim needs
-   deep daily history, but **every daily cache we have is the same 5yr SIP window (2021-06→2026-06)**
-   and **AlphaVantage free tier no longer serves `outputsize=full`** (now a premium feature; free =
-   last 100 bars only). On the available 2021-2026 window the overlays are **weak and OOS-negative**
-   (SPY turn-of-month IS 0.73 / **OOS −0.74**, exposure 34%; pre-FOMC IS 0.61 / **OOS −0.99**;
-   QQQ similar; all t-stats insignificant, p 0.2–0.66) — consistent with the decay thesis, but one
-   regime can't adjudicate it. **Status: marginal overlay, not a third leg.** To actually test the
-   decay split, source deep daily history (Stooq/Tiingo free, or a paid AV/Polygon tier).
+   ✅ **DATA GATE RESOLVED (Case 69, 2026-07-30).** `scripts/download_yahoo_deep.py` pulls Yahoo
+   Finance's public chart API (no key needed) for **SPY 33.5yr (1993-01-29→2026-07-29)** and
+   **QQQ 27.4yr (1999-03-10→2026-07-29)** — verified clean against the existing SIP cache — plus the
+   FOMC calendar extended back to 1994 (200 dates, sourced from the Fed's own historical-materials
+   pages). The pre/post-2011 decay split turned out to be **leg-specific, not a blanket decay**:
+   pre-FOMC drift decayed hard (SPY Sharpe 0.71→0.11, t 2.99→0.44, p 0.003→0.66) but turn-of-month
+   did **not** decay — if anything it got stronger post-2011 (SPY 0.48→0.59, QQQ 0.15→0.63).
+   Adversarial review found real caveats on top of that split: the pre-FOMC "decay" is partly a
+   **2007–2009 crisis-regime artifact** (that window alone drove 5x the per-event effect of the other
+   14 pre-2011 years), and TOM's "post-2011 strength" is **stale** — the 2021–2026 window alone is
+   statistically insignificant for both symbols. **Status: overlay is real but noisier and more
+   regime-dependent than a clean decay story implies — still a marginal diversification leg, not a
+   third fundable edge.** Full writeup: Case 69 in `docs/EDGE_CASE_STUDIES.md`.
 
 3. ~~**Meta-labeling (mlfinlab triple-barrier) on the surviving 84-symbol basket.**~~ — ❌
    **RESOLVED (Case 58): REJECTED.** Same candidate as #8 above. OOS AUC **0.379**, *below* its

@@ -1805,3 +1805,47 @@ capital, and the bar for "validated" is now explicitly out-of-universe + out-of-
   top-quintile, monthly rebalance, 163-name universe) is now a PROBATION sleeve (weight 0) in
   `portfolio.py`, wired into the daily `forward_track.sh` + paper-edge DB — its survivorship-honest
   forward clock is running.
+
+## Case 69 — Seasonality decay test unlocked (Yahoo deep history) ⚠️ (real split, but the clean "pre-2011 decay" story oversells what the data shows)
+
+- **The data-gate is resolved.** `docs/RESEARCH_CANDIDATES.md` item #2 was blocked because every
+  cache we had was the same 5yr SIP window (2021-06→2026-06) and AlphaVantage's free tier stopped
+  serving full history. New `scripts/download_yahoo_deep.py` pulls Yahoo Finance's public
+  `v8/finance/chart` API (no key needed) and delivers **SPY 33.5yr (1993-01-29→2026-07-29, 8,431
+  bars)** and **QQQ 27.4yr (1999-03-10→2026-07-29, 6,889 bars)**. Verified clean: sorted/deduped,
+  zero spurious >30% single-day jumps in either symbol, agrees with the existing Alpaca SIP cache on
+  1,253 overlapping days to within ~3bps, and both symbols' first bars land on their real listing
+  dates.
+- **FOMC calendar extended back to 1994.** Pulled 200 scheduled-meeting dates (1994–2018, 8/year)
+  straight off the Fed's own per-year historical-materials pages and prepended them to the existing
+  `FOMC_ANNOUNCEMENTS` list in `alpca/backtest/seasonality.py` (260 total, 0 dupes). Independently
+  re-checked: weekday distribution (85 Tue / 107 Wed / 7 Thu / 1 Fri) matches real FOMC convention,
+  spot-checks against known dates (1998-09-29 LTCM-era cut, 2008-12-16 ZIRP announcement) correct.
+  One acknowledged gap: **unscheduled/emergency inter-meeting actions are excluded by design** (e.g.
+  the Jan/Oct 2008 crisis cuts) — consistent with the existing list's own convention, not a bug, but
+  it means the pre-2011 pre-FOMC sample only ever sees the *scheduled* clock.
+- **The pre/post-2011 split, run on `scripts/test_seasonality_deep.py`.** Pre-FOMC drift: SPY Sharpe
+  **0.71 (t=2.99, p=0.003) pre-2011 → 0.11 (t=0.44, p=0.66) post-2011** — a real, sharp decay.
+  Turn-of-month: **the opposite happened** — SPY 0.48→0.59 (both significant), QQQ **0.15
+  (insignificant) → 0.63 (t=2.48, p=0.013)** — got *stronger*, not weaker, post-2011. So
+  "seasonality decayed after 2011" is false as a blanket claim; the decay is leg-specific.
+- **The adversarial pass found the clean per-leg story itself oversells.** Re-deriving the pre-2011
+  SPY pre-FOMC series independently reproduced the Sharpe (t≈3.50 vs. the report's 2.99 — not a code
+  bug), but splitting by regime showed the **2007–2009 financial-crisis window alone (24 events)
+  drove a mean effect 5x larger** than the other 14 pre-2011 years combined (1.08%/event vs.
+  0.19%/event, the latter only borderline significant at t=2.17). So "decay" is substantially a
+  **one-time crisis-regime artifact**, not a clean Lucca–Moench-style arbitraged-away effect.
+  Symmetrically, TOM's "post-2011 strengthened" claim is **stale**: the 2021–2026-only crosscheck
+  slice is statistically insignificant for both symbols (SPY t=0.86, QQQ t=0.69) — the strength is
+  carried by 2011–2020, not present in the most recent five years.
+- **Verdict.** ⚠️ **Data gate resolved, mechanics clean (no lookahead, no fabricated dates, no data
+  corruption, 2bps costs intact) — but the neat "pre-FOMC decayed, turn-of-month didn't" headline
+  oversells a noisier reality.** This is not a rejected or broken result, but before leaning on
+  either leg-specific claim: (1) the pre-FOMC "decay" should be re-run **excluding 2007–2009** to
+  see whether it survives without the crisis regime driving it, and (2) TOM's "post-2011 strength"
+  should not be read as "currently strong" — the live 2021–2026 window alone is statistically
+  indistinguishable from noise for both symbols. Net effect on the deployed book: **unchanged** —
+  both legs remain what `seasonality.py`'s own docstring already says, a small, modest,
+  regime-dependent overlay, not a standalone edge. (`scripts/download_yahoo_deep.py`,
+  `scripts/test_seasonality_deep.py` → `data/seasonality_deep_results.json`; FOMC dates extended in
+  `alpca/backtest/seasonality.py`.)
