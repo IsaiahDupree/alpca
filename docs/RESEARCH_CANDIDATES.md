@@ -1,5 +1,16 @@
 # Alpca — Research Candidate Edges (second deep scout pass)
 
+*Superseded 2026-07-30 — kept for history.* This was a hand-curated register from a single deep survey.
+It has since been **overtaken by two at-scale harvests**: Case 62 (176 published strategies, 16-agent
+fan-out) and Case 64 (217 strategies from the user's private trading-knowledge corpus, cross-checked
+against five other codebases) — both converge on **zero new Alpaca-deployable alpha** (see
+`docs/STATE_OF_THE_PROGRAM.md` → "Idea supply is exhausted, not the venue's patience"). The program is no
+longer candidate-limited; the three open threads are all **forward-tracking probation sleeves** waiting on
+live clocks, not new backtests: composite (Case 68), analyst-revision drift (Case 66), hardened
+cross-sectional momentum (Case 65) — see `docs/PAPER_EDGE.md` for their live status and
+`docs/EDGE_CASE_STUDIES.md` Cases 60-68 for the full write-ups. The register below is left as-is for
+reference.
+
 A ranked register of **untested** candidate edges surfaced by a deep survey of open-source
 quant repos / papers, each screened against our venue (Alpaca PAPER, ~1.2s taker fills,
 top-of-book, ~2bps equity / ~10bps crypto, daily/low-turnover) **and** our harness
@@ -45,12 +56,16 @@ cross-sectional crypto long-short basket is infeasible here regardless of publis
    regime can't adjudicate it. **Status: marginal overlay, not a third leg.** To actually test the
    decay split, source deep daily history (Stooq/Tiingo free, or a paid AV/Polygon tier).
 
-3. **Meta-labeling (mlfinlab triple-barrier) on the surviving 84-symbol basket.**
-   *Why it might survive:* doesn't need a new edge — it **amplifies** the one we've proven
-   OOS (0.54) by filtering low-conviction trades, with purged-CV machinery built to resist
-   the overfit that killed Avellaneda-Lee. Lowest-risk build; upside is lifting our sole
-   deployable market-neutral strategy. Honest null: fewer trades + estimation noise may wash
-   out the precision gain on an already-thin edge.
+3. ~~**Meta-labeling (mlfinlab triple-barrier) on the surviving 84-symbol basket.**~~ — ❌
+   **RESOLVED (Case 58): REJECTED.** Same candidate as #8 above. OOS AUC **0.379**, *below* its
+   own shuffle-placebo (0.46) — anti-predictive, zero skill. The τ=0.60 "lift" that looked
+   promising was a trade-count-cut mirage. Pairs stays deployed as-is, unfiltered.
+
+**All three "top 3 to build next" items are now resolved — none survived.** The next-highest-EV work
+after this pass was not a 4th candidate from this register; it was validating the *one deployed edge*
+harder (Case 60's out-of-regime SIP unlock, Case 67's real-tail test) and then two at-scale harvests
+(Case 62: 176 strategies, Case 64: 217-strategy corpus) that exhausted the idea space more thoroughly
+than any hand-picked shortlist could. See `docs/STATE_OF_THE_PROGRAM.md` for what's currently live.
 
 ## Explicitly dead ends (do not spend time)
 
