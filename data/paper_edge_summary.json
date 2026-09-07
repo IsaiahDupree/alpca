@@ -1,40 +1,40 @@
 {
-  "updated": "2026-08-07 21:20:07 UTC",
+  "updated": "2026-08-13 21:21:00 UTC",
   "funded_weights": {
     "pairs": 0.92,
     "short_vol": 0.08
   },
-  "snapshots_logged": 215,
+  "snapshots_logged": 239,
   "edge": {
     "pairs": {
-      "n_marks": 42,
-      "n_realized": 23,
-      "cum_pct": -1.0187,
-      "sharpe": -1.6949,
+      "n_marks": 46,
+      "n_realized": 27,
+      "cum_pct": -1.486,
+      "sharpe": -2.2456,
       "maxdd_pct": -1.9363,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-13",
       "funded": true
     },
     "short_vol": {
-      "n_marks": 41,
-      "n_realized": 37,
-      "cum_pct": 0.4855,
-      "sharpe": 1.7248,
+      "n_marks": 45,
+      "n_realized": 41,
+      "cum_pct": 0.6354,
+      "sharpe": 2.1171,
       "maxdd_pct": -0.4758,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-13",
       "funded": true
     },
     "momentum": {
-      "n_marks": 41,
-      "n_realized": 37,
-      "cum_pct": -2.5288,
-      "sharpe": -2.2752,
+      "n_marks": 45,
+      "n_realized": 41,
+      "cum_pct": -2.3674,
+      "sharpe": -1.8982,
       "maxdd_pct": -4.2958,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-13",
       "funded": false
     },
     "revision": {
-      "n_marks": 34,
+      "n_marks": 38,
       "n_realized": 0,
       "cum_pct": null,
       "sharpe": null,
@@ -43,21 +43,21 @@
       "funded": false
     },
     "composite": {
-      "n_marks": 32,
-      "n_realized": 31,
-      "cum_pct": 7.0214,
-      "sharpe": 3.4142,
+      "n_marks": 36,
+      "n_realized": 35,
+      "cum_pct": 23.2858,
+      "sharpe": 6.5487,
       "maxdd_pct": -3.4297,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-13",
       "funded": false
     },
     "_combined": {
-      "n_marks": 37,
-      "n_realized": 37,
-      "cum_pct": -0.8972,
-      "sharpe": -1.2894,
+      "n_marks": 41,
+      "n_realized": 41,
+      "cum_pct": -1.3159,
+      "sharpe": -1.7632,
       "maxdd_pct": -1.7684,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-13",
       "funded": true
     }
   }
