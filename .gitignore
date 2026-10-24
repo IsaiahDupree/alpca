@@ -69,3 +69,7 @@ id_ed25519*
 .netrc
 .npmrc
 .pypirc
+
+# Finance workspace hygiene (2026-10-24): local caches and private material
+.sol-keypair.json
+*-keypair.json
